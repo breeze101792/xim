@@ -22,10 +22,10 @@ set listchars=tab:>-
 set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 set list
 " setup cursor
-"set cursorcolumn 
-"hi cursorcolumn cterm=NONE ctermbg=DarkGray
+set cursorcolumn
+hi cursorcolumn cterm=NONE ctermbg=233
 set cursorline
-"hi CursorLine   cterm=NONE ctermbg=DarkGray
+hi CursorLine   cterm=NONE ctermbg=233
 
 " map shortkey
 map <C-Left> <Esc>:tabprev<CR>
@@ -33,5 +33,15 @@ map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
 map <C-n> <Esc>:tabnew 
+
+" IDE map
+" Open and close all the three plugins on the same time
+nmap <F8>  :TrinityToggleAll<CR>
+" Open and close the Source Explorer separately
+nmap <F9>  :TrinityToggleSourceExplorer<CR>
+" Open and close the Taglist separately
+nmap <F10> :TrinityToggleTagList<CR>
+" Open and close the NERD Tree separately
+nmap <F11> :TrinityToggleNERDTree<CR>
 
 

@@ -22,3 +22,12 @@
 [submodule "vim/bundle/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git
+[submodule "plugins/SrcExpl"]
+	path = plugins/SrcExpl
+	url = https://github.com/wesleyche/SrcExpl.git
+[submodule "taglist.vim"]
+	path = plugins/taglist.vim
+	url = https://github.com/vim-scripts/taglist.vim.git
+[submodule "plugins/Trinity"]
+	path = plugins/Trinity
+	url = https://github.com/wesleyche/Trinity.git
