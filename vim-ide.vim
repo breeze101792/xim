@@ -33,7 +33,8 @@ map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
 map <C-o> <Esc>:tabnew 
-map <C-a> <Esc>ggVG
+map <C-a> <Esc>ggVG<CR>
+map <C-_> :Commentary<CR>
 
 " IDE map
 " Open and close all the three plugins on the same time
