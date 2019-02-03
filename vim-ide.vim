@@ -27,6 +27,8 @@ hi cursorcolumn cterm=NONE ctermbg=233
 set cursorline
 hi CursorLine   cterm=NONE ctermbg=233
 
+set cscopetag cscopeverbose
+
 " map shortkey
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
