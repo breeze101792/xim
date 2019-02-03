@@ -32,16 +32,18 @@ map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
-map <C-n> <Esc>:tabnew 
+map <C-o> <Esc>:tabnew 
+map <C-a> <Esc>ggVG
 
 " IDE map
 " Open and close all the three plugins on the same time
-nmap <F8>  :TrinityToggleAll<CR>
+" nmap <F8>  :TrinityToggleAll<CR>
 " Open and close the Source Explorer separately
-nmap <F9>  :TrinityToggleSourceExplorer<CR>
+nmap <F8>  :TrinityToggleSourceExplorer<CR>
 " Open and close the Taglist separately
-nmap <F10> :TrinityToggleTagList<CR>
+nmap <F7> :TrinityToggleTagList<CR>
 " Open and close the NERD Tree separately
-nmap <F11> :TrinityToggleNERDTree<CR>
+nmap <F6> :TrinityToggleNERDTree<CR>
 
-
+" remove the trailing space 
+autocmd FileType c,cpp,h,bash,sh autocmd BufWritePre <buffer> %s/\s\+$//e
