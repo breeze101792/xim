@@ -29,14 +29,21 @@ hi CursorLine   cterm=NONE ctermbg=233
 
 set cscopetag cscopeverbose
 
+" remove the trailing space 
+autocmd FileType c,cpp,h,bash,sh autocmd BufWritePre <buffer> %s/\s\+$//e
+
 " map shortkey
+" Edit
+map <S-Up> <Esc>dd<Up>P
+map <S-Down> <Esc>dd<Down>P
+map <C-a> <Esc>ggVG<CR>
+map <C-_> :Commentary<CR>
+" tab manipulation
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
 map <C-o> <Esc>:tabnew 
-map <C-a> <Esc>ggVG<CR>
-map <C-_> :Commentary<CR>
 
 " IDE map
 " Open and close all the three plugins on the same time
@@ -48,5 +55,3 @@ nmap <F7> :TrinityToggleTagList<CR>
 " Open and close the NERD Tree separately
 nmap <F6> :TrinityToggleNERDTree<CR>
 
-" remove the trailing space 
-autocmd FileType c,cpp,h,bash,sh autocmd BufWritePre <buffer> %s/\s\+$//e

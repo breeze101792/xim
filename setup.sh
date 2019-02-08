@@ -22,5 +22,6 @@ function setup()
     }
     popd > /dev/null
     ln -sf $IDE_ROOT/vim-ide.vim $HOME/.vimrc
+    echo "Don't forget to init submodule."
 }
 setup
