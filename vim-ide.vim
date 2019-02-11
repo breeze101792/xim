@@ -4,6 +4,7 @@ set nocp
 set encoding=utf-8
 " Load pathogen
 execute pathogen#infect()
+let g:NERDTreeGlyphReadOnly = "RO"
 
 " Editor Settings
 syntax on
@@ -11,6 +12,8 @@ filetype plugin indent on
 " colorscheme murphy
 " colorscheme industry
 colorscheme pablo
+set mouse=a
+set ic
 set nu
 set hlsearch
 " soft tab

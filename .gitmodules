@@ -33,4 +33,4 @@
 	url = https://github.com/wesleyche/Trinity.git
 [submodule "plugins/vim-commentary.git"]
 	path = plugins/vim-commentary.git
-	url = git://github.com/tpope/vim-commentary.git
+	url = https://github.com/tpope/vim-commentary.git
