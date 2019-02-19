@@ -12,7 +12,9 @@ filetype plugin indent on
 " colorscheme murphy
 " colorscheme industry
 colorscheme pablo
-set mouse=a
+" set mouse=a
+" set mouse=
+set paste
 set ic
 set nu
 set hlsearch
@@ -34,6 +36,8 @@ set cscopetag cscopeverbose
 
 " remove the trailing space 
 autocmd FileType c,cpp,h,bash,sh autocmd BufWritePre <buffer> %s/\s\+$//e
+" memorize last open line
+au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
 
 " map shortkey
 " Edit
