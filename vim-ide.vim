@@ -14,7 +14,7 @@ filetype plugin indent on
 colorscheme pablo
 " set mouse=a
 " set mouse=
-set paste
+" set paste
 set ic
 set nu
 set hlsearch
@@ -41,8 +41,8 @@ au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|
 
 " map shortkey
 " Edit
-map <S-Up> <Esc>dd<Up>P
-map <S-Down> <Esc>dd<Down>P
+map <C-Up> <Esc>dd<Up>P
+map <C-Down> <Esc>dd<Down>P
 map <C-a> <Esc>ggVG<CR>
 map <C-_> :Commentary<CR>
 " tab manipulation
