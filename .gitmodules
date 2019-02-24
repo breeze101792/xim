@@ -34,3 +34,6 @@
 [submodule "plugins/vim-commentary.git"]
 	path = plugins/vim-commentary.git
 	url = https://github.com/tpope/vim-commentary.git
+[submodule "plugins/vim-mark"]
+	path = plugins/vim-mark
+	url = https://github.com/inkarkat/vim-mark
