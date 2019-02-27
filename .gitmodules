@@ -1,25 +1,25 @@
-[submodule "vim/bundle/vim-pathogen"]
+[submodule "plugins/vim-pathogen"]
 	path = plugins/vim-pathogen
 	url = https://github.com/tpope/vim-pathogen
-[submodule "vim/bundle/nerdtree"]
+[submodule "plugins/nerdtree"]
 	path = plugins/nerdtree
 	url = https://github.com/scrooloose/nerdtree.git
-[submodule "vim/bundle/supertab"]
+[submodule "plugins/supertab"]
 	path = plugins/supertab
 	url = https://github.com/ervandew/supertab.git
-[submodule "vim/bundle/ctrlp"]
+[submodule "plugins/ctrlp"]
 	path = plugins/ctrlp
 	url = https://github.com/kien/ctrlp.vim.git
-[submodule "vim/bundle/syntastic"]
+[submodule "plugins/syntastic"]
 	path = plugins/syntastic
 	url = https://github.com/vim-syntastic/syntastic.git
-[submodule "vim/bundle/vim-airline"]
+[submodule "plugins/vim-airline"]
 	path = plugins/vim-airline
 	url = https://github.com/vim-airline/vim-airline.git
-[submodule "vim/bundle/vim-airline-themes"]
+[submodule "plugins/vim-airline-themes"]
 	path = plugins/vim-airline-themes
 	url = https://github.com/vim-airline/vim-airline-themes.git
-[submodule "vim/bundle/vim-multiple-cursors"]
+[submodule "plugins/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git
 [submodule "plugins/SrcExpl"]
@@ -36,4 +36,7 @@
 	url = https://github.com/tpope/vim-commentary.git
 [submodule "plugins/vim-mark"]
 	path = plugins/vim-mark
-	url = https://github.com/inkarkat/vim-mark
+	url = https://github.com/breeze101792/vim-mark.git
+[submodule "plugins/ingo-library"]
+	path = plugins/ingo-library
+	url = https://github.com/vim-scripts/ingo-library.git
