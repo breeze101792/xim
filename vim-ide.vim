@@ -15,8 +15,10 @@ colorscheme pablo
 " set mouse=a
 " set mouse=
 " set paste
+" ignore case
 set ic
 set nu
+" hightlight search word
 set hlsearch
 " soft tab
 set expandtab
@@ -62,3 +64,8 @@ nmap <F7> :TrinityToggleTagList<CR>
 " Open and close the NERD Tree separately
 nmap <F6> :TrinityToggleNERDTree<CR>
 
+" Plugin settings
+" Nertree
+let g:NERDTreeDirArrowExpandable = '▸'
+let g:NERDTreeDirArrowCollapsible = '▾'
+let NERDTreeNodeDelimiter="\u00b7"
