@@ -12,7 +12,7 @@ filetype plugin indent on
 " colorscheme murphy
 " colorscheme industry
 colorscheme pablo
-" set mouse=a
+set mouse=a
 " set mouse=
 " set paste
 " ignore case
@@ -69,3 +69,19 @@ nmap <F6> :TrinityToggleNERDTree<CR>
 let g:NERDTreeDirArrowExpandable = '▸'
 let g:NERDTreeDirArrowCollapsible = '▾'
 let NERDTreeNodeDelimiter="\u00b7"
+
+" Test
+let mouse_mode = 0 " 0 = c, 1 = a
+
+
+func! Mouse_on_off()
+   if g:mouse_mode == 0
+      let g:mouse_mode = 1
+      set mouse=c
+   else
+      let g:mouse_mode = 0
+      set mouse=a
+   endif
+   return
+endfunc
+nnoremap <silent> <C-m> :call Mouse_on_off()<CR>
