@@ -21,6 +21,7 @@ filetype plugin indent on
 " ignore case
 set ignorecase
 set number
+" set autochdir
 " hightlight search word
 " set hlsearch
 " soft tab
@@ -49,7 +50,7 @@ autocmd FileType c,cpp,h,py,bash,sh,vim,xml autocmd BufWritePre <buffer> :%s/\(\
 au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
 
 " Syntax
-set tags=./tags,tags
+set tags=./tags,tags;/
 set cscopetag cscopeverbose
 set foldmethod=syntax
 " set foldmethod=indent
