@@ -16,6 +16,7 @@ function setup()
 
     mkdir $VIM_ROOT
     ln -sf $IDE_ROOT/plugins $VIM_ROOT/bundle
+    ln -sf $IDE_ROOT/scripts $VIM_ROOT/vim-ide
     pushd $VIM_ROOT > /dev/null
     {
         ln -sf bundle/vim-pathogen/autoload .
