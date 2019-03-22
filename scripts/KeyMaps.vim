@@ -25,3 +25,13 @@ nmap <F7>  :TrinityToggleSourceExplorer<CR>
 " nmap <F7> :TrinityToggleTagList<CR>
 " Open and close the NERD Tree separately
 nmap <F6> :TrinityToggleNERDTree<CR>
+
+" Patch
+" Edit
+map <C-l> <Esc>dd<Up>P
+map <C-j> <Esc>dd<Down>P
+" tab manipulation
+map <C-h> <Esc>:tabprev<CR>
+map <C-l> <Esc>:tabnext<CR>
+map <S-h> <Esc>:tabmove -1 <CR>
+map <S-l> <Esc>:tabmove +1 <CR>
