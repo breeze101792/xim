@@ -10,8 +10,8 @@ set encoding=utf-8
 " colorscheme industry
 colorscheme pablo
 
-set mouse=a
 " set mouse=
+" set mouse=a
 " set paste
 
 " Editor Settings
@@ -51,6 +51,7 @@ au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|
 
 " Syntax
 set tags=./tags,tags;/
+" set tags=tags
 set cscopetag cscopeverbose
 set foldmethod=syntax
 " set foldmethod=indent

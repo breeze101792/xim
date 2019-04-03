@@ -28,7 +28,7 @@ nmap <F7> :TrinityToggleNERDTree<CR>
 
 " Patch
 " Edit
-map <C-l> <Esc>dd<Up>P
+map <C-k> <Esc>dd<Up>P
 map <C-j> <Esc>dd<Down>P
 " tab manipulation
 map <C-h> <Esc>:tabprev<CR>
