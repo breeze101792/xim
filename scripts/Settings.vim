@@ -42,9 +42,14 @@ hi CursorLine   cterm=NONE ctermbg=233
 " Advance config
 " ===========================================
 " remove the trailing space
-autocmd FileType c,cpp,h,py,bash,sh,vim,xml autocmd BufWritePre <buffer> %s/\s\+$//e
-autocmd FileType c,cpp,h,py,bash,sh,vim,xml autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
-autocmd FileType c,cpp,h,py,bash,sh,vim,xml autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
+" autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
+" remove double next line
+" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
+" auto retab
+" autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
+" TO be removed
+" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
+
 " autocmd FileType c,cpp setlocal equalprg=clang-format
 " memorize last open line
 au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
