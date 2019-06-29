@@ -57,9 +57,15 @@ au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|
 " Syntax
 set tags=./tags,tags;/
 " set tags=tags
-set cscopetag cscopeverbose
-set foldmethod=syntax
-" set foldmethod=indent
+set cscopetag
+" set cscopeverbose
+set nocscopeverbose
+if $CSCOPE_DB != ''
+    echo $CSCOPE_DB
+    cscope add $CSCOPE_DB
+endif
+" set foldmethod=syntax
+set foldmethod=indent
 " set nofoldenable
 set foldlevel=99
 
