@@ -53,7 +53,7 @@ let python_highlight_all = 1
 " remove double next line
 " autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
 " auto retab
-" autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
+autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
 " TO be removed
 " autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
 

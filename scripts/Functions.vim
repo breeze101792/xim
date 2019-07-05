@@ -21,8 +21,7 @@ endfunc
 " -------------------------------------------
 function! Csc()
   cscope find c <cword>
-  copen
+  " copen
 endfunction
 command! Csc call Csc()
-
 " -------------------------------------------

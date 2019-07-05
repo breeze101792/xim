@@ -25,9 +25,6 @@
 [submodule "plugins/SrcExpl"]
 	path = plugins/SrcExpl
 	url = https://github.com/wesleyche/SrcExpl.git
-[submodule "taglist.vim"]
-	path = plugins/taglist.vim
-	url = https://github.com/vim-scripts/taglist.vim.git
 [submodule "plugins/Trinity"]
 	path = plugins/Trinity
 	url = https://github.com/wesleyche/Trinity.git
@@ -40,3 +37,6 @@
 [submodule "plugins/ingo-library"]
 	path = plugins/ingo-library
 	url = https://github.com/vim-scripts/ingo-library.git
+[submodule "plugins/tagbar"]
+	path = plugins/tagbar
+	url = https://github.com/majutsushi/tagbar.git
