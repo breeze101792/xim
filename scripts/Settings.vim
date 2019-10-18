@@ -41,6 +41,7 @@ hi cursorcolumn cterm=NONE ctermbg=233
 set cursorline
 hi CursorLine   cterm=NONE ctermbg=233
 
+set clipboard=unnamed
 " Language Settings
 " ===========================================
 " enable all Python syntax highlighting features
@@ -49,17 +50,20 @@ let python_highlight_all = 1
 " Advance config
 " ===========================================
 " remove the trailing space
-" autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
-" remove double next line
-" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
+autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
 " auto retab
 autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
-" TO be removed
+" Remove empty lines with space
 " autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
+" remove double next line
+" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
 
 " autocmd FileType c,cpp setlocal equalprg=clang-format
 " memorize last open line
 au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+
+" set mouse mode when exit
+autocmd VimLeave * :set mouse=c
 
 " Syntax
 set tags=./tags,tags;/
@@ -68,7 +72,7 @@ set cscopetag
 " set cscopeverbose
 set nocscopeverbose
 if $CSCOPE_DB != ''
-    echo $CSCOPE_DB
+    " echo "Open ${CSCOPE_DB}"
     cscope add $CSCOPE_DB
 endif
 " set foldmethod=syntax
