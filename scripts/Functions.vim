@@ -25,3 +25,29 @@ function! Csc()
 endfunction
 command! Csc call Csc()
 " -------------------------------------------
+"  Beautify
+" -------------------------------------------
+function! Beautify()
+    " Advance config
+    " ===========================================
+    " remove the trailing space
+    :%s/\s\+$//e
+    " autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
+    " Remove empty lines with space
+    :%s/\($\n\s*\)\+\%$//e
+    " remove double next line
+    :%s/\(\n\n\)\n\+/\1/e
+
+    " autocmd FileType c,cpp setlocal equalprg=clang-format
+    " auto retab
+    " set ff=unix
+
+endfunction
+command! Beautify call Beautify()
+" -------------------------------------------
+"  PVupdate
+" -------------------------------------------
+function! Pvupdate()
+    :silent !pvupdate
+endfunction
+command! Pvupdate call Pvupdate()

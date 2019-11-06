@@ -50,9 +50,9 @@ let python_highlight_all = 1
 " Advance config
 " ===========================================
 " remove the trailing space
-autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
+" autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
 " auto retab
-autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
+" autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
 " Remove empty lines with space
 " autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
 " remove double next line

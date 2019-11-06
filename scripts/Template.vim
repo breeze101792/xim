@@ -1,4 +1,4 @@
-let @a = "printf(\"[Shaun_Debug %s,%d]Var=0x%04x\\n\", __func__, __LINE__, Var);\n"
+let @a = "printf(\"[Shaun_Debug %s-%s,%s,%d]\\n\", __DATE__, __TIME__, __func__, __LINE__);\n"
       \. "\n"
 let @b = "u32retCode = function_name;\n"
       \. "if (u32retCode != TRUE)\n"
