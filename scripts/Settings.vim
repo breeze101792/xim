@@ -65,14 +65,22 @@ au BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|
 " set mouse mode when exit
 autocmd VimLeave * :set mouse=c
 
+" Tab
+" Auto open tab in new window
+" autocmd VimEnter * tab all
+" autocmd BufAdd * exe 'tablast | tabe "' . expand( "<afile") .'"'
+
 " Syntax
+" Beautify settings
+" set formatoptions 
+" tag path
 set tags=./tags,tags;/
 " set tags=tags
 set cscopetag
 " set cscopeverbose
 set nocscopeverbose
 if $CSCOPE_DB != ''
-    " echo "Open ${CSCOPE_DB}"
+    " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
 endif
 " set foldmethod=syntax

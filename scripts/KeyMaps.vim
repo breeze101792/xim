@@ -15,6 +15,7 @@ map <C-o> <Esc>:tabnew<SPACE>
 nnoremap <silent> <C-m> :call Mouse_on_off()<CR>
 " cscope
 " nnoremap <silent> <C-m> :Csc<CR>
+nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
 
 " IDE map
 " nmap <F6> :TlistToggle<CR>
@@ -32,6 +33,7 @@ nmap <F8>  :TrinityToggleSourceExplorer<CR>
 nmap <F7> :NERDTreeToggle<CR>
 
 " Patch
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Edit
 map <S-k> <Esc>dd<Up>P
 map <S-j> <Esc>dd<Down>P
@@ -40,3 +42,12 @@ map <C-h> <Esc>:tabprev<CR>
 map <C-l> <Esc>:tabnext<CR>
 map <S-h> <Esc>:tabmove -1 <CR>
 map <S-l> <Esc>:tabmove +1 <CR>
+
+" Enable Alt Keys
+" for i in range(97,122)
+"     let c = nr2char(i)
+"     exec "map \e".c." <M-".c.">"
+"     exec "map! \e".c." <M-".c.">"
+" endfor
+" No Ctrl Key Patch
+" nmap <A-t> <Esc>:pop<CR>

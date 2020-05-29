@@ -3,7 +3,7 @@
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-let mouse_mode = 1 " 0 = a, 1 = c
+let mouse_mode = 0 " 0 = a, 1 = c
 
 func! Mouse_on_off()
     if g:mouse_mode == 0
@@ -31,19 +31,28 @@ function! Beautify()
     " Advance config
     " ===========================================
     " remove the trailing space
-    :%s/\s\+$//e
+    autocmd BufWritePre <buffer> %s/\s\+$//e
+    " auto retab
     " autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
     " Remove empty lines with space
-    :%s/\($\n\s*\)\+\%$//e
+    autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
     " remove double next line
-    :%s/\(\n\n\)\n\+/\1/e
+    autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
 
     " autocmd FileType c,cpp setlocal equalprg=clang-format
+    
     " auto retab
     " set ff=unix
 
 endfunction
 command! Beautify call Beautify()
+" -------------------------------------------
+"  Test
+" -------------------------------------------
+function! Test() range
+    '<,'> %s/\s\+$//e
+endfunction
+command! Test call Beautify()
 " -------------------------------------------
 "  PVupdate
 " -------------------------------------------

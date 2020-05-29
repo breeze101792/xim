@@ -18,3 +18,11 @@ set showmatch
 
 " enable all Python syntax highlighting features
 let python_highlight_all = 1
+
+" -------------------------------------------
+"  Test
+" -------------------------------------------
+function! Test() range
+    :'<,'> %s/\s\+$//e
+endfunction
+command! Test call Test()
