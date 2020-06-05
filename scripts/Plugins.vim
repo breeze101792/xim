@@ -32,3 +32,16 @@ let g:ctrlp_custom_ignore = {
             \ 'file': '\v\.(exe|so|dll|a|o|d|bin)$',
             \ 'link': 'some_bad_symbolic_links',
             \ }
+
+
+" Bookmark
+" Shortcut keys
+" mm	:BookmarkToggle
+" mi	:BookmarkAnnotate <TEXT>
+" ma	:BookmarkShowAll
+" mc	:BookmarkClear
+" mx	:BookmarkClearAll
+highlight BookmarkSign ctermbg=NONE ctermfg=160
+highlight BookmarkLine ctermbg=194 ctermfg=NONE
+let g:bookmark_sign = '⚑'
+let g:bookmark_highlight_lines = 1
