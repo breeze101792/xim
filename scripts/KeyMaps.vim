@@ -1,9 +1,37 @@
-" Map shortkey
-" Edit
-map <C-Up> <Esc>dd<Up>P
-map <C-Down> <Esc>dd<Down>P
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Map shortkey
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""    Editor
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" for quick save and exit
+nnoremap <leader>wa :wa<cr>
+nnoremap <leader>qa :qa<cr>
+nnoremap <leader>wqa :wqa<cr>
+
+" open an shell without close vim
+nnoremap <leader>sh :sh<cr>
+
+"goto end of line and start of line
+nnoremap <leader>hh 1000h
+nnoremap <leader>ll 1000l
 map <C-a> <Esc>ggVG<CR>
 map <C-_> :Commentary<CR>
+
+" Edit
+map <S-k> <Esc>dd<Up>P
+map <S-j> <Esc>dd<Down>P
+" inseart an line below
+nnoremap <leader><cr> o<Esc>
+
+" tab manipulation
+map <C-h> <Esc>:tabprev<CR>
+map <C-l> <Esc>:tabnext<CR>
+map <S-h> <Esc>:tabmove -1 <CR>
+map <S-l> <Esc>:tabmove +1 <CR>
+
 " tab manipulation
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
@@ -11,6 +39,13 @@ map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
 map <C-o> <Esc>:tabnew<SPACE>
 
+
+" Add hilighted word with " or '
+nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
+nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
+
+""""    Function map
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle
 nnoremap <silent> <C-m> :call Mouse_on_off()<CR>
 " cscope
@@ -34,14 +69,6 @@ nmap <F7> :NERDTreeToggle<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""
-" Edit
-map <S-k> <Esc>dd<Up>P
-map <S-j> <Esc>dd<Down>P
-" tab manipulation
-map <C-h> <Esc>:tabprev<CR>
-map <C-l> <Esc>:tabnext<CR>
-map <S-h> <Esc>:tabmove -1 <CR>
-map <S-l> <Esc>:tabmove +1 <CR>
 
 " Enable Alt Keys
 " for i in range(97,122)

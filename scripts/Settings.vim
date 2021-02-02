@@ -1,6 +1,33 @@
-" Config vim env
-" disable vi compatiable
-set nocp
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Config vim env
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""    Config vim env
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set nocompatible " disable vi compatiable
+" set autowrite " auto save when switch document
+set number	" show line number
+set ruler	" enable status bar ruler
+" set nobackup	"no backup when overright
+set showcmd    " show entered command
+set ignorecase smartcase " search with ignore case
+set mps+=<:> "hilighted matched ()
+set incsearch " increamental search
+set smartindent " smart indent
+set backspace=indent,eol,start " when press backspace
+set cmdheight=1 " Command line height
+set scrolloff=3 " scroll offset, n line for scroll when in top/buttom line
+set laststatus=2 " status bar height
+set completeopt+=menu
+set completeopt+=longest
+set completeopt+=preview  " complete menu use list insdead of window
+set switchbuf+=usetab,newtab "use new tab when open through quickfix
+
+set t_ti= t_te= " leave content when vim exit
+"set relativenumber " use relaaive number
+
 set encoding=utf-8
 
 " Interface Settings
@@ -9,6 +36,11 @@ set encoding=utf-8
 " colorscheme murphy
 " colorscheme industry
 colorscheme pablo
+highlight Pmenu ctermbg=gray "设置补全菜单的背景色
+highlight PmenuSel ctermbg=blue 
+highlight LineNr ctermfg=7 " set line color
+
+" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
 
 " set mouse=
 " set mouse=a
@@ -16,20 +48,24 @@ colorscheme pablo
 
 " Editor Settings
 " ===========================================
-syntax on
+
+
+syntax enable " enable syntax hi
 " show the matching part of the pair for [] {} and ()
 set showmatch
-filetype plugin indent on
+filetype plugin indent on " base on file type do auto indend
+filetype plugin on " auto check file type
 " ignore case
 set ignorecase
-set number
 " set autochdir
 " hightlight search word
 " set hlsearch
 " soft tab
-set expandtab
-set tabstop=4
-set shiftwidth=4
+set expandtab " extend tab to 4 space
+set tabstop=4 "set tab len to 4
+set shiftwidth=4 " set >> command width
+set softtabstop=4 " let tab stop in 4
+
 " set listchars=tab:>-
 " show special char
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
@@ -69,7 +105,7 @@ autocmd VimLeave * :set mouse=c
 " Auto open tab in new window
 " autocmd VimEnter * tab all
 " autocmd BufAdd * exe 'tablast | tabe "' . expand( "<afile") .'"'
-
+"
 " Syntax
 " Beautify settings
 " set formatoptions 
@@ -93,3 +129,6 @@ set foldlevel=99
 " zc: Close fold.
 " zR: Open all folds.
 " zM: Close all folds.
+
+" save debug msg to /tmp/vim-debug
+" let g:vim_debug_enable = 1
