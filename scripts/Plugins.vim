@@ -1,22 +1,31 @@
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Config vim env                            """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load pathogen
 execute pathogen#infect()
 
-" Nertree
+""""    Nertree
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:NERDTreeGlyphReadOnly = "RO"
 let g:NERDTreeDirArrowExpandable = '▸'
 let g:NERDTreeDirArrowCollapsible = '▾'
 let NERDTreeNodeDelimiter="\u00b7"
 let g:NERDTreeWinPos = "left"
 
-" Taglist
+""""    Taglist
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " let Tlist_Show_One_File = 1
 " let Tlist_Enable_Fold_Column=1
 
-" vim-comment
+""""    vim-comment
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd FileType gitcommit setlocal commentstring=#\ %s
 autocmd FileType c,cpp,h,cxx setlocal commentstring=//\ %s
 
-" ctrlp
+""""    ctrlp
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ctrlp_map = '<c-p>'
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_root_markers = ['ctags']
@@ -33,8 +42,16 @@ let g:ctrlp_custom_ignore = {
             \ 'link': 'some_bad_symbolic_links',
             \ }
 
+""""    Syntastic
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:syntastic_always_populate_loc_list = 0
+" let g:syntastic_auto_loc_list = 0
+" let g:syntastic_check_on_open = 0
+" let g:syntastic_check_on_wq = 0
+" let g:syntastic_python_checkers = ['pylint']
 
-" Bookmark
+""""    Bookmark
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Shortcut keys
 " mm	:BookmarkToggle
 " mi	:BookmarkAnnotate <TEXT>

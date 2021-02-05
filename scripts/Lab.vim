@@ -26,3 +26,4 @@ function! Test() range
     :'<,'> %s/\s\+$//e
 endfunction
 command! Test call Test()
+

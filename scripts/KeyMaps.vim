@@ -3,20 +3,20 @@
 """"    Map shortkey
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+" <leader> : \
 
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " for quick save and exit
 nnoremap <leader>wa :wa<cr>
 nnoremap <leader>qa :qa<cr>
+nnoremap <leader>q :q<cr>
 nnoremap <leader>wqa :wqa<cr>
 
 " open an shell without close vim
 nnoremap <leader>sh :sh<cr>
 
 "goto end of line and start of line
-nnoremap <leader>hh 1000h
-nnoremap <leader>ll 1000l
 map <C-a> <Esc>ggVG<CR>
 map <C-_> :Commentary<CR>
 
@@ -51,6 +51,8 @@ nnoremap <silent> <C-m> :call Mouse_on_off()<CR>
 " cscope
 " nnoremap <silent> <C-m> :Csc<CR>
 nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
+" nnoremap <silent><Leader><C-[> :cscope find c <cword>
+" nnoremap <silent><Leader><C-[> :cscope find c <cword><CR>
 
 " IDE map
 " nmap <F6> :TlistToggle<CR>
