@@ -19,14 +19,13 @@ set autochdir
 
 ""    save options
 " set autowrite " auto save when switch document
-" set nobackup	"no backup when overright
+" set nobackup  "no backup when overright
 
 
-
-""""    Editor Settings
+""""    Editor Settings (inside buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-set number	" show line number
-set ruler	" enable status bar ruler
+set number  " show line number
+set ruler   " enable status bar ruler
 set ignorecase smartcase " search with ignore case
 set smartindent " smart indent
 set mps+=<:> "hilighted matched ()
@@ -43,22 +42,20 @@ set softtabstop=4 " let tab stop in 4
 syntax enable " enable syntax hi, can be place after theme settings
 
 filetype plugin indent on " base on file type do auto indend
-filetype plugin on " auto check file type
 
-" set listchars=tab:>-
 " show special char
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
-set listchars=tab:>-,trail:~,extends:>,precedes:<
+" set listchars=tab:>-,trail:~,extends:>,precedes:<
+set showbreak=↪\ 
+set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→
+" set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
 
-""""    Interface Settings
+""""    Interface Settings (Out side buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 set cmdheight=1 " Command line height
 set scrolloff=3 " scroll offset, n line for scroll when in top/buttom line
 set laststatus=2 " status bar height
-set completeopt+=menuone
-set completeopt+=longest
-set completeopt+=preview  " complete menu use list insdead of window
 
 " Other settings
 " set mouse=
@@ -71,9 +68,9 @@ set completeopt+=preview  " complete menu use list insdead of window
 " colorscheme industry
 " colorscheme koehler
 " colorscheme slate
-" colorscheme pablo
+colorscheme pablo
 " colorscheme peachpuff
-colorscheme torte
+" colorscheme torte
 highlight Pmenu ctermbg=gray "menu background color
 highlight PmenuSel ctermbg=blue
 highlight LineNr ctermfg=7 ctermbg=NONE" set line color
@@ -93,7 +90,7 @@ highlight CursorLineNR cterm=NONE ctermbg=233
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax
 " Beautify settings
-" set formatoptions 
+" set formatoptions
 " tag path
 set tags=./tags,tags;/
 " set tags=tags
@@ -108,6 +105,24 @@ endif
 set foldmethod=indent
 " set nofoldenable
 set foldlevel=99
+
+" OmniCppComplete
+" let OmniCpp_NamespaceSearch = 1
+" let OmniCpp_GlobalScopeSearch = 1
+" let OmniCpp_ShowAccess = 1
+" let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
+" let OmniCpp_MayCompleteDot = 1 " autocomplete after .
+" let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
+" let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
+" let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
+
+" automatically open and close the popup menu / preview window
+au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
+set completeopt+=menu
+set completeopt+=menuone
+set completeopt+=longest
+set completeopt+=preview  " complete menu use list insdead of window
+
 
 """"    Advance Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
