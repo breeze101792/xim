@@ -22,30 +22,36 @@
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " for quick save and exit
-nnoremap <leader>wa :wa<cr>
-nnoremap <leader>qa :qa<cr>
-nnoremap <leader>q :q<cr>
-nnoremap <leader>wqa :wqa<cr>
+nnoremap <leader>wa :wa<CR>
+nnoremap <leader>qa :qa<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>wqa :wqa<CR>
 
 " open an shell without close vim
-nnoremap <leader>sh :sh<cr>
+nnoremap <leader>sh :sh<CR>
 
-"goto end of line and start of line
+" select all content
 map <C-a> <Esc>ggVG<CR>
 
 " Edit
 nnoremap <S-k> <Esc>dd<Up>P
 nnoremap <S-j> <Esc>dd<Down>P
 " inseart an line below
-nnoremap <leader><cr> o<Esc>
+nnoremap <leader><CR> o<Esc>
 
-" tab manipulation
+" " Move 5 times fast
+" map <C-H> 5h
+" map <C-L> 5l
+" map <C-J> 5j
+" map <C-K> 5k
+
+" tab manipulation with hjkl
 map <C-h> <Esc>:tabprev<CR>
 map <C-l> <Esc>:tabnext<CR>
 map <S-h> <Esc>:tabmove -1 <CR>
 map <S-l> <Esc>:tabmove +1 <CR>
 
-" tab manipulation
+" tab manipulation with arror keys
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
@@ -56,10 +62,19 @@ map <C-o> <Esc>:tabnew<SPACE>
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 
+" Refresh all
+nmap <F5> :redraw<CR>:AirlineRefresh<CR>
+
+" toggle maximize
+nnoremap <C-W>M <C-W>\| <C-W>_
+nnoremap <C-W>m <C-W>=
+
+
 """"    Function map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle
 nnoremap <silent> <C-m> :call Mouse_toggle()<CR>
+
 " cscope
 nnoremap <silent><Leader>b :Bt<CR>
 nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
@@ -75,6 +90,10 @@ nmap <F6> :TagbarToggle<CR>
 " nmap <F8>  :TrinityToggleAll<CR>
 " Open and close the Source Explorer separately
 nmap <F8>  :TrinityToggleSourceExplorer<CR>
+
+" update source code win
+nmap <F9>  :TrinityRefreshSourceExplorer<CR>
+
 " Open and close the Taglist separately
 " nmap <F7> :TrinityToggleTagList<CR>
 " Open and close the NERD Tree separately
