@@ -25,8 +25,8 @@
 [submodule "plugins/Trinity"]
 	path = plugins/Trinity
 	url = https://github.com/wesleyche/Trinity.git
-[submodule "plugins/vim-commentary.git"]
-	path = plugins/vim-commentary.git
+[submodule "plugins/vim-commentary"]
+	path = plugins/vim-commentary
 	url = https://github.com/tpope/vim-commentary.git
 [submodule "plugins/vim-mark"]
 	path = plugins/vim-mark
@@ -46,3 +46,6 @@
 [submodule "plugins/vim-bookmarks"]
 	path = plugins/vim-bookmarks
 	url = https://github.com/MattesGroeger/vim-bookmarks.git
+[submodule "plugins/OmniCppComplete"]
+	path = plugins/OmniCppComplete
+	url = https://github.com/vim-scripts/OmniCppComplete.git

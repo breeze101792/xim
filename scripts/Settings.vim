@@ -98,6 +98,8 @@ if $CSCOPE_DB != ''
     " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
 endif
+" autocmd VimEnter * if filereadable('cscope.out') | CCTreeLoadDB cscope.out | endif
+
 
 set foldmethod=indent " set foldmethod=syntax
 set foldnestmax=3 " Only fold up to three nested levels.

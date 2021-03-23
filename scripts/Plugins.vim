@@ -28,7 +28,9 @@ autocmd FileType c,cpp,h,cxx setlocal commentstring=//\ %s
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ctrlp_map = '<c-p>'
 let g:ctrlp_working_path_mode = 'ra'
-let g:ctrlp_root_markers = ['ctags']
+let g:ctrlp_switch_buffer = 'et'
+let g:ctrlp_root_markers = ['Makefile', 'Android.bp', '.git', 'cscope.db', '.repo']
+let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
 
@@ -88,6 +90,29 @@ let g:mwDefaultHighlightingNum = 18
 let g:mwAutoSaveMarks = 0
 let g:mwAutoLoadMarks = 0
 let g:mwIgnoreCase = 0
+
+
+""""    Src Expl
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:SrcExpl_winHeight = 8
+" let g:SrcExpl_refreshTime = 100
+" let g:SrcExpl_jumpKey = "<ENTER>"
+" let g:SrcExpl_gobackKey = "<SPACE>"
+" let g:SrcExpl_searchLocalDef = 1
+" let g:SrcExpl_nestedAutoCmd = 1
+let g:SrcExpl_isUpdateTags = 0
+" let g:SrcExpl_pluginList = [
+"             \ "__Tag_List__",
+"             \ "_NERD_tree_",
+"             \ "Source_Explorer"
+"             \ ]
+" let g:SrcExpl_colorSchemeList = [
+"             \ "Red",
+"             \ "Cyan",
+"             \ "Green",
+"             \ "Yellow",
+"             \ "Magenta"
+"             \ ]
 
 
 
