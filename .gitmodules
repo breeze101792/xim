@@ -43,9 +43,9 @@
 [submodule "plugins/vim-bookmarks"]
 	path = plugins/vim-bookmarks
 	url = https://github.com/MattesGroeger/vim-bookmarks.git
-[submodule "plugins/OmniCppComplete"]
-	path = plugins/OmniCppComplete
-	url = https://github.com/vim-scripts/OmniCppComplete.git
 [submodule "plugins/vim-commentary"]
 	path = plugins/vim-commentary
 	url = https://github.com/tpope/vim-commentary.git
+[submodule "plugins/OmniCppComplete"]
+	path = plugins/OmniCppComplete
+	url = https://github.com/vim-scripts/OmniCppComplete.git
