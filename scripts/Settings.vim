@@ -70,7 +70,6 @@ set softtabstop=4 " let tab stop in 4
 set shiftround " When shifting lines, round the indentation to the nearest multiple of "shiftwidth.
 set shiftwidth=4 " When shifting, indent using four spaces.
 set smarttab " Insert tabstop number of spaces when the tab key is pressed.
-set tabstop=4 " Indent using four spaces.
 
 
 " show special char

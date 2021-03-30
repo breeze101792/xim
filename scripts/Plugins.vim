@@ -22,7 +22,7 @@ let g:NERDTreeWinPos = "left"
 """"    vim-comment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd FileType gitcommit setlocal commentstring=#\ %s
-autocmd FileType c,cpp,h,cxx setlocal commentstring=//\ %s
+autocmd FileType c,cpp,h,cxx,verilog setlocal commentstring=//\ %s
 
 """"    ctrlp
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
