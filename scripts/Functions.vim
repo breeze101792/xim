@@ -5,7 +5,7 @@
 " -------------------------------------------
 let mouse_mode = 0 " 0 = a, 1 = c
 
-func! Mouse_toggle()
+func! MouseToggle()
     if g:mouse_mode == 0
         let g:mouse_mode = 1
         set mouse=c
@@ -15,12 +15,27 @@ func! Mouse_toggle()
     endif
     return
 endfunc
+command! MouseToggle call MouseToggle()
 
 " -------------------------------------------
 "  Reverse search function
 " -------------------------------------------
-function! Back_trace()
+function! BackTrace()
     cscope find c <cword>
     " copen
 endfunction
-command! Bt call Back_trace()
+command! BackTrace call BackTrace()
+
+" -------------------------------------------
+"  Toggle Debug message
+" -------------------------------------------
+function! DebugToggle()
+    if !&verbose
+        set verbosefile=~/.vim/verbose.log
+        set verbose=15
+    else
+        set verbose=0
+        set verbosefile=
+    endif
+endfunction
+command! DebugToggle call DebugToggle()

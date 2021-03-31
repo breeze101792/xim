@@ -73,10 +73,10 @@ nnoremap <C-W>m <C-W>=
 """"    Function map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle
-nnoremap <silent> <C-m> :call Mouse_toggle()<CR>
+nnoremap <silent> <C-m> :MouseToggle<CR>
 
 " cscope
-nnoremap <silent><Leader>b :Bt<CR>
+nnoremap <silent><Leader>b :BackTrace<CR>
 nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
 
 """"    Plugins map
