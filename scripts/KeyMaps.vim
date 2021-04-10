@@ -45,6 +45,9 @@ nnoremap <leader><CR> o<Esc>
 " map <C-J> 5j
 " map <C-K> 5k
 
+" duplicate current tab
+map <leader>d <Esc>:tab split<CR>
+
 " tab manipulation with hjkl
 map <C-h> <Esc>:tabprev<CR>
 map <C-l> <Esc>:tabnext<CR>
