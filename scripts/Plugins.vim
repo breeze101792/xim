@@ -3,6 +3,10 @@
 """"    Config vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    pathogen
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:pathogen_disabled = ['Trinity']
+
 " Load pathogen
 execute pathogen#infect()
 
@@ -122,6 +126,21 @@ let g:SrcExpl_isUpdateTags = 0
 "             \ "Magenta"
 "             \ ]
 
+""""    CCTree
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:CCTreeDisplayMode = 3
+" let g:CCTreeWindowVertical = 1
+" let g:CCTreeWindowMinWidth = 40
+let g:CCTreeUseUTF8Symbols = 1
+let g:CCTreeDbFileMaxSize  = 40000000 " (40 Mbytes)
 
 
-
+""""    gitgutter
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:gitgutter_enabled = 0
+" let g:gitgutter_sign_added = '+'
+" let g:gitgutter_sign_modified = '~'
+" let g:gitgutter_sign_removed = '_'
+" let g:gitgutter_sign_removed_first_line = '¯'
+" let g:gitgutter_sign_removed_above_and_below = '_¯'
+" let g:gitgutter_sign_modified_removed = '~_'

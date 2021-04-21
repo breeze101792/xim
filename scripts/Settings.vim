@@ -97,7 +97,13 @@ if $CSCOPE_DB != ''
     " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
 endif
-" autocmd VimEnter * if filereadable('cscope.out') | CCTreeLoadDB cscope.out | endif
+if $CCTREE_DB != ''
+    " echo "Open "$CCTREE_DB
+    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
+    autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
+    " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
+endif
+
 
 
 set foldmethod=indent " set foldmethod=syntax
@@ -149,12 +155,13 @@ set showcmd    " show entered command
 "" Theme
 " theme should be the start of all interface settings
 " colorscheme murphy
-" colorscheme desert
+colorscheme desert
 " colorscheme industry
 " colorscheme koehler
 " colorscheme slate
+" asdf
 " colorscheme pablo
-colorscheme peachpuff
+" colorscheme peachpuff
 " colorscheme torte
 
 highlight Pmenu ctermbg=gray "menu background color
@@ -205,7 +212,6 @@ autocmd VimLeave * :set mouse=c
 " Auto open tab in new window
 " autocmd VimEnter * tab all
 " autocmd BufAdd * exe 'tablast | tabe "' . expand( "<afile") .'"'
-"
 
 " za: Toggle code folding at the current line. The block that the current line belongs to is folded (closed) or unfolded (opened).
 " zo: Open fold.

@@ -89,22 +89,13 @@ nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
 nmap <F6> :TagbarToggle<CR>
 " nmap <F6> :NERDTreeToggle<CR>
 
-" Open and close all the three plugins on the same time
-" nmap <F8>  :TrinityToggleAll<CR>
-" Open and close the Source Explorer separately
-" nmap <F8>  :TrinityToggleSourceExplorer<CR>
-
-" " update source code win
-" nmap <F9>  :TrinityRefreshSourceExplorer<CR>
-
-" Open and close the Taglist separately
-" nmap <F7> :TrinityToggleTagList<CR>
-" Open and close the NERD Tree separately
-" nmap <F7> :TrinityToggleNERDTree<CR>
 nmap <F7> :NERDTreeToggle<CR>
 
 " SrcExpl
 nmap <F8> :SrcExplToggle<CR>
+
+" SrcExpl
+nmap <F9> :CCTreeWindowToggle<CR>
 
 " Commentary settings
 map <C-_> :Commentary<CR>
