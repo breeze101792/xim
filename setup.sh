@@ -15,13 +15,22 @@ function ycm()
 function ccglue()
 {
     local ccglue_url="https://versaweb.dl.sourceforge.net/project/ccglue/binaries/ccglue-x86-linux-elf-glib-2.0-v_0.1.2.tar.gz"
+    local target_file="ccglue.tgz"
     mkdir -p ${IDE_ROOT}/tools
     mkdir -p ${IDE_ROOT}/tmp
     cd ${IDE_ROOT}/tmp/
-    curl --insecure ${ccglue_url} -o ccglue.tar.gz
-    tar xvzf ccglue.tar.gz
+    curl --insecure ${ccglue_url} -o "${target_file}"
+    if file "${target_file}" | grep gzip
+    then
+        tar xvzf "${target_file}"
+    else
+        echo "Fail to download src code, will try with wget."
+        rm "${target_file}"
+        aria2c "${ccglue_url}" -o "${target_file}"
+        tar xvzf "${target_file}"
+    fi
     cp release-0.1.2/bin/ccglue ${IDE_ROOT}/tools
-    rm -rf -p ${IDE_ROOT}/tmp
+    rm -rf ${IDE_ROOT}/tmp
     echo "Please do and add ~/bin to your patch"
     echo "cp tools/* ~/.bin"
 }
