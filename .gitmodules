@@ -55,3 +55,9 @@
 [submodule "plugins/srcexpl"]
 	path = plugins/srcexpl
 	url = https://github.com/breeze101792/SrcExpl.git
+[submodule "plugins/awesome-vim-colorschemes"]
+	path = plugins/awesome-vim-colorschemes
+	url = https://github.com/rafi/awesome-vim-colorschemes.git
+[submodule "plugins/colorsupport"]
+	path = plugins/colorsupport
+	url = https://github.com/vim-scripts/colorsupport.vim.git

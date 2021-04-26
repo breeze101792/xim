@@ -27,6 +27,7 @@ set report=0                " Show all changes.
 set title                   " Show the filename in the window title bar.
 set splitbelow splitright   " how to split new windows.
 
+
 """"    Editor Settings (inside buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 set smartindent " smart indent
@@ -71,7 +72,6 @@ set shiftround " When shifting lines, round the indentation to the nearest multi
 set shiftwidth=4 " When shifting, indent using four spaces.
 set smarttab " Insert tabstop number of spaces when the tab key is pressed.
 
-
 " show special char
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
@@ -104,8 +104,6 @@ if $CCTREE_DB != ''
     " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
 endif
 
-
-
 set foldmethod=indent " set foldmethod=syntax
 set foldnestmax=3 " Only fold up to three nested levels.
 set foldlevel=99
@@ -126,6 +124,7 @@ au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
 
 """"    Interface Settings (Out side buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+set t_Co=256 " force terminal use 256 color
 set scroll=5 " scroll move for ctrl+u/d
 set scrolloff=3 " scroll offset, n line for scroll when in top/buttom line
 set sidescrolloff=5 " The number of screen columns to keep to the left and right of the cursor.
@@ -137,7 +136,7 @@ set wildmenu " Display command line’s tab complete options as a menu.
 set completeopt+=menu
 set completeopt+=menuone
 set completeopt+=longest
-set completeopt+=preview  " complete menu use list insdead of window
+" set completeopt+=preview " complete menu use list insdead of window, this will move main window(stable-window may fix)
 
 " Status/Command
 set showcmd                 " show partial command on last line of screen.
@@ -154,22 +153,7 @@ set showcmd    " show entered command
 
 "" Theme
 " theme should be the start of all interface settings
-" colorscheme murphy
-colorscheme desert
-" colorscheme industry
-" colorscheme koehler
-" colorscheme slate
-" asdf
-" colorscheme pablo
-" colorscheme peachpuff
-" colorscheme torte
-
-highlight Pmenu ctermbg=gray "menu background color
-highlight PmenuSel ctermbg=blue
-
-
-" line num color
-highlight LineNr ctermfg=gray ctermbg=NONE " set line color
+" colorscheme desert
 
 " setup column cursor line, this will slow down vim speed
 " set cursorcolumn
@@ -177,15 +161,14 @@ highlight LineNr ctermfg=gray ctermbg=NONE " set line color
 
 " setup row cursor line
 set cursorline
-highlight CursorLine   cterm=NONE ctermbg=233
-highlight CursorLineNR cterm=NONE ctermbg=233
-
+if version >= 801
+    set cursorlineopt=number " only line number will be highlighted, dosen't
+endif
 
 " split separator
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
-" highlight VertSplit cterm=NONE
-highlight VertSplit ctermbg=gray ctermfg=black
+
 
 """"    Advance Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

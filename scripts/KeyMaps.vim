@@ -82,6 +82,9 @@ nnoremap <silent> <C-m> :MouseToggle<CR>
 nnoremap <silent><Leader>b :BackTrace<CR>
 nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
 
+" srcexpl
+nnoremap <silent><Leader>t :SrcExplRefresh<CR>
+
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " IDE map
