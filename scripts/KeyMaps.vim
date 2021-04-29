@@ -27,6 +27,9 @@ nnoremap <leader>qa :qa<CR>
 nnoremap <leader>q :q<CR>
 nnoremap <leader>wqa :wqa<CR>
 
+" Toggle Hex Mode
+nmap <Leader>h :Hexmode<CR>
+
 " open an shell without close vim
 nnoremap <leader>sh :sh<CR>
 
