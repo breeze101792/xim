@@ -53,9 +53,9 @@ command! Beautify call Beautify()
 "  Test
 " -------------------------------------------
 function! Test() range
-    '<,'> %s/\s\+$//e
+    s/\s\+$//g
 endfunction
-command! Test call Beautify()
+command! Test call Test()
 " -------------------------------------------
 "  PVupdate
 " -------------------------------------------

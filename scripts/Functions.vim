@@ -18,14 +18,6 @@ endfunc
 command! MouseToggle call MouseToggle()
 
 " -------------------------------------------
-"  Reverse search function
-" -------------------------------------------
-function! BackTrace()
-    cscope find c <cword>
-    " copen
-endfunction
-command! BackTrace call BackTrace()
-" -------------------------------------------
 "  Toggle Hexmode
 " -------------------------------------------
 " ex command for toggling hex mode - define mapping if desired

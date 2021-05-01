@@ -7,6 +7,7 @@ Convert binary to hex mode
 ```
 
 Convert back binary from hex mode
+! -> represent fileter command
 ```
 :%!xxd -r
 ```

@@ -82,8 +82,24 @@ nnoremap <C-W>m <C-W>=
 nnoremap <silent> <C-m> :MouseToggle<CR>
 
 " cscope
-nnoremap <silent><Leader>b :BackTrace<CR>
-nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
+" a: Find places where this symbol is assigned a value
+" c: Find functions calling this function
+" d: Find functions called by this function
+" e: Find this egrep pattern
+" f: Find this file
+" g: Find this definition
+" i: Find files #including this file
+" s: Find this C symbol
+" t: Find this text string
+nnoremap <silent>ca :cscope find a <cword><CR>
+nnoremap <silent>cc :cscope find c <cword><CR>
+nnoremap <silent>cl :cscope find d <cword><CR>
+nnoremap <silent>ce :cscope find e <cword><CR>
+nnoremap <silent>cf :cscope find f <cword><CR>
+nnoremap <silent>cd :cscope find g <cword><CR>
+nnoremap <silent>ci :cscope find i <cword><CR>
+nnoremap <silent>cs :cscope find s <cword><CR>
+nnoremap <silent>ct :cscope find t <cword><CR>
 
 " srcexpl
 nnoremap <silent><Leader>t :SrcExplRefresh<CR>
@@ -105,8 +121,6 @@ nmap <F9> :CCTreeWindowToggle<CR>
 
 " Commentary settings
 map <C-_> :Commentary<CR>
-
-
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""
