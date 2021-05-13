@@ -161,7 +161,7 @@ set showcmd    " show entered command
 
 " setup row cursor line
 set cursorline
-if version >= 801
+if version >= 802
     set cursorlineopt=number " only line number will be highlighted, dosen't
 endif
 
