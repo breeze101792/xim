@@ -80,8 +80,8 @@ let g:ctrlp_custom_ignore = {
 " let g:syntastic_always_populate_loc_list = 0
 " let g:syntastic_auto_loc_list = 0
 " let g:syntastic_check_on_open = 0
-" let g:syntastic_check_on_wq = 0
-" let g:syntastic_python_checkers = ['pylint']
+let g:syntastic_check_on_wq = 1
+let g:syntastic_python_checkers = ['pylint']
 let g:syntastic_c_remove_include_errors = 1
 
 """"    Cpp Enhanced highlight
@@ -90,10 +90,11 @@ let g:cpp_class_scope_highlight = 1
 " let g:cpp_member_variable_highlight = 1
 let g:cpp_class_decl_highlight = 1
 let g:cpp_posix_standard = 1
-let g:cpp_experimental_simple_template_highlight = 1
-let g:cpp_experimental_template_highlight = 1
 let g:cpp_concepts_highlight = 1
 " let g:cpp_no_function_highlight = 1
+" Don't use it, it will slow down the vim
+" let g:cpp_experimental_simple_template_highlight = 1
+" let g:cpp_experimental_template_highlight = 1
 
 
 """"    Bookmark

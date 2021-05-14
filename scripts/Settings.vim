@@ -97,6 +97,10 @@ if $CSCOPE_DB != ''
     " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
 endif
+if $PROJ_VIM != ''
+    " echo "Source "$PROJ_VIM
+    so $PROJ_VIM
+endif
 if $CCTREE_DB != ''
     " echo "Open "$CCTREE_DB
     " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB

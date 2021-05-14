@@ -24,3 +24,9 @@ At this point do slow actions
 :profile pause
 :noautocmd qall!
 ```
+
+## Plugins
+for tag prototype hilight
+```
+git clone https://github.com/vim-scripts/TagHighlight.git -b master
+```
