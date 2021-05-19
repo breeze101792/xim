@@ -6,13 +6,15 @@
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:pathogen_disabled = ['Trinity']
+let g:pathogen_disabled = ['awesome-vim-colorschemes']
+let g:pathogen_disabled = ['syntastic']
 
 " Load pathogen
 execute pathogen#infect()
 
 """"    awesome-vim-colorschemes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme afterglow
+colorscheme afterglow_lab
 
 " remove color under line
 autocmd VimEnter * highlight CursorLine   cterm=NONE " hi color in content area
@@ -77,12 +79,40 @@ let g:ctrlp_custom_ignore = {
 
 """"    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:syntastic_always_populate_loc_list = 0
-" let g:syntastic_auto_loc_list = 0
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
 " let g:syntastic_check_on_open = 0
-let g:syntastic_check_on_wq = 1
-let g:syntastic_python_checkers = ['pylint']
-let g:syntastic_c_remove_include_errors = 1
+" let g:syntastic_check_on_wq = 1
+" let g:syntastic_aggregate_errors = 1
+
+" let g:syntastic_python_checkers = ['pylint']
+
+" let g:syntastic_c_remove_include_errors = 1
+" let g:syntastic_c_compiler =['gcc', 'clang','make']
+" let g:syntastic_c_compiler_options ='-Wpedantic -g'
+
+"""""    Ale
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"let g:ale_lint_on_enter = 0
+"let g:ale_set_signs = 1
+"let g:ale_sign_error = '◈'
+"let g:ale_sign_warning = '◈'
+"" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
+"let g:ale_echo_msg_error_str = 'E'
+"let g:ale_echo_msg_warning_str = 'W'
+"let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
+" let g:airline#extensions#ale#error_symbol = 'E'
+" let g:airline#extensions#ale#warning_symbol = 'W'
+"let g:ale_pattern_options = {
+"            \   '.*\.sh$': {'ale_enabled': 0},
+"            \   '.*\.json$': {'ale_enabled': 0},
+"            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
+"            \}
+"let g:ale_linters = {
+"            \   'c++': ['clang'],
+"            \   'c': ['clang'],
+"            \   'python': ['pylint'],
+"            \}
 
 """"    Cpp Enhanced highlight
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

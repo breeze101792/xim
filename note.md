@@ -1,5 +1,11 @@
 # Note about using VIM
 
+## Debug
+Starup time measure
+```
+vim -X --startuptime startup.log
+```
+
 ## Binary Editor
 Convert binary to hex mode
 ```
@@ -30,3 +36,9 @@ for tag prototype hilight
 ```
 git clone https://github.com/vim-scripts/TagHighlight.git -b master
 ```
+
+keep color consistency in different terms
+```
+git clone https://github.com/vim-scripts/colorsupport.vim.git -b master
+```
+
