@@ -10,9 +10,6 @@
 [submodule "plugins/vim-airline"]
 	path = plugins/vim-airline
 	url = https://github.com/vim-airline/vim-airline.git
-[submodule "plugins/vim-airline-themes"]
-	path = plugins/vim-airline-themes
-	url = https://github.com/vim-airline/vim-airline-themes.git
 [submodule "plugins/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git
@@ -49,6 +46,3 @@
 [submodule "plugins/srcexpl"]
 	path = plugins/srcexpl
 	url = https://github.com/breeze101792/SrcExpl.git
-[submodule "plugins/awesome-vim-colorschemes"]
-	path = plugins/awesome-vim-colorschemes
-	url = https://github.com/rafi/awesome-vim-colorschemes.git
