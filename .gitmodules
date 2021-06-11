@@ -7,9 +7,6 @@
 [submodule "plugins/supertab"]
 	path = plugins/supertab
 	url = https://github.com/ervandew/supertab.git
-[submodule "plugins/syntastic"]
-	path = plugins/syntastic
-	url = https://github.com/vim-syntastic/syntastic.git
 [submodule "plugins/vim-airline"]
 	path = plugins/vim-airline
 	url = https://github.com/vim-airline/vim-airline.git
@@ -19,9 +16,6 @@
 [submodule "plugins/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git
-[submodule "plugins/Trinity"]
-	path = plugins/Trinity
-	url = https://github.com/wesleyche/Trinity.git
 [submodule "plugins/vim-mark"]
 	path = plugins/vim-mark
 	url = https://github.com/breeze101792/vim-mark.git
@@ -58,6 +52,3 @@
 [submodule "plugins/awesome-vim-colorschemes"]
 	path = plugins/awesome-vim-colorschemes
 	url = https://github.com/rafi/awesome-vim-colorschemes.git
-[submodule "plugins/colorsupport"]
-	path = plugins/colorsupport
-	url = https://github.com/vim-scripts/colorsupport.vim.git

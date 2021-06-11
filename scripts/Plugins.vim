@@ -5,9 +5,6 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:pathogen_disabled = ['Trinity']
-" let g:pathogen_disabled = ['awesome-vim-colorschemes']
-" let g:pathogen_disabled = ['syntastic']
 
 " Load pathogen
 execute pathogen#infect()

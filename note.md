@@ -41,4 +41,9 @@ keep color consistency in different terms
 ```
 git clone https://github.com/vim-scripts/colorsupport.vim.git -b master
 ```
-
+With URL
+```
+url = https://github.com/vim-syntastic/syntastic.git
+url = https://github.com/vim-scripts/colorsupport.vim.git
+url = https://github.com/wesleyche/Trinity.git
+```
