@@ -611,6 +611,15 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     hi! link DiffAdd DiffAdded
     hi! link diffAdd DiffAdded
 
+    " " GitGutter
+    " call <SID>X("GitGutterAdd", s:green, s:chosen_background, "bold")
+    " call <SID>X("GitGutterChange", s:yellow, s:chosen_background, "bold")
+    " call <SID>X("GitGutterDelete", s:red, s:chosen_background, "bold")
+    call <SID>X("GitGutterChangeDelete", s:blue, s:chosen_background, "bold")
+
+    " Vim-Bookmark
+    call <SID>X("BookmarkLine", s:foreground, s:selection, "bold")
+
     " ALE (plugin)
     call <SID>X("ALEWarningSign", s:orange, s:chosen_background, "bold")
     call <SID>X("ALEErrorSign", s:red, s:chosen_background, "bold")

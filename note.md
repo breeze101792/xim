@@ -66,11 +66,14 @@ keep color consistency in different terms
 ```
 git clone https://github.com/vim-scripts/colorsupport.vim.git -b master
 ```
-With URL
+Theme
 ```
-url = https://github.com/vim-syntastic/syntastic.git
-url = https://github.com/vim-scripts/colorsupport.vim.git
-url = https://github.com/wesleyche/Trinity.git
-url = https://github.com/vim-airline/vim-airline-themes.git
-url = https://github.com/rafi/awesome-vim-colorschemes.git
+git clone https://github.com/vim-airline/vim-airline-themes.git
+git clone https://github.com/rafi/awesome-vim-colorschemes.git
+```
+Others
+```
+git clone https://github.com/vim-syntastic/syntastic.git
+git clone https://github.com/vim-scripts/colorsupport.vim.git
+git clone https://github.com/wesleyche/Trinity.git
 ```
