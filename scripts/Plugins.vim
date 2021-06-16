@@ -3,29 +3,6 @@
 """"    Config vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    pathogen
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Load pathogen
-execute pathogen#infect()
-
-""""    awesome-vim-colorschemes
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme afterglow_lab
-
-" remove color under line
-autocmd VimEnter * highlight CursorLine   cterm=NONE " hi color in content area
-autocmd VimEnter * highlight CursorLineNR cterm=NONE " hi color in number line
-autocmd VimEnter * highlight LineNr ctermbg=NONE " set line color
-
-" Fix first single column issue background issue
-" autocmd ColorScheme * highlight! link SignColumn LineNr
-autocmd VimEnter * highlight! link SignColumn LineNr
-
-if version <= 800
-    " highlight Normal ctermbg=NONE " avoid background block
-    autocmd VimEnter * highlight Normal ctermbg=NONE
-endif
 
 """"    Airline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -35,7 +12,9 @@ let g:airline#extensions#tabline#left_alt_sep = '|'
 let g:airline#extensions#tabline#formatter = 'unique_tail'
 let g:airline_theme='afterglow'
 " Avoid ui not refresh
-autocmd VimEnter * :AirlineRefresh
+" if version >= 802
+"     autocmd VimEnter * :AirlineRefresh
+" endif
 
 """"    Nertree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -45,11 +24,6 @@ let g:NERDTreeDirArrowCollapsible = '▾'
 " let NERDTreeNodeDelimiter="\u00b7"
 let NERDTreeNodeDelimiter = "\t"
 let g:NERDTreeWinPos = "left"
-
-""""    Taglist
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let Tlist_Show_One_File = 1
-" let Tlist_Enable_Fold_Column=1
 
 """"    vim-comment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -74,43 +48,6 @@ let g:ctrlp_custom_ignore = {
             \ 'link': 'some_bad_symbolic_links',
             \ }
 
-""""    Syntastic
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:syntastic_always_populate_loc_list = 1
-" let g:syntastic_auto_loc_list = 1
-" let g:syntastic_check_on_open = 0
-" let g:syntastic_check_on_wq = 1
-" let g:syntastic_aggregate_errors = 1
-
-" let g:syntastic_python_checkers = ['pylint']
-
-" let g:syntastic_c_remove_include_errors = 1
-" let g:syntastic_c_compiler =['gcc', 'clang','make']
-" let g:syntastic_c_compiler_options ='-Wpedantic -g'
-
-"""""    Ale
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"let g:ale_lint_on_enter = 0
-"let g:ale_set_signs = 1
-"let g:ale_sign_error = '◈'
-"let g:ale_sign_warning = '◈'
-"" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
-"let g:ale_echo_msg_error_str = 'E'
-"let g:ale_echo_msg_warning_str = 'W'
-"let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-" let g:airline#extensions#ale#error_symbol = 'E'
-" let g:airline#extensions#ale#warning_symbol = 'W'
-"let g:ale_pattern_options = {
-"            \   '.*\.sh$': {'ale_enabled': 0},
-"            \   '.*\.json$': {'ale_enabled': 0},
-"            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
-"            \}
-"let g:ale_linters = {
-"            \   'c++': ['clang'],
-"            \   'c': ['clang'],
-"            \   'python': ['pylint'],
-"            \}
-
 """"    Cpp Enhanced highlight
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:cpp_class_scope_highlight = 1
@@ -132,10 +69,9 @@ let g:cpp_concepts_highlight = 1
 " ma	:BookmarkShowAll
 " mc	:BookmarkClear
 " mx	:BookmarkClearAll
-autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
-" autocmd VimEnter * highlight BookmarkSign ctermfg=4
 let g:bookmark_sign = '⚑'
 let g:bookmark_highlight_lines = 1
+" autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
 
 """"    Vim Mark
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -198,8 +134,77 @@ let g:gitgutter_sign_removed = '-'
 
 let g:gitgutter_override_sign_column_highlight = 1
 " highlight clear SignColumn
-autocmd VimEnter * highlight GitGutterAdd ctermfg=2 ctermbg=None
-autocmd VimEnter * highlight GitGutterChange ctermfg=3 ctermbg=None
-autocmd VimEnter * highlight GitGutterDelete ctermfg=1 ctermbg=None
-autocmd VimEnter * highlight GitGutterChangeDelete ctermfg=4 ctermbg=None
+" autocmd VimEnter * highlight GitGutterAdd ctermfg=2 ctermbg=None
+" autocmd VimEnter * highlight GitGutterChange ctermfg=3 ctermbg=None
+" autocmd VimEnter * highlight GitGutterDelete ctermfg=1 ctermbg=None
+" autocmd VimEnter * highlight GitGutterChangeDelete ctermfg=4 ctermbg=None
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    pathogen
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Load pathogen
+execute pathogen#infect()
+
+""""    Themes
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+colorscheme afterglow_lab
+
+" remove color under line
+" autocmd VimEnter * highlight CursorLine   cterm=NONE " hi color in content area
+" autocmd VimEnter * highlight CursorLineNR cterm=NONE " hi color in number line
+" autocmd VimEnter * highlight LineNr ctermbg=NONE " set line color
+
+" Fix first single column issue background issue
+" autocmd VimEnter * highlight! link SignColumn LineNr
+
+" if version <= 800
+"     " highlight Normal ctermbg=NONE " avoid background block
+"     autocmd VimEnter * highlight Normal ctermbg=NONE
+" endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Others
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""    Syntastic
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
+" let g:syntastic_check_on_open = 0
+" let g:syntastic_check_on_wq = 1
+" let g:syntastic_aggregate_errors = 1
+
+" let g:syntastic_python_checkers = ['pylint']
+
+" let g:syntastic_c_remove_include_errors = 1
+" let g:syntastic_c_compiler =['gcc', 'clang','make']
+" let g:syntastic_c_compiler_options ='-Wpedantic -g'
+
+"""""    Ale
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"let g:ale_lint_on_enter = 0
+"let g:ale_set_signs = 1
+"let g:ale_sign_error = '◈'
+"let g:ale_sign_warning = '◈'
+"" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
+"let g:ale_echo_msg_error_str = 'E'
+"let g:ale_echo_msg_warning_str = 'W'
+"let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
+" let g:airline#extensions#ale#error_symbol = 'E'
+" let g:airline#extensions#ale#warning_symbol = 'W'
+"let g:ale_pattern_options = {
+"            \   '.*\.sh$': {'ale_enabled': 0},
+"            \   '.*\.json$': {'ale_enabled': 0},
+"            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
+"            \}
+"let g:ale_linters = {
+"            \   'c++': ['clang'],
+"            \   'c': ['clang'],
+"            \   'python': ['pylint'],
+"            \}
+
+""""    Taglist
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let Tlist_Show_One_File = 1
+" let Tlist_Enable_Fold_Column=1
 

@@ -18,6 +18,16 @@
 " !  Insert and command-line mode map. Defined using 'map!' or
 "    'noremap!'.
 
+" Tab
+" Auto open tab in new window
+" autocmd VimEnter * tab all
+" autocmd BufAdd * exe 'tablast | tabe "' . expand( "<afile") .'"'
+
+" za: Toggle code folding at the current line. The block that the current line belongs to is folded (closed) or unfolded (opened).
+" zo: Open fold.
+" zc: Close fold.
+" zR: Open all folds.
+" zM: Close all folds.
 
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

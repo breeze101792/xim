@@ -195,17 +195,5 @@ autocmd VimLeave * :set mouse=c
 
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Tab
-" Auto open tab in new window
-" autocmd VimEnter * tab all
-" autocmd BufAdd * exe 'tablast | tabe "' . expand( "<afile") .'"'
-
-" za: Toggle code folding at the current line. The block that the current line belongs to is folded (closed) or unfolded (opened).
-" zo: Open fold.
-" zc: Close fold.
-" zR: Open all folds.
-" zM: Close all folds.
-
 " save debug msg to /tmp/vim-debug
 " let g:vim_debug_enable = 1
