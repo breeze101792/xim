@@ -26,6 +26,8 @@ set magic                   " Enable extended regexes.
 set report=0                " Show all changes.
 set title                   " Show the filename in the window title bar.
 set splitbelow splitright   " how to split new windows.
+" Show ^M windows
+" :e ++ff=unix
 
 
 """"    Editor Settings (inside buffer)
@@ -77,7 +79,7 @@ set smarttab " Insert tabstop number of spaces when the tab key is pressed.
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
 set showbreak=↪\ 
-set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→
+set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
 " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
 

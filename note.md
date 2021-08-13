@@ -76,4 +76,5 @@ Others
 git clone https://github.com/vim-syntastic/syntastic.git
 git clone https://github.com/vim-scripts/colorsupport.vim.git
 git clone https://github.com/wesleyche/Trinity.git
+git clone https://github.com/zefei/vim-wintabs.git -b master
 ```
