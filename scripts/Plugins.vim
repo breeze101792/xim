@@ -13,9 +13,9 @@ let plugin_debug = 0
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-airline'
 Plug '~/.vim/plugins/ingo-library'
-Plug '~/.vim/plugins/gitgutter'
 Plug '~/.vim/plugins/supertab'
 
+" Plug '~/.vim/plugins/gitgutter'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -25,7 +25,9 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
     Plug '~/.vim/plugins/cctree', { 'on':  'CCTreeWindowToggle' }
+    Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterToggle', 'GitGutterNextHunk', 'GitGutterPrevHunk'] }
 else
+    Plug '~/.vim/plugins/gitgutter'
     Plug '~/.vim/plugins/nerdtree'
     Plug '~/.vim/plugins/tagbar'
     Plug '~/.vim/plugins/srcexpl'
@@ -56,3 +58,16 @@ Plug '~/.vim/plugins/vim-mark'
 " Initialize plugin system
 call plug#end()
 
+
+""""    Delay Loading
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! DealyLoading(timer) abort
+    " load plugins
+    call plug#load('gitgutter')
+    : GitGutterEnable
+endfunction
+
+if version >= 800
+    " Call loadPlug after 500ms
+    call timer_start(1000, 'DealyLoading')
+endif

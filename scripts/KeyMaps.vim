@@ -132,6 +132,11 @@ nmap <F9> :CCTreeWindowToggle<CR>
 " Commentary settings
 map <C-_> :Commentary<CR>
 
+" GitGutter settings
+map <C-g> :GitGutterToggle<CR>
+nmap ]c :GitGutterNextHunk<CR>
+nmap [c :GitGutterPrevHunk<CR>
+
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""
 
