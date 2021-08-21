@@ -15,6 +15,7 @@ set autochdir
 set hidden      " can put buffer to the background without writing
                 "   to disk, will remember history/marks.
 set lazyredraw  " don't update the display while executing macros
+set updatetime=500
 set ttyfast     " Send more characters at a given time.
 set switchbuf+=usetab,newtab "use new tab when open through quickfix
 
