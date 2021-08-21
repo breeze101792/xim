@@ -47,3 +47,11 @@
 	path = plugins/vim-mark
 	url = https://github.com/inkarkat/vim-mark.git
 	branch = master
+[submodule "plugins/syntastic"]
+	path = plugins/syntastic
+	url = https://github.com/vim-syntastic/syntastic.git
+	branch = master
+[submodule "plugins/vim-surround"]
+	path = plugins/vim-surround
+	url = https://github.com/tpope/vim-surround.git
+	branch = master

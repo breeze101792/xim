@@ -13,7 +13,6 @@ let plugin_debug = 0
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-airline'
 Plug '~/.vim/plugins/ingo-library'
-Plug '~/.vim/plugins/supertab'
 
 " Plug '~/.vim/plugins/gitgutter'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -25,9 +24,7 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
     Plug '~/.vim/plugins/cctree', { 'on':  'CCTreeWindowToggle' }
-    Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterToggle', 'GitGutterNextHunk', 'GitGutterPrevHunk'] }
 else
-    Plug '~/.vim/plugins/gitgutter'
     Plug '~/.vim/plugins/nerdtree'
     Plug '~/.vim/plugins/tagbar'
     Plug '~/.vim/plugins/srcexpl'
@@ -48,12 +45,27 @@ else
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Others loading
+""""    Auto-start loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-Plug '~/.vim/plugins/ctrlp'
-Plug '~/.vim/plugins/vim-multiple-cursors'
-Plug '~/.vim/plugins/vim-bookmarks'
-Plug '~/.vim/plugins/vim-mark'
+if plugin_debug == 0
+    Plug '~/.vim/plugins/supertab', { 'on':  [] }
+    Plug '~/.vim/plugins/ctrlp', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-multiple-cursors', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-bookmarks', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-mark', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-surround', { 'on':  [] }
+    Plug '~/.vim/plugins/gitgutter', { 'on':  [] }
+    Plug '~/.vim/plugins/syntastic', { 'on':  [] }
+else
+    Plug '~/.vim/plugins/supertab'
+    Plug '~/.vim/plugins/ctrlp'
+    Plug '~/.vim/plugins/vim-multiple-cursors'
+    Plug '~/.vim/plugins/vim-bookmarks'
+    Plug '~/.vim/plugins/vim-mark'
+    Plug '~/.vim/plugins/vim-surround'
+    Plug '~/.vim/plugins/gitgutter'
+    Plug '~/.vim/plugins/syntastic'
+endif
 
 " Initialize plugin system
 call plug#end()
@@ -63,6 +75,13 @@ call plug#end()
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! DealyLoading(timer) abort
     " load plugins
+    call plug#load('supertab')
+    call plug#load('ctrlp')
+    call plug#load('vim-multiple-cursors')
+    call plug#load('vim-bookmarks')
+    call plug#load('vim-mark')
+    call plug#load('vim-surround')
+    call plug#load('syntastic')
     call plug#load('gitgutter')
     : GitGutterEnable
 endfunction
