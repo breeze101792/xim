@@ -43,3 +43,7 @@
 [submodule "plugins/vim-plug"]
 	path = plugins/vim-plug
 	url = https://github.com/junegunn/vim-plug.git
+[submodule "plugins/vim-mark"]
+	path = plugins/vim-mark
+	url = https://github.com/inkarkat/vim-mark.git
+	branch = master
