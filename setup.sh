@@ -2,6 +2,20 @@
 IDE_ROOT=`pwd`
 VIM_ROOT=$HOME"/.vim"
 VIM_BAK_ROOT=$IDE_ROOT"/vim_bak_"$(date +%Y%m%d_%H%M%S)
+function plugins_check()
+{
+    local var_check="pass"
+    for each_plugin in $(ls ${IDE_ROOT}/plugins)
+    do
+        # echo ${each_plugin}
+        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${IDE_ROOT}/scripts/Plugins.vim | grep ${each_plugin} > /dev/null
+        then
+            echo Plugin ${each_plugin} not found in Plugins.vim
+            var_check="fail"
+        fi
+    done
+    echo "Check plugins: ${var_check}"
+}
 function ycm()
 {
     echo "Setup plugins"
@@ -61,22 +75,22 @@ function setup()
 
     if [ ${flag_ln_all_plugins} = true ]
     then
-        ln -sf $IDE_ROOT/plugins $VIM_ROOT/bundle
+        ln -sf $IDE_ROOT/plugins $VIM_ROOT/plugins
     else
-        mkdir -p $VIM_ROOT/bundle/
-        ln -sf $IDE_ROOT/plugins/* $VIM_ROOT/bundle/
+        mkdir -p $VIM_ROOT/plugins/
+        ln -sf $IDE_ROOT/plugins/* $VIM_ROOT/plugins/
     fi
 
     mkdir -p $VIM_ROOT/autoload/
-    ln -sf $VIM_ROOT/bundle/vim-pathogen/autoload/pathogen.vim $VIM_ROOT/autoload/
-
-    mkdir -p $VIM_ROOT/after/
+    ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
 
     echo "Don't forget to init submodule."
+
 }
 function setup_after()
 {
     echo "Setup After with plugins"
+    mkdir -p $VIM_ROOT/after/
     cd $IDE_ROOT/plugins
     for each_plugin in $(ls)
     do
@@ -94,11 +108,15 @@ function main()
     local flag_setup="n"
     local flag_ccglue="n"
     local flag_ycm="n"
+    local flag_plugins="n"
     while [[ "$#" != 0 ]]
     do
         case $1 in
             -s|--setup)
                 flag_setup="y"
+                ;;
+            -p|--plugins)
+                flag_plugins="y"
                 ;;
             -c|--ccglue)
                 flag_ccglue="y"
@@ -109,6 +127,7 @@ function main()
             -h|--help)
                 echo "VIM IDE Setup Tool"
                 printf  "    %s ->%s \n" "-s|--setup" "Setup up vim ide"
+                printf  "    %s ->%s \n" "-p|--plugins)" "Check plugins with Plugins.vim"
                 printf  "    %s ->%s \n" "-c|--ccglue)" "Download ccglue"
                 printf  "    %s ->%s \n" "-y|--ycm" "Download ycm plugin"
                 return 0
@@ -123,7 +142,11 @@ function main()
     if [ "${flag_setup}" = "y" ]
     then
         setup
-        setup_after
+        # setup_after
+    fi
+    if [ "${flag_plugins}" = "y" ]
+    then
+        plugins_check
     fi
     if [ "${flag_ccglue}" = "y" ]
     then

@@ -1,210 +1,58 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Config vim env                            """"
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Specify a directory for plugins
+" - For Neovim: stdpath('data') . '/plugins'
+" - Avoid using standard Vim directory names like 'plugins'
+call plug#begin('~/.vim/plugins/')
 
-""""    Airline
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#left_sep = ' '
-let g:airline#extensions#tabline#left_alt_sep = '|'
-let g:airline#extensions#tabline#formatter = 'unique_tail'
-let g:airline_theme='afterglow'
-" Avoid ui not refresh
-" if version >= 802
-"     autocmd VimEnter * :AirlineRefresh
-" endif
-
-""""    Nertree
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:NERDTreeGlyphReadOnly = "RO"
-let g:NERDTreeDirArrowExpandable = '▸'
-let g:NERDTreeDirArrowCollapsible = '▾'
-" let NERDTreeNodeDelimiter="\u00b7"
-let NERDTreeNodeDelimiter = "\t"
-let g:NERDTreeWinPos = "left"
-
-""""    vim-comment
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd FileType gitcommit setlocal commentstring=#\ %s
-autocmd FileType c,cpp,hxx,hpp,cxx,verilog setlocal commentstring=//\ %s
-
-""""    ctrlp
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ctrlp_map = '<c-p>'
-let g:ctrlp_working_path_mode = 'ra'
-let g:ctrlp_switch_buffer = 'et'
-let g:ctrlp_root_markers = ['Makefile', 'Android.mk', 'Android.bp', '.git', 'cscope.db', '.repo']
-let g:ctrlp_extensions = ['tag']
-" ignore file on .gitignore
-let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standard']
-
-" let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-" unlet g:ctrlp_custom_ignore
-let g:ctrlp_custom_ignore = {
-            \ 'dir':  '\v[\/]\.(git|hg|svn)$\|*build*',
-            \ 'file': '\v\.(exe|so|dll|a|o|d|bin)$',
-            \ 'link': 'some_bad_symbolic_links',
-            \ }
-
-""""    Cpp Enhanced highlight
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:cpp_class_scope_highlight = 1
-" let g:cpp_member_variable_highlight = 1
-let g:cpp_class_decl_highlight = 1
-let g:cpp_posix_standard = 1
-let g:cpp_concepts_highlight = 1
-" let g:cpp_no_function_highlight = 1
-" Don't use it, it will slow down the vim
-" let g:cpp_experimental_simple_template_highlight = 1
-" let g:cpp_experimental_template_highlight = 1
-
-
-""""    Bookmark
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Shortcut keys
-" mm	:BookmarkToggle
-" mi	:BookmarkAnnotate <TEXT>
-" ma	:BookmarkShowAll
-" mc	:BookmarkClear
-" mx	:BookmarkClearAll
-let g:bookmark_sign = '⚑'
-let g:bookmark_highlight_lines = 1
-" autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
-
-""""    Vim Mark
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" extended can be used up to 18 color
-" maximum can be used up to 27, 58, or even 77 colors
-let g:mwDefaultHighlightingPalette = 'maximum'
-let g:mwDefaultHighlightingNum = 58
-
-let g:mwAutoSaveMarks = 0
-let g:mwAutoLoadMarks = 0
-let g:mwIgnoreCase = 0
-
-""""    vim-multiple-cursors
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" If set to 0, insert mappings won't be supported in _Insert_ mode anymore.
-let g:multi_cursor_support_imap=1
-let g:multi_cursor_exit_from_visual_mode=1
-let g:multi_cursor_exit_from_insert_mode=1
-
-""""    Src Expl
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:SrcExpl_winHeight = 10
-" let g:SrcExpl_refreshTime = 100
-" let g:SrcExpl_jumpKey = "<ENTER>"
-" let g:SrcExpl_gobackKey = "<SPACE>"
-" let g:SrcExpl_searchLocalDef = 1
-" let g:SrcExpl_nestedAutoCmd = 0
-let g:SrcExpl_isUpdateTags = 0
-" let g:SrcExpl_pluginList = [
-"             \ "__Tag_List__",
-"             \ "_NERD_tree_",
-"             \ "Source_Explorer"
-"             \ ]
-" let g:SrcExpl_colorSchemeList = [
-"             \ "Red",
-"             \ "Cyan",
-"             \ "Green",
-"             \ "Yellow",
-"             \ "Magenta"
-"             \ ]
-
-""""    CCTree
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:CCTreeDisplayMode = 3
-" let g:CCTreeWindowVertical = 1
-" let g:CCTreeWindowMinWidth = 40
-let g:CCTreeUseUTF8Symbols = 1
-let g:CCTreeDbFileMaxSize  = 40000000 " (40 Mbytes)
-
-
-""""    gitgutter
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:gitgutter_enabled = 0
-" let g:gitgutter_sign_added = '+'
-" let g:gitgutter_sign_modified = '~'
-let g:gitgutter_sign_removed = '-'
-" let g:gitgutter_sign_removed_first_line = '¯'
-" let g:gitgutter_sign_removed_above_and_below = '_¯'
-" let g:gitgutter_sign_modified_removed = '~_'
-
-let g:gitgutter_override_sign_column_highlight = 1
-" highlight clear SignColumn
-" autocmd VimEnter * highlight GitGutterAdd ctermfg=2 ctermbg=None
-" autocmd VimEnter * highlight GitGutterChange ctermfg=3 ctermbg=None
-" autocmd VimEnter * highlight GitGutterDelete ctermfg=1 ctermbg=None
-" autocmd VimEnter * highlight GitGutterChangeDelete ctermfg=4 ctermbg=None
+" Make sure you use single quotes
+let plugin_debug = 0
+" let plugin_debug = 1
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    pathogen
+""""    Always loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Load pathogen
-execute pathogen#infect()
-
-""""    Themes
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme afterglow_lab
-
-" remove color under line
-" autocmd VimEnter * highlight CursorLine   cterm=NONE " hi color in content area
-" autocmd VimEnter * highlight CursorLineNR cterm=NONE " hi color in number line
-" autocmd VimEnter * highlight LineNr ctermbg=NONE " set line color
-
-" Fix first single column issue background issue
-" autocmd VimEnter * highlight! link SignColumn LineNr
-
-" if version <= 800
-"     " highlight Normal ctermbg=NONE " avoid background block
-"     autocmd VimEnter * highlight Normal ctermbg=NONE
-" endif
+Plug '~/.vim/plugins/vim-ide'
+Plug '~/.vim/plugins/vim-airline'
+Plug '~/.vim/plugins/ingo-library'
+Plug '~/.vim/plugins/gitgutter'
+Plug '~/.vim/plugins/supertab'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Others
+""""    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+if plugin_debug == 0
+    Plug '~/.vim/plugins/nerdtree', { 'on':  'NERDTreeToggle' }
+    Plug '~/.vim/plugins/tagbar', { 'on':  'TagbarToggle' }
+    Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
+    Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
+    Plug '~/.vim/plugins/cctree', { 'on':  'CCTreeWindowToggle' }
+else
+    Plug '~/.vim/plugins/nerdtree'
+    Plug '~/.vim/plugins/tagbar'
+    Plug '~/.vim/plugins/srcexpl'
+    Plug '~/.vim/plugins/vim-commentary'
+    Plug '~/.vim/plugins/cctree'
+endif
 
-""""    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:syntastic_always_populate_loc_list = 1
-" let g:syntastic_auto_loc_list = 1
-" let g:syntastic_check_on_open = 0
-" let g:syntastic_check_on_wq = 1
-" let g:syntastic_aggregate_errors = 1
-
-" let g:syntastic_python_checkers = ['pylint']
-
-" let g:syntastic_c_remove_include_errors = 1
-" let g:syntastic_c_compiler =['gcc', 'clang','make']
-" let g:syntastic_c_compiler_options ='-Wpedantic -g'
-
-"""""    Ale
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"let g:ale_lint_on_enter = 0
-"let g:ale_set_signs = 1
-"let g:ale_sign_error = '◈'
-"let g:ale_sign_warning = '◈'
-"" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
-"let g:ale_echo_msg_error_str = 'E'
-"let g:ale_echo_msg_warning_str = 'W'
-"let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-" let g:airline#extensions#ale#error_symbol = 'E'
-" let g:airline#extensions#ale#warning_symbol = 'W'
-"let g:ale_pattern_options = {
-"            \   '.*\.sh$': {'ale_enabled': 0},
-"            \   '.*\.json$': {'ale_enabled': 0},
-"            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
-"            \}
-"let g:ale_linters = {
-"            \   'c++': ['clang'],
-"            \   'c': ['clang'],
-"            \   'python': ['pylint'],
-"            \}
-
-""""    Taglist
+""""    On-demand file type loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" let Tlist_Show_One_File = 1
-" let Tlist_Enable_Fold_Column=1
+" TODO add file type loading
+if plugin_debug == 0
+    Plug '~/.vim/plugins/OmniCppComplete', { 'for':  'cpp' }
+    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  'cpp' }
+else
+    Plug '~/.vim/plugins/OmniCppComplete'
+    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight'
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Others loading
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Plug '~/.vim/plugins/ctrlp'
+Plug '~/.vim/plugins/vim-multiple-cursors'
+Plug '~/.vim/plugins/vim-bookmarks'
+Plug '~/.vim/plugins/vim-mark'
+
+" Initialize plugin system
+call plug#end()
 
