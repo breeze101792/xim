@@ -52,3 +52,7 @@
 	path = plugins/vim-surround
 	url = https://github.com/tpope/vim-surround.git
 	branch = master
+[submodule "plugins/vim-ingo-library"]
+	path = plugins/vim-ingo-library
+	url = https://github.com/inkarkat/vim-ingo-library.git
+	branch = master

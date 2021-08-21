@@ -12,7 +12,7 @@ let plugin_debug = 0
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-airline'
-Plug '~/.vim/plugins/ingo-library'
+Plug '~/.vim/plugins/vim-ingo-library'
 
 " Plug '~/.vim/plugins/gitgutter'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -88,5 +88,5 @@ endfunction
 
 if version >= 800
     " Call loadPlug after 500ms
-    call timer_start(500, 'DealyLoading')
+    call timer_start(200, 'DealyLoading')
 endif
