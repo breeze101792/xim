@@ -9,6 +9,7 @@
 set encoding=utf-8
 set nocompatible " disable vi compatiable
 set autochdir
+set showtabline=2
 " set noswapfile
 " set t_ti= t_te= " leave content when vim exit
 

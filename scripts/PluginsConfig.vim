@@ -4,13 +4,24 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""""    Themes
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+colorscheme afterglow_lab
+
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
       \ 'component_function': {
       \   'filename': 'LightlineFilename',
       \ },
+      \ 'colorscheme': 'wombat',
       \ }
+
+let g:lightline.tabline = {
+            \ 'left': [ [ 'tabs' ] ],
+            \ 'right': [ [ 'bufnum'] ] }
+let g:lightline.separator = { 'left': '', 'right': '' }
+let g:lightline.subseparator = {'left': '', 'right': '' }
 
 function! LightlineFilename()
   return &filetype ==# 'vimfiler' ? vimfiler#get_status_string() :
@@ -22,6 +33,7 @@ endfunction
 let g:unite_force_overwrite_statusline = 0
 let g:vimfiler_force_overwrite_statusline = 0
 let g:vimshell_force_overwrite_statusline = 0
+
 
 """"    Nertree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -165,10 +177,6 @@ let g:syntastic_c_remove_include_errors = 1
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load pathogen
 " execute pathogen#infect()
-
-""""    Themes
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme afterglow_lab
 
 " remove color under line
 " autocmd VimEnter * highlight CursorLine   cterm=NONE " hi color in content area
