@@ -56,3 +56,7 @@
 	path = plugins/vim-ingo-library
 	url = https://github.com/inkarkat/vim-ingo-library.git
 	branch = master
+[submodule "plugins/lightline.vim"]
+	path = plugins/lightline.vim
+	url = https://github.com/itchyny/lightline.vim.git
+	branch = master

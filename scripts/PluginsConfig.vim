@@ -4,17 +4,24 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-""""    Airline
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#left_sep = ' '
-let g:airline#extensions#tabline#left_alt_sep = '|'
-let g:airline#extensions#tabline#formatter = 'unique_tail'
-let g:airline_theme='afterglow'
-" Avoid ui not refresh
-" if version >= 802
-"     autocmd VimEnter * :AirlineRefresh
-" endif
+"""""    lightline
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:lightline = {
+      \ 'component_function': {
+      \   'filename': 'LightlineFilename',
+      \ },
+      \ }
+
+function! LightlineFilename()
+  return &filetype ==# 'vimfiler' ? vimfiler#get_status_string() :
+        \ &filetype ==# 'unite' ? unite#get_status_string() :
+        \ &filetype ==# 'vimshell' ? vimshell#get_status_string() :
+        \ expand('%:t') !=# '' ? expand('%:t') : '[No Name]'
+endfunction
+
+let g:unite_force_overwrite_statusline = 0
+let g:vimfiler_force_overwrite_statusline = 0
+let g:vimshell_force_overwrite_statusline = 0
 
 """"    Nertree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -139,6 +146,20 @@ let g:gitgutter_override_sign_column_highlight = 1
 " autocmd VimEnter * highlight GitGutterDelete ctermfg=1 ctermbg=None
 " autocmd VimEnter * highlight GitGutterChangeDelete ctermfg=4 ctermbg=None
 
+""""    Syntastic
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 0
+let g:syntastic_check_on_wq = 1
+" let g:syntastic_aggregate_errors = 1
+"
+let g:syntastic_python_checkers = ['pylint']
+
+let g:syntastic_c_remove_include_errors = 1
+" let g:syntastic_c_compiler =['gcc', 'clang','make']
+" let g:syntastic_c_compiler_options ='-Wpedantic -g'
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -166,19 +187,17 @@ colorscheme afterglow_lab
 """"    Others
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-""""    Syntastic
+""""    Airline
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 0
-let g:syntastic_check_on_wq = 1
-" let g:syntastic_aggregate_errors = 1
-"
-let g:syntastic_python_checkers = ['pylint']
-
-let g:syntastic_c_remove_include_errors = 1
-" let g:syntastic_c_compiler =['gcc', 'clang','make']
-" let g:syntastic_c_compiler_options ='-Wpedantic -g'
+" let g:airline#extensions#tabline#enabled = 1
+" let g:airline#extensions#tabline#left_sep = ' '
+" let g:airline#extensions#tabline#left_alt_sep = '|'
+" let g:airline#extensions#tabline#formatter = 'unique_tail'
+" let g:airline_theme='afterglow'
+" " Avoid ui not refresh
+" " if version >= 802
+" "     autocmd VimEnter * :AirlineRefresh
+" " endif
 
 """""    Ale
 """""""""""""""""""""""""""""""""""""""""""""""""""""""

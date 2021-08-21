@@ -11,7 +11,7 @@ let plugin_debug = 0
 """"    Always loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug '~/.vim/plugins/vim-ide'
-Plug '~/.vim/plugins/vim-airline'
+Plug '~/.vim/plugins/lightline.vim'
 Plug '~/.vim/plugins/vim-ingo-library'
 
 " Plug '~/.vim/plugins/gitgutter'
