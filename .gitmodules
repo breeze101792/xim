@@ -10,9 +10,6 @@
 [submodule "plugins/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git
-[submodule "plugins/ingo-library"]
-	path = plugins/ingo-library
-	url = https://github.com/vim-scripts/ingo-library.git
 [submodule "plugins/tagbar"]
 	path = plugins/tagbar
 	url = https://github.com/majutsushi/tagbar.git

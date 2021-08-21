@@ -88,5 +88,5 @@ endfunction
 
 if version >= 800
     " Call loadPlug after 500ms
-    call timer_start(1000, 'DealyLoading')
+    call timer_start(500, 'DealyLoading')
 endif
