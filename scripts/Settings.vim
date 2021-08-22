@@ -6,8 +6,9 @@
 
 """"    Basic Config vim env
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-set encoding=utf-8
 set nocompatible " disable vi compatiable
+set shortmess=I " Disable screen welcome message, Read :help shortmess for everything else.
+set encoding=utf-8
 set autochdir
 set showtabline=2
 " set noswapfile
@@ -71,7 +72,7 @@ set clipboard+=unnamedplus " use systemc clip buffer instead
 set history=1000 " Increase the undo limit.
 
 " soft tab
-set expandtab " extend tab to 4 space
+set expandtab " extend tab (soft tab)
 set tabstop=4 "set tab len to 4
 set softtabstop=4 " let tab stop in 4
 set shiftround " When shifting lines, round the indentation to the nearest multiple of "shiftwidth.
