@@ -13,19 +13,20 @@ let plugin_debug = 0
 Plug '~/.vim/plugins/lightline.vim'
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-ingo-library'
+Plug '~/.vim/plugins/tagbar'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if plugin_debug == 0
     Plug '~/.vim/plugins/nerdtree', { 'on':  'NERDTreeToggle' }
-    Plug '~/.vim/plugins/tagbar', { 'on':  'TagbarToggle' }
+    " Plug '~/.vim/plugins/tagbar', { 'on':  'TagbarToggle' }
     Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
     Plug '~/.vim/plugins/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
 else
     Plug '~/.vim/plugins/nerdtree'
-    Plug '~/.vim/plugins/tagbar'
+    " Plug '~/.vim/plugins/tagbar'
     Plug '~/.vim/plugins/srcexpl'
     Plug '~/.vim/plugins/vim-commentary'
     Plug '~/.vim/plugins/cctree'

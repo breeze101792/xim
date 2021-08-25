@@ -11,10 +11,21 @@ colorscheme afterglow_lab
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
+      \ 'colorscheme': 'wombat',
+      \ 'active': {
+      \     'left': [['mode', 'paste'], ['gitbranch', 'projname', 'readonly', 'filename', 'modified']],
+      \     'right': [['lineinfo'], ['percent'], ['CurrentFunction', 'fileformat', 'fileencoding', 'filetype']]
+      \ },
+      \   'inactive': {
+      \     'left': [['filename', 'gitbranch', 'projname']],
+      \     'right': [['lineinfo'], ['percent'], ['CurrentFunction']]
+      \ },
       \ 'component_function': {
       \   'filename': 'LightlineFilename',
+      \   'CurrentFunction': 'LightlineFuncName',
+      \   'gitbranch': 'LightlineGitBranch',
+      \   'projname': 'LightlineProjName',
       \ },
-      \ 'colorscheme': 'wombat',
       \ }
 
 let g:lightline.tabline = {
@@ -22,6 +33,20 @@ let g:lightline.tabline = {
             \ 'right': [ [ 'bufnum'] ] }
 let g:lightline.separator = { 'left': '', 'right': '' }
 let g:lightline.subseparator = {'left': '', 'right': '' }
+
+function! LightlineFuncName()
+    " return g:IDE_ENV_CURRENT_FUNC
+    return ""
+endfunction
+function! LightlineProjName()
+    " return g:IDE_ENV_GIT_PROJECT_NAME
+    return ""
+endfunction
+
+function! LightlineGitBranch()
+    " return g:IDE_ENV_GIT_BRANCH
+    return ""
+endfunction
 
 function! LightlineFilename()
   return &filetype ==# 'vimfiler' ? vimfiler#get_status_string() :

@@ -65,40 +65,46 @@ endfunction
 " -------------------------------------------
 "  Display FunctionName
 " -------------------------------------------
-fun FunctionName()
-    "set a mark at our current position
-    normal mz
-    "while foundcontrol == 1, keep looking up the line to find something that
-    "isn't a control statement
+fun CurrentFunction()
+    let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
+    let counter = 0
+    let max_find = 5
     let foundcontrol = 1
+    let position = ""
+    let pos=getpos(".")          " This saves the cursor position
+    let view=winsaveview()       " This saves the window view
     while (foundcontrol)
-        "find the previous '{' and get the line above it
-        ?{
-        normal k0
+        let counter = counter + 1
+        if counter > max_find
+            call cursor(pos)
+            call winrestview(view)
+            return ""
+        endif
+        let foundcontrol = 0
+        normal [{
+        call search('\S','bW')
+        let tempchar = getline(".")[col(".") - 1]
+        if (match(tempchar, ")") >=0 )
+            normal %
+            call search('\S','bW')
+        endif
         let tempstring = getline(".")
-        "if the line matches a control statement, set found control to 1 so
-        "we can look farther back in the file for the beginning of the
-        "actual function we are in
-        if(match(tempstring, "while") >= 0)
-            let foundcontrol = 1
-        elseif(match(tempstring, "for") >= 0)
-            let foundcontrol = 1
-        elseif(match(tempstring, "if") >= 0)
-            let foundcontrol = 1
-        elseif(match(tempstring, "else") >= 0)
-            let foundcontrol = 1
-        elseif(match(tempstring, "try") >= 0)
-            let foundcontrol = 1
-        elseif(match(tempstring, "catch") >= 0)
-            let foundcontrol = 1
-        else
-            normal `z
-            let foundcontrol = 0
-            return tempstring
+        for item in strList
+            if( match(tempstring,item) >= 0 )
+                let position = item . " - " . position
+                let foundcontrol = 1
+                break
+            endif
+        endfor
+        if(foundcontrol == 0)
+            call cursor(pos)
+            call winrestview(view)
+            return tempstring.position
         endif
     endwhile
-    echo tempstring
-    return tempstring
+    call cursor(pos)
+    call winrestview(view)
+    return tempstring.position
 endfun
 
 "this mapping assigns a variable to be the name of the function found by
@@ -106,7 +112,7 @@ endfun
 "location on screen returning to the line you started from in FunctionName()
 " map \func :let name = FunctionName()<CR> :echo name<CR>
 
-command! FunName call FunctionName()
+command! CurrentFunction call CurrentFunction()
 
 
 " -------------------------------------------
