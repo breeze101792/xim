@@ -82,6 +82,7 @@ function setup()
     fi
 
     mkdir -p $VIM_ROOT/autoload/
+    mkdir -p $VIM_ROOT/swp/
     ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
 
     echo "Don't forget to init submodule."

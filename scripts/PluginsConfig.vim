@@ -113,6 +113,7 @@ let g:cpp_concepts_highlight = 1
 " ma	:BookmarkShowAll
 " mc	:BookmarkClear
 " mx	:BookmarkClearAll
+let g:bookmark_auto_save = 0
 let g:bookmark_sign = '⚑'
 let g:bookmark_highlight_lines = 1
 " autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
