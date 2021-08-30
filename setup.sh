@@ -83,6 +83,7 @@ function setup()
 
     mkdir -p $VIM_ROOT/autoload/
     ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
+    touch $VIM_ROOT/Config_Customeize.vim
 
     echo "Don't forget to init submodule."
 

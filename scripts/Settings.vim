@@ -150,12 +150,11 @@ set completeopt+=longest
 " set completeopt+=preview " complete menu use list insdead of window, this will move main window(stable-window may fix)
 
 " Status/Command
-set showcmd                 " show partial command on last line of screen.
+set showcmd  " show partial command on last line of screen.
 set cmdheight=1 " Command line height
 set ruler   " enable status bar ruler
 set laststatus=2 " status bar height
 " set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
-set showcmd    " show entered command
 
 " Other settings
 " set mouse=

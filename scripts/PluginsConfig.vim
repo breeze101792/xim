@@ -11,22 +11,22 @@ colorscheme afterglow_lab
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-      \ 'colorscheme': 'wombat',
-      \ 'active': {
-      \     'left': [['mode', 'paste'], ['gitbranch', 'projname', 'readonly', 'filename', 'modified']],
-      \     'right': [['lineinfo'], ['percent'], ['CurrentFunction', 'fileformat', 'fileencoding', 'filetype']]
-      \ },
-      \   'inactive': {
-      \     'left': [['filename', 'gitbranch', 'projname']],
-      \     'right': [['lineinfo'], ['percent'], ['CurrentFunction']]
-      \ },
-      \ 'component_function': {
-      \   'filename': 'LightlineFilename',
-      \   'CurrentFunction': 'LightlineFuncName',
-      \   'gitbranch': 'LightlineGitBranch',
-      \   'projname': 'LightlineProjName',
-      \ },
-      \ }
+            \ 'colorscheme': 'wombat',
+            \ 'active': {
+            \     'left': [['mode', 'paste'], ['gitbranch', 'projname'] ,['readonly', 'filename', 'modified']],
+            \     'right': [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
+            \ },
+            \   'inactive': {
+            \     'left': [['filename', 'gitbranch', 'projname']],
+            \     'right': [['lineinfo'], ['percent'], ['CurrentFunction']]
+            \ },
+            \ 'component_function': {
+            \   'filename': 'LightlineFilename',
+            \   'CurrentFunction': 'LightlineFuncName',
+            \   'gitbranch': 'LightlineGitBranch',
+            \   'projname': 'LightlineProjName',
+            \ },
+            \ }
 
 let g:lightline.tabline = {
             \ 'left': [ [ 'tabs' ] ],
@@ -35,17 +35,14 @@ let g:lightline.separator = { 'left': '', 'right': '' }
 let g:lightline.subseparator = {'left': '', 'right': '' }
 
 function! LightlineFuncName()
-    " return g:IDE_ENV_CURRENT_FUNC
-    return ""
+    return g:IDE_ENV_CURRENT_FUNC
 endfunction
 function! LightlineProjName()
-    " return g:IDE_ENV_GIT_PROJECT_NAME
-    return ""
+    return g:IDE_ENV_GIT_PROJECT_NAME
 endfunction
 
 function! LightlineGitBranch()
-    " return g:IDE_ENV_GIT_BRANCH
-    return ""
+    return g:IDE_ENV_GIT_BRANCH
 endfunction
 
 function! LightlineFilename()
@@ -73,6 +70,11 @@ let g:NERDTreeWinPos = "left"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd FileType gitcommit setlocal commentstring=#\ %s
 autocmd FileType c,cpp,hxx,hpp,cxx,verilog setlocal commentstring=//\ %s
+
+""""    tagbar
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" cursor line will slow down tagbar
+autocmd FileType tagbar setlocal nocursorline
 
 """"    ctrlp
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -185,12 +187,12 @@ let g:gitgutter_override_sign_column_highlight = 1
 
 """"    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 1
 " let g:syntastic_aggregate_errors = 1
-"
+
 let g:syntastic_python_checkers = ['pylint']
 
 let g:syntastic_c_remove_include_errors = 1
