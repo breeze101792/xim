@@ -79,7 +79,7 @@ nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 
 " Refresh all
-nmap <F5> :redraw<CR>:AirlineRefresh<CR>
+nmap <F5> :redraw<CR>
 
 " toggle maximize
 nnoremap <C-W>M <C-W>\| <C-W>_
@@ -136,6 +136,15 @@ map <C-_> :Commentary<CR>
 map <C-g> :GitGutterToggle<CR>
 nmap ]c :GitGutterNextHunk<CR>
 nmap [c :GitGutterPrevHunk<CR>
+
+" tabular
+vnoremap <leader>t :Tabularize /
+
+" bookmark
+noremap mm :BookmarkToggle<CR>
+
+" CtrlP
+noremap <C-p> :CtrlP<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""

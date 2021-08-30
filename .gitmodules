@@ -60,3 +60,7 @@
 	path = plugins/lightline.vim
 	url = https://github.com/itchyny/lightline.vim.git
 	branch = master
+[submodule "plugins/tabular"]
+	path = plugins/tabular
+	url = https://github.com/godlygeek/tabular.git
+	branch = master
