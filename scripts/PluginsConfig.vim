@@ -13,50 +13,40 @@ colorscheme afterglow_lab
 let g:lightline = {
             \ 'colorscheme'         : 'wombat_lab',
             \ 'active'              : {
-            \     'left'            : [['mode', 'paste'], ['gitbranch', 'projname'] ,['readonly', 'filename', 'modified']],
+            \     'left'            : [['mode', 'paste'], ['readonly', 'absolutepath', 'modified']],
             \     'right'           : [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
             \ },
             \   'inactive'          : {
-            \     'left'            : [['filename', 'gitbranch', 'projname']],
+            \     'left'            : [['filename', 'gitinfo']],
             \     'right'           : [['lineinfo'], ['percent'], ['CurrentFunction']]
             \ },
             \ 'component_function'  : {
-            \     'filename'        : 'LightlineFilename',
             \     'CurrentFunction' : 'LightlineFuncName',
-            \     'gitbranch'       : 'LightlineGitBranch',
-            \     'projname'        : 'LightlineProjName',
+            \     'gitinfo'         : 'LightlineGitInfo',
+            \ },
+            \ 'tabline'             : {
+            \     'left'            : [['tabs']],
+            \     'right'           : [['bufnum'], ['gitinfo'] ]
             \ },
             \ }
 
-let g:lightline.tabline = {
-            \ 'left'  : [ [ 'tabs' ] ],
-            \ 'right' : [ [ 'bufnum'] ],
-            \ }
 let g:lightline.separator = { 'left': '', 'right': '' }
 let g:lightline.subseparator = {'left': '', 'right': '' }
 
 function! LightlineFuncName()
     return winwidth(0) < 70 ? '' : g:IDE_ENV_CURRENT_FUNC
 endfunction
-function! LightlineProjName()
-    return winwidth(0) < 70 ? '' : g:IDE_ENV_GIT_PROJECT_NAME
-endfunction
 
-function! LightlineGitBranch()
-    return winwidth(0) < 70 ? '' : g:IDE_ENV_GIT_BRANCH
-endfunction
-
-function! LightlineFilename()
-  return &filetype ==# 'vimfiler' ? vimfiler#get_status_string() :
-        \ &filetype ==# 'unite' ? unite#get_status_string() :
-        \ &filetype ==# 'vimshell' ? vimshell#get_status_string() :
-        \ expand('%:t') !=# '' ? expand('%:t') : '[No Name]'
+function! LightlineGitInfo()
+    if winwidth(0) > 70 && g:IDE_ENV_GIT_PROJECT_NAME != ''
+        return g:IDE_ENV_GIT_BRANCH == '' ? ' '.g:IDE_ENV_GIT_PROJECT_NAME:' '.g:IDE_ENV_GIT_BRANCH.'@'.g:IDE_ENV_GIT_PROJECT_NAME
+    endif
+    return ''
 endfunction
 
 let g:unite_force_overwrite_statusline = 0
 let g:vimfiler_force_overwrite_statusline = 0
 let g:vimshell_force_overwrite_statusline = 0
-
 
 """"    Nertree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
