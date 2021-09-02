@@ -11,38 +11,39 @@ colorscheme afterglow_lab
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-            \ 'colorscheme': 'wombat',
-            \ 'active': {
-            \     'left': [['mode', 'paste'], ['gitbranch', 'projname'] ,['readonly', 'filename', 'modified']],
-            \     'right': [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
+            \ 'colorscheme'         : 'wombat_lab',
+            \ 'active'              : {
+            \     'left'            : [['mode', 'paste'], ['gitbranch', 'projname'] ,['readonly', 'filename', 'modified']],
+            \     'right'           : [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
             \ },
-            \   'inactive': {
-            \     'left': [['filename', 'gitbranch', 'projname']],
-            \     'right': [['lineinfo'], ['percent'], ['CurrentFunction']]
+            \   'inactive'          : {
+            \     'left'            : [['filename', 'gitbranch', 'projname']],
+            \     'right'           : [['lineinfo'], ['percent'], ['CurrentFunction']]
             \ },
-            \ 'component_function': {
-            \   'filename': 'LightlineFilename',
-            \   'CurrentFunction': 'LightlineFuncName',
-            \   'gitbranch': 'LightlineGitBranch',
-            \   'projname': 'LightlineProjName',
+            \ 'component_function'  : {
+            \     'filename'        : 'LightlineFilename',
+            \     'CurrentFunction' : 'LightlineFuncName',
+            \     'gitbranch'       : 'LightlineGitBranch',
+            \     'projname'        : 'LightlineProjName',
             \ },
             \ }
 
 let g:lightline.tabline = {
-            \ 'left': [ [ 'tabs' ] ],
-            \ 'right': [ [ 'bufnum'] ] }
+            \ 'left'  : [ [ 'tabs' ] ],
+            \ 'right' : [ [ 'bufnum'] ],
+            \ }
 let g:lightline.separator = { 'left': '', 'right': '' }
 let g:lightline.subseparator = {'left': '', 'right': '' }
 
 function! LightlineFuncName()
-    return g:IDE_ENV_CURRENT_FUNC
+    return winwidth(0) < 70 ? '' : g:IDE_ENV_CURRENT_FUNC
 endfunction
 function! LightlineProjName()
-    return g:IDE_ENV_GIT_PROJECT_NAME
+    return winwidth(0) < 70 ? '' : g:IDE_ENV_GIT_PROJECT_NAME
 endfunction
 
 function! LightlineGitBranch()
-    return g:IDE_ENV_GIT_BRANCH
+    return winwidth(0) < 70 ? '' : g:IDE_ENV_GIT_BRANCH
 endfunction
 
 function! LightlineFilename()
@@ -89,9 +90,9 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 " let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
 " unlet g:ctrlp_custom_ignore
 let g:ctrlp_custom_ignore = {
-            \ 'dir':  '\v[\/]\.(git|hg|svn)$\|*build*',
-            \ 'file': '\v\.(exe|so|dll|a|o|d|bin)$',
-            \ 'link': 'some_bad_symbolic_links',
+            \ 'dir'  : '\v[\/]\.(git|hg|svn)$\|*build*',
+            \ 'file' : '\v\.(exe|so|dll|a|o|d|bin)$',
+            \ 'link' : 'some_bad_symbolic_links',
             \ }
 
 """"    Cpp Enhanced highlight

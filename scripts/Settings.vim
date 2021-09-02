@@ -29,8 +29,7 @@ set magic                        " Enable extended regexes.
 set report=0                     " Show all changes.
 set title                        " Show the filename in the window title bar.
 set splitbelow splitright        " how to split new windows.
-" Show ^M windows
-" :e ++ff=unix
+" :e ++ff=unix " Show ^M windows
 
 
 """"    Editor Settings (inside buffer)
@@ -47,7 +46,7 @@ set wrap                                          " Enable line wrapping.
 
 " Number
 set number                                        " show line number
-set relativenumber                                " use relaaive number
+" set relativenumber                                " use relaaive number
 " set numberwidth=5                               " width of numbers line (default on gvim is 4)
 "  Auto change relativenumber
 " augroup numbertoggle
@@ -139,7 +138,7 @@ set nofoldenable
 " let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
 
 " automatically open and close the popup menu / preview window
-au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
+" au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
 
 """"    Interface Settings (Out side buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -169,13 +168,8 @@ set laststatus=2            " status bar height
 " set mouse=a
 " set paste
 
-"" Theme
-" theme should be the start of all interface settings
-" colorscheme desert
-
 " setup column cursor line, this will slow down vim speed
 " set cursorcolumn
-" hi cursorcolumn cterm=NONE ctermbg=233
 
 " setup row cursor line
 set cursorline

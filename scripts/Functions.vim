@@ -3,7 +3,9 @@
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-let mouse_mode = 0 " 0 = a, 1 = c
+let mouse_mode = 1 " 0 = a, 1 = c
+
+command! MouseToggle call MouseToggle()
 
 func! MouseToggle()
     if g:mouse_mode == 0
@@ -15,7 +17,6 @@ func! MouseToggle()
     endif
     return
 endfunc
-command! MouseToggle call MouseToggle()
 
 " -------------------------------------------
 "  Toggle Hexmode
@@ -65,6 +66,12 @@ endfunction
 " -------------------------------------------
 "  Display FunctionName
 " -------------------------------------------
+"this mapping assigns a variable to be the name of the function found by
+"FunctionName() then echoes it back so it isn't erased if Vim shifts your
+"location on screen returning to the line you started from in FunctionName()
+" map \func :let name = FunctionName()<CR> :echo name<CR>
+
+command! CurrentFunction call CurrentFunction()
 fun CurrentFunction()
     let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
     let counter = 0
@@ -107,17 +114,11 @@ fun CurrentFunction()
     return tempstring.position
 endfun
 
-"this mapping assigns a variable to be the name of the function found by
-"FunctionName() then echoes it back so it isn't erased if Vim shifts your
-"location on screen returning to the line you started from in FunctionName()
-" map \func :let name = FunctionName()<CR> :echo name<CR>
-
-command! CurrentFunction call CurrentFunction()
-
 
 " -------------------------------------------
 "  Toggle Debug message
 " -------------------------------------------
+command! DebugToggle call DebugToggle()
 function! DebugToggle()
     if !&verbose
         set verbosefile=~/.vim/verbose.log
@@ -127,4 +128,3 @@ function! DebugToggle()
         set verbosefile=
     endif
 endfunction
-command! DebugToggle call DebugToggle()

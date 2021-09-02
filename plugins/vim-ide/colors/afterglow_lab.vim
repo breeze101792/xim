@@ -14,12 +14,12 @@ if version > 580
 endif
 
 let g:colors_name = "afterglow_lab"
+" set None as background
+let g:afterglow_inherit_background=1
 
 " Default GUI Colours
 let s:foreground = "d6d6d6"
-" let s:background = "1a1a1a"
-let s:background = "NONE"
-" let s:background = "000000"
+let s:background = "1a1a1a"
 let s:selection = "5a647e"
 let s:line = "393939"
 let s:comment = "797979"
