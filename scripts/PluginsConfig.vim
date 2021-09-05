@@ -30,16 +30,22 @@ let g:lightline = {
             \ },
             \ }
 
-let g:lightline.separator = { 'left': '', 'right': '' }
-let g:lightline.subseparator = {'left': '', 'right': '' }
+if g:IDE_CFG_SPECIAL_CHARS == "y"
+    let g:lightline.separator = { 'left': '', 'right': '' }
+    let g:lightline.subseparator = {'left': '', 'right': '' }
+endif
 
 function! LightlineFuncName()
     return winwidth(0) < 70 ? '' : g:IDE_ENV_CURRENT_FUNC
 endfunction
 
 function! LightlineGitInfo()
+    let l:git_chars=" "
+    if g:IDE_CFG_SPECIAL_CHARS == "y"
+        let l:git_chars=" "
+    endif
     if winwidth(0) > 70 && g:IDE_ENV_GIT_PROJECT_NAME != ''
-        return g:IDE_ENV_GIT_BRANCH == '' ? ' '.g:IDE_ENV_GIT_PROJECT_NAME:' '.g:IDE_ENV_GIT_BRANCH.'@'.g:IDE_ENV_GIT_PROJECT_NAME
+        return g:IDE_ENV_GIT_BRANCH == '' ? l:git_chars.g:IDE_ENV_GIT_PROJECT_NAME:l:git_chars.g:IDE_ENV_GIT_BRANCH.'@'.g:IDE_ENV_GIT_PROJECT_NAME
     endif
     return ''
 endfunction

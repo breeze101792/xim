@@ -85,9 +85,15 @@ function setup()
     mkdir -p $VIM_ROOT/swp/
     ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
     touch $VIM_ROOT/Config_Customize.vim
+    setup_temp_config
 
     echo "Don't forget to init submodule."
 
+}
+function setup_temp_config()
+{
+    cat scripts/Config.vim | grep let | grep "\"n\"" | sed 's/get.*/"n"/g' > $VIM_ROOT/Config_TEMP.vim
+    cat scripts/Config.vim | grep let | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_TEMP.vim
 }
 function setup_after()
 {
@@ -111,6 +117,7 @@ function main()
     local flag_ccglue="n"
     local flag_ycm="n"
     local flag_plugins="n"
+    local flag_temp_config="n"
     while [[ "$#" != 0 ]]
     do
         case $1 in
@@ -126,12 +133,16 @@ function main()
             -y|--ycm)
                 flag_ycm="y"
                 ;;
+            -t|--temp-config)
+                flag_temp_config="y"
+                ;;
             -h|--help)
                 echo "VIM IDE Setup Tool"
                 printf  "    %s ->%s \n" "-s|--setup" "Setup up vim ide"
                 printf  "    %s ->%s \n" "-p|--plugins)" "Check plugins with Plugins.vim"
                 printf  "    %s ->%s \n" "-c|--ccglue)" "Download ccglue"
                 printf  "    %s ->%s \n" "-y|--ycm" "Download ycm plugin"
+                printf  "    %s ->%s \n" "-t|--temp-config" "Setup temp config"
                 return 0
                 ;;
             *)
@@ -158,5 +169,10 @@ function main()
     then
         ycm
     fi
+    if [ "${flag_temp_config}" = "y" ]
+    then
+        setup_temp_config
+    fi
+
 }
 main $@
