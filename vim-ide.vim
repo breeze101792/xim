@@ -5,9 +5,9 @@ endif
 
 if version >= 704
     so ~/.vim/vim-ide/Config.vim
+    so ~/.vim/vim-ide/Environment.vim
     so ~/.vim/vim-ide/Settings.vim
     so ~/.vim/vim-ide/Functions.vim
-    so ~/.vim/vim-ide/Environment.vim
     so ~/.vim/vim-ide/Plugins.vim
     so ~/.vim/vim-ide/PluginsConfig.vim
     so ~/.vim/vim-ide/KeyMaps.vim

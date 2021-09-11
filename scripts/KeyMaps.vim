@@ -35,10 +35,11 @@
 nnoremap <leader>wa :wa<CR>
 nnoremap <leader>qa :qa<CR>
 nnoremap <leader>q :q<CR>
+nnoremap <leader>qq :q!<CR>
 nnoremap <leader>wqa :wqa<CR>
 
 " Toggle Hex Mode
-nmap <Leader>h :Hexmode<CR>
+nmap <Leader>h :HexToggle<CR>
 
 " open an shell without close vim
 nnoremap <leader>sh :sh<CR>

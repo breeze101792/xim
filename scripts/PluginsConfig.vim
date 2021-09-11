@@ -13,14 +13,15 @@ colorscheme afterglow_lab
 let g:lightline = {
             \ 'colorscheme'         : 'wombat_lab',
             \ 'active'              : {
-            \     'left'            : [['mode', 'paste'], ['readonly', 'absolutepath', 'modified']],
+            \     'left'            : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
             \     'right'           : [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
             \ },
             \   'inactive'          : {
-            \     'left'            : [['filename', 'gitinfo']],
-            \     'right'           : [['lineinfo'], ['percent'], ['CurrentFunction']]
+            \     'left'            : [['filename']],
+            \     'right'           : [['lineinfo'], ['percent']]
             \ },
             \ 'component_function'  : {
+            \     'filename'        : 'LightlineFilename',
             \     'CurrentFunction' : 'LightlineFuncName',
             \     'gitinfo'         : 'LightlineGitInfo',
             \ },
@@ -36,18 +37,36 @@ if g:IDE_CFG_SPECIAL_CHARS == "y"
 endif
 
 function! LightlineFuncName()
-    return winwidth(0) < 70 ? '' : g:IDE_ENV_CURRENT_FUNC
+    let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
+    return winwidth(0) < 70 ? '' : l:current_fun
 endfunction
 
 function! LightlineGitInfo()
     let l:git_chars=" "
+    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
+    let proj_branch = get(b:, 'IDE_ENV_GIT_BRANCH', "")
+
     if g:IDE_CFG_SPECIAL_CHARS == "y"
         let l:git_chars=" "
     endif
-    if winwidth(0) > 70 && g:IDE_ENV_GIT_PROJECT_NAME != ''
-        return g:IDE_ENV_GIT_BRANCH == '' ? l:git_chars.g:IDE_ENV_GIT_PROJECT_NAME:l:git_chars.g:IDE_ENV_GIT_BRANCH.'@'.g:IDE_ENV_GIT_PROJECT_NAME
+    if winwidth(0) > 70 && l:proj_name != ''
+        return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
     endif
     return ''
+endfunction
+
+function! LightlineFilename()
+    let root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "")
+    " let path = expand('%:p')
+    let name = expand('%:t')
+
+    if len(root) != 0 && len(name) != 0
+        return l:root.l:name
+    elseif len(name) == 0
+        return "[No Name]"
+    else
+        return expand('%')
+    endif
 endfunction
 
 let g:unite_force_overwrite_statusline = 0

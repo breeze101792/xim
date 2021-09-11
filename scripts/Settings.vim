@@ -164,7 +164,7 @@ set laststatus=2            " status bar height
 " set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
 
 " Other settings
-" set mouse=
+set mouse=c
 " set mouse=a
 " set paste
 
