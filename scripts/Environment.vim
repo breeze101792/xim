@@ -3,7 +3,6 @@
 " let b:IDE_ENV_GIT_BRANCH = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_ROOT = ""
-
 func! IDE_UpdateEnv_CursorHold()
     " let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s ','','f')
