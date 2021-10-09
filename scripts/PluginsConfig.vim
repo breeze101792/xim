@@ -35,28 +35,13 @@ if g:IDE_CFG_SPECIAL_CHARS == "y"
     let g:lightline.separator = { 'left': '', 'right': '' }
     let g:lightline.subseparator = {'left': '', 'right': '' }
 endif
-let g:ll_funcname=""
-let g:ll_gitinfo=""
-let g:ll_filename=""
 
 function! LightlineFuncName()
-    return g:ll_funcname
+    let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
+    return winwidth(0) < 70 ? '' : l:current_fun
 endfunction
 
 function! LightlineGitInfo()
-    return g:ll_gitinfo
-endfunction
-
-function! LightlineFilename()
-    return g:ll_filename
-endfunction
-
-function! LightlineUpdate()
-    "" function name
-    let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
-    let g:ll_funcname = winwidth(0) < 70 ? '' : l:current_fun
-
-    "" git info
     let l:git_chars=" "
     let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
     let proj_branch = get(b:, 'IDE_ENV_GIT_BRANCH', "")
@@ -65,59 +50,23 @@ function! LightlineUpdate()
         let l:git_chars=" "
     endif
     if winwidth(0) > 70 && l:proj_name != ''
-        let g:ll_gitinfo = l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
-    else
-        let g:ll_gitinfo = ''
+        return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
     endif
+    return ''
+endfunction
 
-    "" filename
+function! LightlineFilename()
     let root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "")
     let name = expand('%:t')
 
     if len(root) != 0 && len(name) != 0
-        let g:ll_filename = l:root.l:name
+        return l:root.l:name
     elseif len(name) == 0
-        let g:ll_filename = "[No Name]"
+        return "[No Name]"
     else
-        let g:ll_filename = expand('%')
+        return expand('%')
     endif
 endfunction
-
-autocmd CursorHold * :call LightlineUpdate()
-autocmd BufReadPost * :call LightlineUpdate()
-
-" function! LightlineFuncName()
-"     let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
-"     return winwidth(0) < 70 ? '' : l:current_fun
-" endfunction
-
-" function! LightlineGitInfo()
-"     let l:git_chars=" "
-"     let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
-"     let proj_branch = get(b:, 'IDE_ENV_GIT_BRANCH', "")
-
-"     if g:IDE_CFG_SPECIAL_CHARS == "y"
-"         let l:git_chars=" "
-"     endif
-"     if winwidth(0) > 70 && l:proj_name != ''
-"         return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
-"     endif
-"     return ''
-" endfunction
-
-" function! LightlineFilename()
-"     let root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "")
-"     " let path = expand('%:p')
-"     let name = expand('%:t')
-
-"     if len(root) != 0 && len(name) != 0
-"         return l:root.l:name
-"     elseif len(name) == 0
-"         return "[No Name]"
-"     else
-"         return expand('%')
-"     endif
-" endfunction
 
 let g:unite_force_overwrite_statusline = 0
 let g:vimfiler_force_overwrite_statusline = 0
@@ -145,8 +94,12 @@ autocmd FileType tagbar setlocal nocursorline
 """"    ctrlp
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ctrlp_map = '<c-p>'
+let g:ctrlp_by_filename = 1
+let g:ctrlp_regexp = 1
+let g:ctrlp_lazy_update = 250
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_switch_buffer = 'et'
+let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20,results:20'
 let g:ctrlp_root_markers = ['Makefile', 'Android.mk', 'Android.bp', '.git', 'cscope.db', '.repo']
 let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
@@ -225,6 +178,7 @@ let g:SrcExpl_isUpdateTags = 0
 "             \ "Yellow",
 "             \ "Magenta"
 "             \ ]
+autocmd FileType nerdtree setlocal nocursorline
 
 """"    CCTree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

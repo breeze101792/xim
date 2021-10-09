@@ -1,9 +1,10 @@
 " Function Settings
 " ===========================================
+
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-let mouse_mode = 1 " 0 = a, 1 = c
+let g:mouse_mode = 1 " 0 = a, 1 = c
 
 command! MouseToggle call MouseToggle()
 
@@ -128,6 +129,30 @@ function! DebugToggle()
         set verbosefile=
     endif
 endfunction
+" -------------------------------------------
+"  Clip
+" -------------------------------------------
+command! ClipRead call ClipRead()
+
+func! ClipRead()
+    let @c = system('cat ${HOME}/.vim/clip')
+endfunc
+
+command! ClipOpen call ClipOpen()
+
+func! ClipOpen()
+    let l:clip_buf = system('cat ${HOME}/.vim/clip')
+    execute 'tabnew ' . l:clip_buf
+endfunc
+
+" -------------------------------------------
+"  Tags
+" -------------------------------------------
+command! TagUpdate call TagUpdate()
+
+func! TagUpdate()
+    execute 'cscope reset'
+endfunc
 " ===========================================
 " C/C++ Function
 " ===========================================

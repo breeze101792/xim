@@ -14,6 +14,7 @@ Plug '~/.vim/plugins/lightline.vim'
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-ingo-library'
 Plug '~/.vim/plugins/tagbar'
+Plug '~/.vim/plugins/bufexplorer'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
@@ -27,6 +28,7 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/tabular', { 'on':  ['Tabularize'] }
     Plug '~/.vim/plugins/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
+    " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer', 'BufExplorer'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -36,7 +38,9 @@ else
     Plug '~/.vim/plugins/tabular'
     Plug '~/.vim/plugins/vim-bookmarks'
     Plug '~/.vim/plugins/ctrlp'
+    " Plug '~/.vim/plugins/bufexplorer'
 endif
+
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand file type loading

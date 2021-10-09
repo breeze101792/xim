@@ -86,7 +86,6 @@ nmap <F5> :redraw<CR>
 nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 
-
 """"    Function map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle
@@ -146,6 +145,9 @@ noremap mm :BookmarkToggle<CR>
 
 " CtrlP
 noremap <C-p> :CtrlP<CR>
+
+" bufferexpl
+noremap <leader>b :ToggleBufExplorer<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""
