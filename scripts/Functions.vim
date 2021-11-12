@@ -190,7 +190,7 @@ function! s:CPrintf(content)
         let l:tmpl="message"
     endif
     let l:text = [
-                \ "printf(\"[Debug %s,%d] <TMPL> \\n\", __func__, __LINE__);\n",
+                \ "printf(\"[Debug %s,%d] <TMPL> \\n\", __func__, __LINE__);",
                 \ ""
                 \ ]
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
