@@ -4,9 +4,6 @@
 [submodule "plugins/supertab"]
 	path = plugins/supertab
 	url = https://github.com/ervandew/supertab.git
-[submodule "plugins/vim-airline"]
-	path = plugins/vim-airline
-	url = https://github.com/vim-airline/vim-airline.git
 [submodule "plugins/vim-multiple-cursors"]
 	path = plugins/vim-multiple-cursors
 	url = https://github.com/terryma/vim-multiple-cursors.git

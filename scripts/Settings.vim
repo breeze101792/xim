@@ -20,6 +20,7 @@ set lazyredraw                   " don't update the display while executing macr
 set updatetime=500
 set ttyfast                      " Send more characters at a given time.
 set switchbuf+=usetab,newtab     " use new tab when open through quickfix
+" set redrawtime=10000
 
 ""   regexp
 set gdefault                     " RegExp global by default
@@ -98,6 +99,9 @@ set list
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax one
 syntax enable              " enable syntax hi, cann't be place after theme settings
+" syntax sync maxlines=200
+" syntax sync minlines=200
+" set synmaxcol=100        " arbitrary number < 3000 (default value)
 filetype plugin indent on  " base on file type do auto indend
 
 " set formatoptions
@@ -122,7 +126,7 @@ if $CCTREE_DB != ''
 endif
 
 " Folding
-set foldmethod=indent  " set foldmethod=syntax
+set foldmethod=indent  " can be set to syntax, indent, manual
 set foldnestmax=3      " Only fold up to three nested levels.
 set foldlevel=99
 set nofoldenable
@@ -204,3 +208,6 @@ autocmd VimLeave * :set mouse=c
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " save debug msg to /tmp/vim-debug
 " let g:vim_debug_enable = 1
+" Check syntax time
+" syntime on
+" syntime report
