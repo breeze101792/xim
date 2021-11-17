@@ -99,7 +99,7 @@ set list
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax one
 syntax enable              " enable syntax hi, cann't be place after theme settings
-" syntax sync maxlines=200
+syntax sync maxlines=50
 " syntax sync minlines=200
 " set synmaxcol=100        " arbitrary number < 3000 (default value)
 filetype plugin indent on  " base on file type do auto indend

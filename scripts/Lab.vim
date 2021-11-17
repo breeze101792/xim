@@ -25,29 +25,6 @@ command! Test call Test()
 " endfunction
 
 " imap <Tab> <C-R>=SuperTab()<CR>
-
-" -------------------------------------------
-"  Beautify
-" -------------------------------------------
-function! Beautify()
-    " Advance config
-    " ===========================================
-    " remove the trailing space
-    autocmd BufWritePre <buffer> %s/\s\+$//e
-    " auto retab
-    " autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
-    " Remove empty lines with space
-    autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
-    " remove double next line
-    autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
-
-    " autocmd FileType c,cpp setlocal equalprg=clang-format
-    
-    " auto retab
-    " set ff=unix
-
-endfunction
-command! Beautify call Beautify()
 " -------------------------------------------
 "  Test
 " -------------------------------------------

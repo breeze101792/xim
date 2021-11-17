@@ -115,7 +115,6 @@ fun CurrentFunction()
     return tempstring.position
 endfun
 
-
 " -------------------------------------------
 "  Toggle Debug message
 " -------------------------------------------
@@ -153,6 +152,35 @@ command! TagUpdate call TagUpdate()
 func! TagUpdate()
     execute 'cscope reset'
 endfunc
+" -------------------------------------------
+"  Beautify Remove trailing space
+" -------------------------------------------
+command! -range TrimTrailingSpace <line1>,<line2>call TrimTrailingSpace()
+function! TrimTrailingSpace() range
+    " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
+    execute a:firstline.','.a:lastline.'s/\s\+$//g'
+endfunction
+
+command! -range TrimEmptyLine <line1>,<line2>call TrimEmptyLine()
+function! TrimEmptyLine() range
+    " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
+    " execute a:firstline.','.a:lastline.'s/\n\{2,\}/\n/g'
+    execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
+endfunction
+
+command! -range Beautify <line1>,<line2>call Beautify()
+function! Beautify() range
+
+    " remove the trailing space
+    execute a:firstline.','.a:lastline.'s/\s\+$//e'
+
+    " Remove empty lines with space
+    " execute a:firstline.','.a:lastline. :%s/\($\n\s*\)\+\%$//e
+
+    " remove double next line
+    execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
+
+endfunction
 " ===========================================
 " C/C++ Function
 " ===========================================
