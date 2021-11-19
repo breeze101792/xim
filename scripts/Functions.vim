@@ -147,6 +147,21 @@ endfunc
 " -------------------------------------------
 "  Tags
 " -------------------------------------------
+command! -nargs=? Title :call <SID>Title(<q-args>)
+function! s:Title(fun_name)
+    let g:IDE_ENV_IDE_TITLE=a:fun_name
+    if version >= 802
+        redrawtabline
+    else
+        " old version didn't have redrawtabline
+        " so use redraw all for it
+        redraw!
+    endif
+endfunc
+
+" -------------------------------------------
+"  Tags
+" -------------------------------------------
 command! TagUpdate call TagUpdate()
 
 func! TagUpdate()
@@ -155,30 +170,37 @@ endfunc
 " -------------------------------------------
 "  Beautify Remove trailing space
 " -------------------------------------------
+command! -range TrimRepeatedSpace <line1>,<line2>call TrimRepeatedSpace()
+function! TrimRepeatedSpace() range
+    " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
+    silent! execute a:firstline.','.a:lastline.'s/\s\+/ /g'
+    silent! execute a:firstline.','.a:lastline.'s/\s\+$//g'
+endfunction
+
 command! -range TrimTrailingSpace <line1>,<line2>call TrimTrailingSpace()
 function! TrimTrailingSpace() range
     " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
-    execute a:firstline.','.a:lastline.'s/\s\+$//g'
+    silent! execute a:firstline.','.a:lastline.'s/\s\+$//g'
 endfunction
 
 command! -range TrimEmptyLine <line1>,<line2>call TrimEmptyLine()
 function! TrimEmptyLine() range
     " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
     " execute a:firstline.','.a:lastline.'s/\n\{2,\}/\n/g'
-    execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
+    silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
 endfunction
 
 command! -range Beautify <line1>,<line2>call Beautify()
 function! Beautify() range
 
     " remove the trailing space
-    execute a:firstline.','.a:lastline.'s/\s\+$//e'
+    silent! execute a:firstline.','.a:lastline.'s/\s\+$//e'
 
     " Remove empty lines with space
     " execute a:firstline.','.a:lastline. :%s/\($\n\s*\)\+\%$//e
 
     " remove double next line
-    execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
+    silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
 
 endfunction
 " ===========================================

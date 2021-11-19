@@ -1,3 +1,5 @@
+" Golobal ENV
+let g:IDE_ENV_IDE_TITLE = "VIM"
 " Buffer Env 
 " let b:IDE_ENV_CURRENT_FUNC = ""
 " let b:IDE_ENV_GIT_BRANCH = ""

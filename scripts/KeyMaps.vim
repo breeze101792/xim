@@ -80,7 +80,7 @@ nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 
 " Refresh all
-nmap <F5> :redraw<CR>
+nmap <F5> :redraw!<CR>
 
 " toggle maximize
 nnoremap <C-W>M <C-W>\| <C-W>_

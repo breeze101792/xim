@@ -23,7 +23,7 @@ set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 " set redrawtime=10000
 
 ""   regexp
-set gdefault                     " RegExp global by default
+" set gdefault                     " RegExp global by default, will add g in the sed
 set magic                        " Enable extended regexes.
 
 ""    Others
@@ -41,7 +41,7 @@ set showmatch                                     " show the matching part of th
 set backspace=indent,eol,start                    " when press backspace
 set undolevels=999                                " More undo (default=100)
 set linebreak                                     " Avoid wrapping a line in the middle of a word.
-set wrap                                          " Enable line wrapping.
+" set wrap                                          " Enable line wrapping.
 " set virtualedit=block                           " in visal mode can select empty space
 
 
@@ -126,9 +126,10 @@ if $CCTREE_DB != ''
 endif
 
 " Folding
-set foldmethod=indent  " can be set to syntax, indent, manual
-set foldnestmax=3      " Only fold up to three nested levels.
+set foldmethod=indent " can be set to syntax, indent, manual
+set foldnestmax=10    " Only fold up to three nested levels.
 set foldlevel=99
+" set foldminlines=3    " show the min line of folded code
 set nofoldenable
 
 " OmniCppComplete
@@ -161,14 +162,16 @@ set completeopt+=longest
 " set completeopt+=preview  " complete menu use list insdead of window, this will move main window(stable-window may fix)
 
 " Status/Command
-set showcmd                 " show partial command on last line of screen.
-set cmdheight=1             " Command line height
-set ruler                   " enable status bar ruler
-set laststatus=2            " status bar height
+set showcmd      " show partial command on last line of screen.
+set cmdheight=1  " Command line height
+set laststatus=2 " status bar height
+set shortmess=aO  " option to avoid hit enter, a for all, O for overwrite when reading file
+set ruler        " enable status bar ruler
 " set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
 
 " Other settings
-set mouse=c
+" use group to set it
+" set mouse=c
 " set mouse=a
 " set paste
 
@@ -181,7 +184,7 @@ if version >= 802
     set cursorlineopt=number " only line number will be highlighted, dosen't
 endif
 
-" split separator
+" Windows fill chars
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
 
@@ -202,7 +205,11 @@ set fillchars+=vert:│
 autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
 
 " set mouse mode when exit
-autocmd VimLeave * :set mouse=c
+augroup mouse_gp
+    autocmd!
+    autocmd VimEnter * :set mouse=c
+    autocmd VimLeave * :set mouse=c
+augroup END
 
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

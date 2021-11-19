@@ -24,9 +24,10 @@ let g:lightline = {
             \     'filename'        : 'LightlineFilename',
             \     'CurrentFunction' : 'LightlineFuncName',
             \     'gitinfo'         : 'LightlineGitInfo',
+            \     'title'           : 'LightlineTitle',
             \ },
             \ 'tabline'             : {
-            \     'left'            : [['tabs']],
+            \     'left'            : [['title'], ['tabs']],
             \     'right'           : [['bufnum'], ['gitinfo'] ]
             \ },
             \ }
@@ -35,6 +36,10 @@ if g:IDE_CFG_SPECIAL_CHARS == "y"
     let g:lightline.separator = { 'left': '', 'right': '' }
     let g:lightline.subseparator = {'left': '', 'right': '' }
 endif
+
+function! LightlineTitle()
+    return winwidth(0) < 70 ? '' : g:IDE_ENV_IDE_TITLE
+endfunction
 
 function! LightlineFuncName()
     let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")

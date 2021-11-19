@@ -28,7 +28,7 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/tabular', { 'on':  ['Tabularize'] }
     Plug '~/.vim/plugins/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
-    " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer', 'BufExplorer'] }
+    Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -38,7 +38,7 @@ else
     Plug '~/.vim/plugins/tabular'
     Plug '~/.vim/plugins/vim-bookmarks'
     Plug '~/.vim/plugins/ctrlp'
-    " Plug '~/.vim/plugins/bufexplorer'
+    Plug '~/.vim/plugins/syntastic'
 endif
 
 
@@ -63,14 +63,12 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/vim-mark', { 'on':  [] }
     Plug '~/.vim/plugins/vim-surround', { 'on':  [] }
     Plug '~/.vim/plugins/gitgutter', { 'on':  [] }
-    Plug '~/.vim/plugins/syntastic', { 'on':  [] }
 else
     Plug '~/.vim/plugins/supertab'
     Plug '~/.vim/plugins/vim-multiple-cursors'
     Plug '~/.vim/plugins/vim-mark'
     Plug '~/.vim/plugins/vim-surround'
     Plug '~/.vim/plugins/gitgutter'
-    Plug '~/.vim/plugins/syntastic'
 endif
 
 " Initialize plugin system
@@ -85,7 +83,7 @@ function! DealyLoading(timer) abort
     call plug#load('vim-multiple-cursors')
     call plug#load('vim-mark')
     call plug#load('vim-surround')
-    call plug#load('syntastic')
+    " call plug#load('syntastic')
     call plug#load('gitgutter')
     : GitGutterEnable
 endfunction
