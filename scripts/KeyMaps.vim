@@ -37,6 +37,7 @@ nnoremap <leader>qa :qa<CR>
 nnoremap <leader>q :q<CR>
 nnoremap <leader>qq :q!<CR>
 nnoremap <leader>wqa :wqa<CR>
+nnoremap qq :q!<CR>
 
 " Toggle Hex Mode
 nmap <Leader>h :HexToggle<CR>
