@@ -1,5 +1,10 @@
 # Note about using VIM
 
+## update subproject
+```
+git submodule foreach git pull origin master
+git submodule foreach git reset --hard origin/master
+```
 ## Remove subproject
 1. Delete the relevant section from the .gitmodules file.
 2. Stage the .gitmodules changes:
