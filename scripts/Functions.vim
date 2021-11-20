@@ -145,7 +145,7 @@ func! ClipOpen()
 endfunc
 
 " -------------------------------------------
-"  Tags
+"  Title
 " -------------------------------------------
 command! -nargs=? Title :call <SID>Title(<q-args>)
 function! s:Title(fun_name)
@@ -203,71 +203,39 @@ function! Beautify() range
     silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
 
 endfunction
-" ===========================================
-" C/C++ Function
-" ===========================================
+
 " -------------------------------------------
-"  C Function
+"  Duplicate Function
 " -------------------------------------------
-command! -nargs=? CFun :call <SID>CFun(<q-args>)
-function! s:CFun(fun_name)
-    let l:indent = repeat(' ', indent('.'))
-    let l:tmpl=a:fun_name
-    if l:tmpl == ""
-        let l:tmpl="function_name"
-    endif
-    let l:text = [
-                \ "u32retCode = <TMPL>;",
-                \ "if (u32retCode != TRUE)",
-                \ "{",
-                \ "    printf(\"Fail to call <TMPL>. Return Code:%u\\n\", __func__, __LINE__, u32retCode);",
-                \ "    return u32retCode;",
-                \ "}",
-                \ ""
-                \ ]
-    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+command! -range -nargs=?  DuplicateLine <line1>,<line2>call DuplicateLine(<q-args>)
+function! DuplicateLine(times = 1) range
+    let l:counter = 0
+    let l:selectedlines = getline(a:firstline, a:lastline)
+    let l:text = [ ]
+
+    while l:counter < a:times
+        " call append('.', l:selectedlines)
+        call extend(l:text, l:selectedlines)
+        let l:counter += 1
+    endwhile
     call append('.', l:text)
+    echo 'Duplicate text '.a:times.' times done.'
 endfunction
+
 " -------------------------------------------
-"  C Printf
+"  Generate num seq
 " -------------------------------------------
-command! -nargs=? CPrintf :call <SID>CPrintf(<q-args>)
-command! CPrintf :call <SID>CPrintf("")
-function! s:CPrintf(content)
-    let l:indent = repeat(' ', indent('.'))
-    let l:tmpl=a:content
-    if l:tmpl == ""
-        let l:tmpl="message"
-    endif
-    let l:text = [
-                \ "printf(\"[Debug %s,%d] <TMPL> \\n\", __func__, __LINE__);",
-                \ ""
-                \ ]
-    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+command! -nargs=*  GenerateNumSeq call GenerateNumSeq(<f-args>)
+function! GenerateNumSeq(end, start=1)
+    let l:counter = a:start
+    let l:selectedlines = getline(a:firstline, a:lastline)
+    let l:text = [ ]
+
+    while l:counter <= a:end
+        call add(l:text, l:counter)
+        let l:counter += 1
+    endwhile
     call append('.', l:text)
-endfunction
-" ===========================================
-" Python Function
-" ===========================================
-" -------------------------------------------
-"  Python Prop
-" -------------------------------------------
-command! -nargs=? PyProp :call <SID>PyProp(<q-args>)
-command! PyProp :call <SID>PyProp("python_prop")
-function! s:PyProp(property)
-    let l:indent = repeat(' ', indent('.'))
-    let l:tmpl=a:property
-    if l:tmpl == ""
-        let l:tmpl="py_prop"
-    endif
-    let l:text = [
-        \ '@property',
-        \ 'def <TMPL>(self):',
-        \ '    return self.<TMPL>',
-        \ '@property.setter',
-        \ '    def <TMPL>(self,val):',
-        \ '        self._<TMPL> = val'
-    \ ]
-    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
-    call append('.', l:text)
+    echo 'Generate num from '.a:start.' to '.a:end
+
 endfunction
