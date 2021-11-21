@@ -1,5 +1,8 @@
 # Note about using VIM
 
+## vim script note
+http://vimdoc.sourceforge.net/htmldoc/usr_41.html
+
 ## update subproject
 ```
 git submodule foreach git pull origin master
