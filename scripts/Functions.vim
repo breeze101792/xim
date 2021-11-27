@@ -135,6 +135,7 @@ command! ClipRead call ClipRead()
 
 func! ClipRead()
     let @c = system('cat ${HOME}/.vim/clip')
+    echo 'Read '.@c.'to reg c'
 endfunc
 
 command! ClipOpen call ClipOpen()
@@ -208,12 +209,17 @@ endfunction
 "  Duplicate Function
 " -------------------------------------------
 command! -range -nargs=?  DuplicateLine <line1>,<line2>call DuplicateLine(<q-args>)
-function! DuplicateLine(times = 1) range
+function! DuplicateLine(times) range
     let l:counter = 0
     let l:selectedlines = getline(a:firstline, a:lastline)
     let l:text = [ ]
+    let tmp_times=a:times
 
-    while l:counter < a:times
+    if l:tmp_times == ""
+        let l:tmp_times=1
+    endif
+
+    while l:counter < l:tmp_times
         " call append('.', l:selectedlines)
         call extend(l:text, l:selectedlines)
         let l:counter += 1
@@ -226,16 +232,54 @@ endfunction
 "  Generate num seq
 " -------------------------------------------
 command! -nargs=*  GenerateNumSeq call GenerateNumSeq(<f-args>)
-function! GenerateNumSeq(end, start=1)
-    let l:counter = a:start
+function! GenerateNumSeq(...)
+    let l:start=1
+    let l:num=5
+
+    if a:0 == 1
+        let l:num=a:1
+    elseif a:0 == 2
+        echo a:1.','.a:2.','.a:0
+        let l:num=a:2
+        let l:start=a:1
+    endif
+
+    let l:counter = l:start
     let l:selectedlines = getline(a:firstline, a:lastline)
     let l:text = [ ]
 
-    while l:counter <= a:end
+    if l:counter == ""
+        let l:counter=1
+    endif
+
+    while l:counter < l:num + l:start
         call add(l:text, l:counter)
         let l:counter += 1
     endwhile
     call append('.', l:text)
-    echo 'Generate num from '.a:start.' to '.a:end
+    echo 'Generate num from '.l:start.' to '.l:num
 
+endfunction
+
+" -------------------------------------------
+"  Repeat text
+" -------------------------------------------
+command! -nargs=* RepeatText call RepeatText(<f-args>)
+function! RepeatText(text, times)
+    let l:counter = 0
+    let l:selectedlines = a:text
+    let l:text = ""
+    let tmp_times=a:times
+
+    if l:tmp_times == ""
+        let l:tmp_times=1
+    endif
+
+    while l:counter < l:tmp_times
+        " call append(l:text, l:selectedlines)
+        let l:text = l:text.l:selectedlines
+        let l:counter += 1
+    endwhile
+    call append('.', l:text)
+    echo 'Repeate text '.a:times.' times done.'
 endfunction

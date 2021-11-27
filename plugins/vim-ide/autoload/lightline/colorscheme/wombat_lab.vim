@@ -45,7 +45,7 @@ let s:p.normal.warning  = [ [ s:gray023, s:yellow ] ]
 
 "" Table line
 " Formate ["Foreground", "Barckground"]
-let s:p.tabline.left    = [ [ s:gray3, s:gray00 ] ]
+let s:p.tabline.left    = [ [ s:gray02, s:yellow, 'bold' ] ]
 let s:p.tabline.tabsel  = [ [ s:gray02, s:blue ] ]
 let s:p.tabline.middle  = [ [ s:gray2, s:gray02 ] ]
 let s:p.tabline.right   = [ [ s:gray02, s:blue ], [ s:gray3, s:gray01 ] ]

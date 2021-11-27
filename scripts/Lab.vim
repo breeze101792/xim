@@ -6,39 +6,6 @@
 "     let &t_SI = "\<Esc>]50;CursorShape=1\x7"
 "     let &t_EI = "\<Esc>]50;CursorShape=0\x7"
 " endif
-
-" -------------------------------------------
-"  Test
-" -------------------------------------------
-function! Test() range
-    :'<,'> %s/\s\+$//e
-endfunction
-command! Test call Test()
-
-" function! SuperTab()
-"   let l:part = strpart(getline('.'),col('.')-2,1)
-"   if (l:part =~ '^\W\?$')
-"       return "\<Tab>"
-"   else
-"       return "\<C-n>"
-"   endif
-" endfunction
-
-" imap <Tab> <C-R>=SuperTab()<CR>
-" -------------------------------------------
-"  Test
-" -------------------------------------------
-function! Test() range
-    s/\s\+$//g
-endfunction
-command! Test call Test()
-" -------------------------------------------
-"  PVupdate
-" -------------------------------------------
-function! Pvupdate()
-    :silent !pvupdate
-endfunction
-command! Pvupdate call Pvupdate()
 " -------------------------------------------
 "  DisplayColorSchemes
 " -------------------------------------------
