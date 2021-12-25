@@ -104,10 +104,10 @@ nnoremap <silent> <C-m> :MouseToggle<CR>
 " t: Find this text string
 nnoremap <silent>ca :cscope find a <cword><CR>
 nnoremap <silent>cc :cscope find c <cword><CR>
-nnoremap <silent>cl :cscope find d <cword><CR>
+nnoremap <silent>cd :cscope find d <cword><CR>
 nnoremap <silent>ce :cscope find e <cword><CR>
 nnoremap <silent>cf :cscope find f <cword><CR>
-nnoremap <silent>cd :cscope find g <cword><CR>
+nnoremap <silent>cg :cscope find g <cword><CR>
 nnoremap <silent>ci :cscope find i <cword><CR>
 nnoremap <silent>cs :cscope find s <cword><CR>
 nnoremap <silent>ct :cscope find t <cword><CR>

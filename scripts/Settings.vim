@@ -72,7 +72,7 @@ set directory=~/.vim/swp//
 " set nobackup                                    " no backup when overright
 " set backupdir=~/.vim/backup//
 " set autoread                                    " reload files if changed externally
-set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.o,*.a
+set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.o,*.a,*.d
 
 ""    clipboard options
 set clipboard=unnamed                             " Access system clipboard

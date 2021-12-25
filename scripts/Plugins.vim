@@ -47,8 +47,8 @@ endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " TODO add file type loading
 if plugin_debug == 0
-    Plug '~/.vim/plugins/OmniCppComplete', { 'for':  'cpp' }
-    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  'cpp' }
+    Plug '~/.vim/plugins/OmniCppComplete', { 'for':  ['cpp', 'c'] }
+    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  ['cpp', 'c'] }
 else
     Plug '~/.vim/plugins/OmniCppComplete'
     Plug '~/.vim/plugins/vim-cpp-enhanced-highlight'

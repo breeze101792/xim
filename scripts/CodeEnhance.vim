@@ -1,5 +1,48 @@
 " CodeEnhance Settings
 " ===========================================
+" Shell Function
+" ===========================================
+" -------------------------------------------
+"  Shell Function
+" -------------------------------------------
+command! -nargs=? SHIf :call <SID>SHIf(<q-args>)
+function! s:SHIf(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="var_tmp"
+    endif
+    let l:text = [
+                \ "if [ \"${<TMPL>}\" = \"value\" ]",
+                \ "then",
+                \ "    echo \"<TMPL>: ${<TMPL>}\"",
+                \ "fi",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+" -------------------------------------------
+"  Shell Parentheses
+" -------------------------------------------
+command! -nargs=? SHParentheses :call <SID>SHParentheses(<q-args>)
+function! s:SHParentheses(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    let l:ctmp=expand('<cword>')
+    if l:tmpl == "" && l:ctmp != ""
+        let l:tmpl=l:ctmp
+    elseif l:tmpl == ""
+        let l:tmpl="var_tmp"
+    endif
+    let l:text = [
+                \ "\"${<TMPL>}\""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+" ===========================================
 " C/C++ Function
 " ===========================================
 " -------------------------------------------
@@ -37,6 +80,26 @@ function! s:CPrintf(content)
     endif
     let l:text = [
                 \ "printf(\"[Debug %s,%d] <TMPL> \\n\", __func__, __LINE__);",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+" -------------------------------------------
+"  C Macro if
+" -------------------------------------------
+command! -nargs=? CMIf :call <SID>CMIf(<q-args>)
+command! CMIf :call <SID>CMIf("")
+function! s:CMIf(content)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:content
+    if l:tmpl == ""
+        let l:tmpl="MACRO_DEF"
+    endif
+    let l:text = [
+                \ "#if defined(<TMPL>) && (<TMPL> == value)",
+                \ "#else // <TMPL>  Else",
+                \ "#endif // <TMPL> End",
                 \ ""
                 \ ]
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
