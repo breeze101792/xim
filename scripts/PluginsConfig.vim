@@ -109,7 +109,7 @@ let g:ctrlp_root_markers = ['Makefile', 'Android.mk', 'Android.bp', '.git', 'csc
 let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
 " while using user command, ignore will not work
-let g:ctrlp_user_command = ['.git', "cd %s && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$"]
+let g:ctrlp_user_command = ['.git', "cd %s && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
 
 " unlet g:ctrlp_custom_ignore
 let g:ctrlp_custom_ignore = {
