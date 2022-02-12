@@ -122,8 +122,8 @@ function! s:PyProp(property)
     let l:text = [
         \ '@property',
         \ 'def <TMPL>(self):',
-        \ '    return self.<TMPL>',
-        \ '@property.setter',
+        \ '    return self._<TMPL>',
+        \ '@<TMPL>.setter',
         \ '    def <TMPL>(self,val):',
         \ '        self._<TMPL> = val'
     \ ]
