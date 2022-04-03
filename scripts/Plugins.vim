@@ -29,6 +29,7 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
     Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
+    Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -39,6 +40,7 @@ else
     Plug '~/.vim/plugins/vim-bookmarks'
     Plug '~/.vim/plugins/ctrlp'
     Plug '~/.vim/plugins/syntastic'
+    Plug '~/.vim/plugins/Colorizer'
 endif
 
 

@@ -65,3 +65,7 @@
 	path = plugins/bufexplorer
 	url = https://github.com/jlanzarotta/bufexplorer.git
 	branch = master
+[submodule "plugins/Colorizer"]
+	path = plugins/Colorizer
+	url = https://github.com/chrisbra/Colorizer.git
+	branch = master

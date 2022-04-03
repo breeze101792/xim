@@ -39,7 +39,7 @@ Starup time measure
 vim -X --startuptime startup.log
 ```
 
-## Binary Editor
+## Filter command
 Convert binary to hex mode
 ```
 :%!xxd
@@ -49,6 +49,11 @@ Convert back binary from hex mode
 ! -> represent fileter command
 ```
 :%!xxd -r
+```
+
+Do shell command as new input file
+```
+:r[ead]! ls -al
 ```
 
 ## Profiling
