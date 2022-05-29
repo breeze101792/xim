@@ -140,7 +140,11 @@ let g:cpp_concepts_highlight = 1
 " mc	:BookmarkClear
 " mx	:BookmarkClearAll
 let g:bookmark_auto_save = 0
-let g:bookmark_sign = '⚑'
+if g:IDE_CFG_SPECIAL_CHARS == "y"
+    let g:bookmark_sign = '⚑'
+else
+    let g:bookmark_sign = '*'
+endif
 let g:bookmark_highlight_lines = 1
 " autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
 

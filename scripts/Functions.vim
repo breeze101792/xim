@@ -283,3 +283,21 @@ function! RepeatText(text, times)
     call append('.', l:text)
     echo 'Repeate text '.a:times.' times done.'
 endfunction
+" -------------------------------------------
+"  DisplayColorSchemes
+" -------------------------------------------
+function! DisplayColorSchemes()
+   let currDir = getcwd()
+   exec "cd $VIMRUNTIME/colors"
+   for myCol in split(glob("*"), '\n')
+      if myCol =~ '\.vim'
+         let mycol = substitute(myCol, '\.vim', '', '')
+         exec "colorscheme " . mycol
+         exec "redraw!"
+         echo "colorscheme = ". myCol
+         sleep 2
+      endif
+   endfor
+   exec "cd " . currDir
+endfunction
+command! Dcs call DisplayColorSchemes()

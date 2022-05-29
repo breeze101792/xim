@@ -88,10 +88,15 @@ set shiftwidth=4                                  " When shifting, indent using 
 set smarttab                                      " Insert tabstop number of spaces when the tab key is pressed.
 
 " show special char
+if g:IDE_CFG_SPECIAL_CHARS == "y"
+    set showbreak=↪\
+    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+else
+    set showbreak=→\
+    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+endif
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
-set showbreak=↪\
-set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
 " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
 
@@ -207,7 +212,8 @@ autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '
 " set mouse mode when exit
 augroup mouse_gp
     autocmd!
-    autocmd VimEnter * :set mouse=c
+    " autocmd VimEnter * :set mouse=c
+    autocmd BufReadPost * :set mouse=c
     autocmd VimLeave * :set mouse=c
 augroup END
 

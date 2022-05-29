@@ -84,16 +84,16 @@ function setup()
     mkdir -p $VIM_ROOT/autoload/
     mkdir -p $VIM_ROOT/swp/
     ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
-    touch $VIM_ROOT/Config_Customize.vim
-    setup_temp_config
+    setup_cus_config
 
     echo "Don't forget to init submodule."
 
 }
-function setup_temp_config()
+function setup_cus_config()
 {
-    cat scripts/Config.vim | grep let | grep "\"n\"" | sed 's/get.*/"n"/g' > $VIM_ROOT/Config_TEMP.vim
-    cat scripts/Config.vim | grep let | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_TEMP.vim
+    touch $VIM_ROOT/Config_Customize.vim
+    cat scripts/Config.vim | grep let | grep "\"n\"" | sed 's/get.*/"n"/g' > $VIM_ROOT/Config_Customize.vim
+    cat scripts/Config.vim | grep let | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_Customize.vim
 }
 function setup_after()
 {
@@ -171,7 +171,7 @@ function main()
     fi
     if [ "${flag_temp_config}" = "y" ]
     then
-        setup_temp_config
+        setup_cus_config
     fi
 
 }
