@@ -72,6 +72,7 @@ function setup()
     mkdir $VIM_ROOT
     ln -sf $IDE_ROOT/vim-ide.vim $VIM_ROOT/
     ln -sf $IDE_ROOT/scripts $VIM_ROOT/vim-ide
+    ln -sf $IDE_ROOT/tools $VIM_ROOT/tools
 
     if [ ${flag_ln_all_plugins} = true ]
     then
@@ -82,6 +83,7 @@ function setup()
     fi
 
     mkdir -p $VIM_ROOT/autoload/
+    mkdir -p $VIM_ROOT/colors/
     mkdir -p $VIM_ROOT/swp/
     ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
     setup_cus_config

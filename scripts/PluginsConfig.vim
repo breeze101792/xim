@@ -6,7 +6,24 @@
 
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme afterglow_lab
+if g:IDE_CFG_CACHED_COLORSCHEME == "y"
+    try
+        " use generated color scheme to accerate start up speed
+        colorscheme autogen
+    catch /^Vim\%((\a\+)\)\=:E185/
+        try
+            colorscheme afterglow_lab
+        catch /^Vim\%((\a\+)\)\=:E185/
+            colorscheme desert
+        endtry
+    endtry
+else
+    try
+        colorscheme afterglow_lab
+    catch /^Vim\%((\a\+)\)\=:E185/
+        colorscheme desert
+    endtry
+endif
 
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""

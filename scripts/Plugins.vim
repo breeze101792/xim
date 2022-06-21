@@ -80,12 +80,13 @@ call plug#end()
 """"    Delay Loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! DealyLoading(timer) abort
+    " no reshape
+    call plug#load('vim-surround')
+
     " load plugins
     call plug#load('supertab')
     call plug#load('vim-multiple-cursors')
     call plug#load('vim-mark')
-    call plug#load('vim-surround')
-    " call plug#load('syntastic')
     call plug#load('gitgutter')
     : GitGutterEnable
 endfunction

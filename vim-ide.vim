@@ -1,3 +1,10 @@
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Pre initialize
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Post initialize
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Source needed scripts
 if !empty(glob("~/.vim/Config_Customize.vim"))
     so ~/.vim/Config_Customize.vim
@@ -18,4 +25,11 @@ elseif version < 704
     so ~/.vim/vim-ide/Config.vim
     so ~/.vim/vim-ide/Settings.vim
     so ~/.vim/vim-ide/KeyMaps.vim
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Post initialize
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
+    silent! so ~/.vim/tools/save_colorscheme.vim
 endif

@@ -301,3 +301,10 @@ function! DisplayColorSchemes()
    exec "cd " . currDir
 endfunction
 command! Dcs call DisplayColorSchemes()
+" -------------------------------------------
+"  GenerateColorScheme
+" -------------------------------------------
+function! GenerateColorScheme()
+    silent! so ~/.vim/tools/save_colorscheme.vim
+endfunction
+command! GenerateColorScheme call GenerateColorScheme()
