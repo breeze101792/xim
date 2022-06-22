@@ -51,3 +51,4 @@ endfunction
 "   exe "split " . g:lastWinName
 " endfunction
 " command -nargs=0 LastWindow call LastWindow()
+"
