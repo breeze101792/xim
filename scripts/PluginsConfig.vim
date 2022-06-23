@@ -6,53 +6,70 @@
 
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-if g:IDE_CFG_CACHED_COLORSCHEME == "y"
-    try
-        " use generated color scheme to accerate start up speed
-        colorscheme autogen
-    catch /^Vim\%((\a\+)\)\=:E185/
-        try
-            colorscheme afterglow_lab
-        catch /^Vim\%((\a\+)\)\=:E185/
-            colorscheme desert
-        endtry
-    endtry
-else
+try
+    " use generated color scheme to accerate start up speed
+    colorscheme autogen
+catch /^Vim\%((\a\+)\)\=:E185/
     try
         colorscheme afterglow_lab
     catch /^Vim\%((\a\+)\)\=:E185/
         colorscheme desert
     endtry
-endif
+endtry
 
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
             \ 'colorscheme'         : 'wombat_lab',
             \ 'active'              : {
-            \     'left'            : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
-            \     'right'           : [['lineinfo', 'percent'], ['fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
+            \ 'left'            : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
+            \ 'right'           : [['lineinfo', 'percent'], ['noet', 'fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
             \ },
-            \   'inactive'          : {
-            \     'left'            : [['filename']],
-            \     'right'           : [['lineinfo'], ['percent']]
+            \ 'inactive'          : {
+            \ 'left'            : [['filename']],
+            \ 'right'           : [['lineinfo'], ['percent']]
+            \ },
+            \ 'component_expand': {
+            \ 'noet': 'LightlineNoexpandtab',
             \ },
             \ 'component_function'  : {
-            \     'filename'        : 'LightlineFilename',
-            \     'CurrentFunction' : 'LightlineFuncName',
-            \     'gitinfo'         : 'LightlineGitInfo',
-            \     'title'           : 'LightlineTitle',
+            \ 'filename'        : 'LightlineFilename',
+            \ 'CurrentFunction' : 'LightlineFuncName',
+            \ 'gitinfo'         : 'LightlineGitInfo',
+            \ 'title'           : 'LightlineTitle',
             \ },
             \ 'tabline'             : {
-            \     'left'            : [['title'], ['tabs']],
-            \     'right'           : [['bufnum'], ['gitinfo'] ]
+            \ 'left'            : [['title'], ['tabs']],
+            \ 'right'           : [['bufnum'], ['gitinfo'] ]
+            \ },
+            \ 'mode_map' : {
+            \ 'n' : 'N',
+            \ 'i' : 'I',
+            \ 'R' : 'R',
+            \ 'v' : 'V',
+            \ 'V' : 'V-LINE',
+            \ 'c' : 'C',
+            \ 's' : 'S',
+            \ 'S' : 'S-LINE',
+            \ 't' : 'T',
+            \ "\<C-v>": 'V-BLOCK',
+            \ "\<C-s>": 'S-BLOCK',
             \ },
             \ }
+
+        " \ 'component_type': {
+        " \   'paste': 'warning',
+        " \   'noet': 'error',
+        " \ },
 
 if g:IDE_CFG_SPECIAL_CHARS == "y"
     let g:lightline.separator = { 'left': '', 'right': '' }
     let g:lightline.subseparator = {'left': '', 'right': '' }
 endif
+
+function! LightlineNoexpandtab()
+  return &expandtab ? '' : 'noet'
+endfunction
 
 function! LightlineTitle()
     return winwidth(0) < 70 ? '' : g:IDE_ENV_IDE_TITLE

@@ -54,7 +54,7 @@ function setup()
     echo $VIM_BAK_ROOT
     if [ -d $VIM_ROOT ]
     then
-        mv $VIM_ROOT $VIM_BAK_ROOT
+        cp -rf $VIM_ROOT $VIM_BAK_ROOT
     fi
     # if [ -e $HOME/.vimrc ]
     # then
@@ -69,7 +69,7 @@ function setup()
         echo "so ~/.vim/vim-ide.vim" >> ~/.vimrc
     fi
 
-    mkdir $VIM_ROOT
+    test -d $VIM_ROOT || mkdir $VIM_ROOT
     ln -sf $IDE_ROOT/vim-ide.vim $VIM_ROOT/
     ln -sf $IDE_ROOT/scripts $VIM_ROOT/vim-ide
     ln -sf $IDE_ROOT/tools $VIM_ROOT/tools
@@ -94,8 +94,18 @@ function setup()
 function setup_cus_config()
 {
     touch $VIM_ROOT/Config_Customize.vim
-    cat scripts/Config.vim | grep let | grep "\"n\"" | sed 's/get.*/"n"/g' > $VIM_ROOT/Config_Customize.vim
-    cat scripts/Config.vim | grep let | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_Customize.vim
+    for each_config in $(cat scripts/Config.vim | grep let | cut -d ':' -f 2 | cut -d '=' -f 1)
+    do
+        # echo "Checking ${each_config}"
+        if cat $VIM_ROOT/Config_Customize.vim | grep ${each_config} > /dev/null
+        then
+            echo "Skip config ${each_config}, already exist"
+        else
+            echo "Adding config ${each_config}"
+            cat scripts/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> $VIM_ROOT/Config_Customize.vim
+            cat scripts/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_Customize.vim
+        fi
+    done
 }
 function setup_after()
 {
