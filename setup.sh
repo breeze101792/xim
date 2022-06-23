@@ -16,6 +16,32 @@ function plugins_check()
     done
     echo "Check plugins: ${var_check}"
 }
+function compre_colorscheme()
+{
+    # bash colorscheme_check.sh ~/.vim/colors/autogen.vim plugins/vim-ide/colors/afterglow_lab.vim
+    local var_ref_scheme=$1
+    local var_target_scheme=$2
+    # for unlink target
+    for each_label in $(cat ${var_ref_scheme} | grep hi | grep -v link | cut -d ' ' -f 2)
+    do
+        # echo ${each_label}
+        if ! cat ${var_target_scheme} | grep ${each_label} > /dev/null
+        then
+            echo "${each_label} is missing"
+        fi
+    done
+
+    # for link target
+    for each_label in $(cat ${var_ref_scheme} | grep hi | grep link | cut -d ' ' -f 3)
+    do
+        # echo ${each_label}
+        if ! cat ${var_target_scheme} | grep ${each_label} > /dev/null
+        then
+            echo "link ${each_label} is missing"
+        fi
+    done
+
+}
 function ycm()
 {
     echo "Setup plugins"
@@ -128,7 +154,8 @@ function main()
     local flag_setup="n"
     local flag_ccglue="n"
     local flag_ycm="n"
-    local flag_plugins="n"
+    local flag_plugins_check="n"
+    local flag_compre_colorscheme="n"
     local flag_temp_config="n"
     while [[ "$#" != 0 ]]
     do
@@ -136,8 +163,11 @@ function main()
             -s|--setup)
                 flag_setup="y"
                 ;;
-            -p|--plugins)
-                flag_plugins="y"
+            -p|--plugins-check)
+                flag_plugins_check="y"
+                ;;
+            -cc|--colorscheme-compare)
+                flag_compre_colorscheme="y"
                 ;;
             -c|--ccglue)
                 flag_ccglue="y"
@@ -151,7 +181,8 @@ function main()
             -h|--help)
                 echo "VIM IDE Setup Tool"
                 printf  "    %s ->%s \n" "-s|--setup" "Setup up vim ide"
-                printf  "    %s ->%s \n" "-p|--plugins)" "Check plugins with Plugins.vim"
+                printf  "    %s ->%s \n" "-p|--plugins-check)" "Check plugins with Plugins.vim"
+                printf  "    %s ->%s \n" "-cc|--colorscheme-compare)" "Compare two different color scheme and export missing one"
                 printf  "    %s ->%s \n" "-c|--ccglue)" "Download ccglue"
                 printf  "    %s ->%s \n" "-y|--ycm" "Download ycm plugin"
                 printf  "    %s ->%s \n" "-t|--temp-config" "Setup temp config"
@@ -169,9 +200,13 @@ function main()
         setup
         # setup_after
     fi
-    if [ "${flag_plugins}" = "y" ]
+    if [ "${flag_plugins_check}" = "y" ]
     then
         plugins_check
+    fi
+    if [ "${flag_compre_colorscheme}" = "y" ]
+    then
+        compre_colorscheme
     fi
     if [ "${flag_ccglue}" = "y" ]
     then

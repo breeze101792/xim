@@ -13,7 +13,7 @@ catch /^Vim\%((\a\+)\)\=:E185/
     try
         colorscheme afterglow_lab
     catch /^Vim\%((\a\+)\)\=:E185/
-        colorscheme desert
+        colorscheme vimdefault
     endtry
 endtry
 
