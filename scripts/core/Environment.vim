@@ -23,8 +23,9 @@ func! IDE_UpdateEnv_BufOpen()
     let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
 endfunc
 
-autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
-" autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
-autocmd BufReadPost * :call IDE_UpdateEnv_BufOpen()
-
-
+augroup environment_gp
+    autocmd!
+    autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
+    " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
+    autocmd BufReadPost * :call IDE_UpdateEnv_BufOpen()
+augroup END

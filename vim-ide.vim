@@ -10,21 +10,23 @@ if !empty(glob("~/.vim/Config_Customize.vim"))
     so ~/.vim/Config_Customize.vim
 endif
 
+so ~/.vim/vim-ide/core/Config.vim
+so ~/.vim/vim-ide/core/Environment.vim
+so ~/.vim/vim-ide/core/Settings.vim
+so ~/.vim/vim-ide/core/KeyMaps.vim
+
+" utility function related
+so ~/.vim/vim-ide/utility/Functions.vim
+so ~/.vim/vim-ide/utility/CodeEnhance.vim
+so ~/.vim/vim-ide/utility/Lab.vim
+so ~/.vim/vim-ide/utility/Template.vim
+
 if version >= 704
-    so ~/.vim/vim-ide/Config.vim
-    so ~/.vim/vim-ide/Environment.vim
-    so ~/.vim/vim-ide/Settings.vim
-    so ~/.vim/vim-ide/Functions.vim
-    so ~/.vim/vim-ide/CodeEnhance.vim
-    so ~/.vim/vim-ide/Plugins.vim
-    so ~/.vim/vim-ide/PluginsConfig.vim
-    so ~/.vim/vim-ide/KeyMaps.vim
-    so ~/.vim/vim-ide/Lab.vim
-    so ~/.vim/vim-ide/Template.vim
-elseif version < 704
-    so ~/.vim/vim-ide/Config.vim
-    so ~/.vim/vim-ide/Settings.vim
-    so ~/.vim/vim-ide/KeyMaps.vim
+    " plugins related
+    so ~/.vim/vim-ide/plugin/Plugins.vim
+    so ~/.vim/vim-ide/plugin/PluginsConfig.vim
+" elseif version < 704
+" skip
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

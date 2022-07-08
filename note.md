@@ -1,5 +1,16 @@
 # Note about using VIM
 
+## Userfull commands
+Search with copied text
+
+
+Searching for a selection:
+if you want to first yank a section of a line, then use "v" and move with cursors until you have marked what you want, then press y for yank and now the selection is in register 0
+
+```
+/Ctrl-R 0
+```
+
 ## vim script note
 http://vimdoc.sourceforge.net/htmldoc/usr_41.html
 
@@ -69,6 +80,14 @@ At this point do slow actions
 :noautocmd qall!
 ```
 
+get syntime report
+```
+syntime on
+```
+do scroll
+```
+syntime report
+```
 ## Plugins
 for tag prototype hilight
 ```

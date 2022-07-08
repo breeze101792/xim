@@ -32,6 +32,9 @@ set title                        " Show the filename in the window title bar.
 set splitbelow splitright        " how to split new windows.
 " :e ++ff=unix " Show ^M windows
 
+""    Old/Compatiable options
+" set re=1 " this force vim use old rex engine
+
 
 """"    Editor Settings (inside buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -212,8 +215,8 @@ autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '
 " set mouse mode when exit
 augroup mouse_gp
     autocmd!
-    " autocmd VimEnter * :set mouse=c
-    autocmd BufReadPost * :set mouse=c
+    autocmd VimEnter * :set mouse=c
+    " autocmd BufReadPost * :set mouse=c
     autocmd VimLeave * :set mouse=c
 augroup END
 
