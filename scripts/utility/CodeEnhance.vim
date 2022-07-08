@@ -26,22 +26,32 @@ endfunction
 " -------------------------------------------
 "  Shell Parentheses
 " -------------------------------------------
-command! -nargs=? SHParentheses :call <SID>SHParentheses(<q-args>)
-function! s:SHParentheses(variable)
-    let l:indent = repeat(' ', indent('.'))
-    let l:tmpl=a:variable
-    let l:ctmp=expand('<cword>')
-    if l:tmpl == "" && l:ctmp != ""
-        let l:tmpl=l:ctmp
-    elseif l:tmpl == ""
-        let l:tmpl="var_tmp"
-    endif
-    let l:text = [
-                \ "\"${<TMPL>}\""
-                \ ]
-    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
-    call append('.', l:text)
+command! -range SHParentness <line1>,<line2>call s:SHParentness()
+function! s:SHParentness() range
+    echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
+
+    " :g/\$[0-9A-Za-z_@*]\+/ s//\${&}/g
+    " s/\${\$/\${/g
+    silent! execute a:firstline.','.a:lastline.'g/\$[0-9A-Za-z_@*]\+/ s//\${&}/g'
+    silent! execute a:firstline.','.a:lastline.'s/\${\$/\${/g'
 endfunction
+
+" command! -nargs=? SHParentheses :call <SID>SHParentheses(<q-args>)
+" function! s:SHParentheses(variable)
+"     let l:indent = repeat(' ', indent('.'))
+"     let l:tmpl=a:variable
+"     let l:ctmp=expand('<cword>')
+"     if l:tmpl == "" && l:ctmp != ""
+"         let l:tmpl=l:ctmp
+"     elseif l:tmpl == ""
+"         let l:tmpl="var_tmp"
+"     endif
+"     let l:text = [
+"                 \ "\"${<TMPL>}\""
+"                 \ ]
+"     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+"     call append('.', l:text)
+" endfunction
 " ===========================================
 " C/C++ Function
 " ===========================================

@@ -1,7 +1,7 @@
 #!/bin/bash
 IDE_ROOT=`pwd`
-VIM_ROOT=$HOME"/.vim"
-VIM_BAK_ROOT=$IDE_ROOT"/vim_bak_"$(date +%Y%m%d_%H%M%S)
+VIM_ROOT=${HOME}"/.vim"
+VIM_BAK_ROOT=${IDE_ROOT}"/vim_bak_"$(date +%Y%m%d_%H%M%S)
 function plugins_check()
 {
     local var_check="pass"
@@ -19,8 +19,8 @@ function plugins_check()
 function compre_colorscheme()
 {
     # bash colorscheme_check.sh ~/.vim/colors/autogen.vim plugins/vim-ide/colors/afterglow_lab.vim
-    local var_ref_scheme=$1
-    local var_target_scheme=$2
+    local var_ref_scheme=${1}
+    local var_target_scheme=${2}
     # for unlink target
     for each_label in $(cat ${var_ref_scheme} | grep hi | grep -v link | cut -d ' ' -f 2)
     do
@@ -77,16 +77,16 @@ function ccglue()
 function setup()
 {
     local flag_ln_all_plugins=true
-    echo $VIM_BAK_ROOT
-    if [ -d $VIM_ROOT ]
+    echo ${VIM_BAK_ROOT}
+    if [ -d ${VIM_ROOT} ]
     then
-        cp -rf $VIM_ROOT $VIM_BAK_ROOT
+        cp -rf ${VIM_ROOT} ${VIM_BAK_ROOT}
     fi
-    # if [ -e $HOME/.vimrc ]
+    # if [ -e ${HOME}/.vimrc ]
     # then
-    #     mv $HOME/.vimrc $VIM_BAK_ROOT/
+    #     mv ${HOME}/.vimrc ${VIM_BAK_ROOT}/
     # fi
-    if cat $HOME/.vimrc |grep "vim-ide.vim" > /dev/null
+    if cat ${HOME}/.vimrc |grep "vim-ide.vim" > /dev/null
     then
         echo "Vim-ide exist."
     else
@@ -95,23 +95,23 @@ function setup()
         echo "so ~/.vim/vim-ide.vim" >> ~/.vimrc
     fi
 
-    test -d $VIM_ROOT || mkdir $VIM_ROOT
-    ln -sf $IDE_ROOT/vim-ide.vim $VIM_ROOT/
-    ln -sf $IDE_ROOT/scripts $VIM_ROOT/vim-ide
-    ln -sf $IDE_ROOT/tools $VIM_ROOT/tools
+    test -d ${VIM_ROOT} || mkdir ${VIM_ROOT}
+    ln -sf ${IDE_ROOT}/vim-ide.vim ${VIM_ROOT}/
+    ln -sf ${IDE_ROOT}/scripts ${VIM_ROOT}/vim-ide
+    ln -sf ${IDE_ROOT}/tools ${VIM_ROOT}/tools
 
     if [ ${flag_ln_all_plugins} = true ]
     then
-        ln -sf $IDE_ROOT/plugins $VIM_ROOT/plugins
+        ln -sf ${IDE_ROOT}/plugins ${VIM_ROOT}/plugins
     else
-        mkdir -p $VIM_ROOT/plugins/
-        ln -sf $IDE_ROOT/plugins/* $VIM_ROOT/plugins/
+        mkdir -p ${VIM_ROOT}/plugins/
+        ln -sf ${IDE_ROOT}/plugins/* ${VIM_ROOT}/plugins/
     fi
 
-    mkdir -p $VIM_ROOT/autoload/
-    mkdir -p $VIM_ROOT/colors/
-    mkdir -p $VIM_ROOT/swp/
-    ln -sf $VIM_ROOT/plugins/vim-plug/plug.vim $VIM_ROOT/autoload/
+    mkdir -p ${VIM_ROOT}/autoload/
+    mkdir -p ${VIM_ROOT}/colors/
+    mkdir -p ${VIM_ROOT}/swp/
+    ln -sf ${VIM_ROOT}/plugins/vim-plug/plug.vim ${VIM_ROOT}/autoload/
     setup_cus_config
 
     echo "Don't forget to init submodule."
@@ -119,29 +119,29 @@ function setup()
 }
 function setup_cus_config()
 {
-    touch $VIM_ROOT/Config_Customize.vim
+    touch ${VIM_ROOT}/Config_Customize.vim
     for each_config in $(cat scripts/Config.vim | grep let | cut -d ':' -f 2 | cut -d '=' -f 1)
     do
         # echo "Checking ${each_config}"
-        if cat $VIM_ROOT/Config_Customize.vim | grep ${each_config} > /dev/null
+        if cat ${VIM_ROOT}/Config_Customize.vim | grep ${each_config} > /dev/null
         then
             echo "Skip config ${each_config}, already exist"
         else
             echo "Adding config ${each_config}"
-            cat scripts/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> $VIM_ROOT/Config_Customize.vim
-            cat scripts/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> $VIM_ROOT/Config_Customize.vim
+            cat scripts/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${VIM_ROOT}/Config_Customize.vim
+            cat scripts/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${VIM_ROOT}/Config_Customize.vim
         fi
     done
 }
 function setup_after()
 {
     echo "Setup After with plugins"
-    mkdir -p $VIM_ROOT/after/
-    cd $IDE_ROOT/plugins
+    mkdir -p ${VIM_ROOT}/after/
+    cd ${IDE_ROOT}/plugins
     for each_plugin in $(ls)
     do
         # echo ${each_plugin}
-        cd $IDE_ROOT/plugins
+        cd ${IDE_ROOT}/plugins
         if [ -d "${each_plugin}/after" ]
         then
             echo Install ${each_plugin}/after to vim
@@ -159,7 +159,7 @@ function main()
     local flag_temp_config="n"
     while [[ "$#" != 0 ]]
     do
-        case $1 in
+        case ${1} in
             -s|--setup)
                 flag_setup="y"
                 ;;
@@ -222,4 +222,4 @@ function main()
     fi
 
 }
-main $@
+main ${@}
