@@ -29,6 +29,30 @@
 " zR: Open all folds.
 " zM: Close all folds.
 
+""""    Function Key
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Refresh all
+nmap <F5> :redraw!<CR>
+
+" nmap <F6> :TlistToggle<CR>
+nmap <F6> :TagbarToggle<CR>
+" nmap <F6> :NERDTreeToggle<CR>
+
+nmap <F7> :NERDTreeToggle<CR>
+
+" SrcExpl
+nmap <F8> :SrcExplToggle<CR>
+
+" SrcExpl
+nmap <F9> :CCTreeWindowToggle<CR>
+
+"" function
+nmap 5 :redraw!<CR>
+nmap 6 :TagbarToggle<CR>
+nmap 7 :NERDTreeToggle<CR>
+nmap 8 :SrcExplToggle<CR>
+nmap 9 :CCTreeWindowToggle<CR>
+
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " for quick save and exit
@@ -80,9 +104,6 @@ map <C-o> <Esc>:tabnew<SPACE>
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 
-" Refresh all
-nmap <F5> :redraw!<CR>
-
 " toggle maximize
 nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
@@ -118,17 +139,6 @@ nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " IDE map
-" nmap <F6> :TlistToggle<CR>
-nmap <F6> :TagbarToggle<CR>
-" nmap <F6> :NERDTreeToggle<CR>
-
-nmap <F7> :NERDTreeToggle<CR>
-
-" SrcExpl
-nmap <F8> :SrcExplToggle<CR>
-
-" SrcExpl
-nmap <F9> :CCTreeWindowToggle<CR>
 
 " Commentary settings
 map <C-_> :Commentary<CR>
