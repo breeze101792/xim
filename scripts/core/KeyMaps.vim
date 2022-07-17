@@ -47,11 +47,11 @@ nmap <F8> :SrcExplToggle<CR>
 nmap <F9> :CCTreeWindowToggle<CR>
 
 "" function
-nmap 5 :redraw!<CR>
-nmap 6 :TagbarToggle<CR>
-nmap 7 :NERDTreeToggle<CR>
-nmap 8 :SrcExplToggle<CR>
-nmap 9 :CCTreeWindowToggle<CR>
+nmap <leader>5 :redraw!<CR>
+nmap <leader>6 :TagbarToggle<CR>
+nmap <leader>7 :NERDTreeToggle<CR>
+nmap <leader>8 :SrcExplToggle<CR>
+nmap <leader>9 :CCTreeWindowToggle<CR>
 
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
