@@ -75,7 +75,6 @@ set directory=~/.vim/swp//
 " set nobackup                                    " no backup when overright
 " set backupdir=~/.vim/backup//
 " set autoread                                    " reload files if changed externally
-set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.o,*.a,*.d
 
 ""    clipboard options
 set clipboard=unnamed                             " Access system clipboard
@@ -118,6 +117,8 @@ set cscopetag              " set tags=tags
 set nocscopeverbose        " set cscopeverbose
 
 " Tag setup
+" TODO Remove this compatiable code
+" -------------------------------------------
 if $CSCOPE_DB != ''
     " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
@@ -131,6 +132,20 @@ if $CCTREE_DB != ''
     " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
     autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
     " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
+endif
+" -------------------------------------------
+if g:IDE_CFG_CSCOPE_DB != ''
+    " echo "Open "g:IDE_CFG_CSCOPE_DB
+    cscope add g:IDE_CFG_CSCOPE_DB
+endif
+if g:IDE_CFG_CCTREE_DB != ''
+    " echo "Source "g:IDE_CFG_CCTREE_DB
+    so g:IDE_CFG_CCTREE_DB
+endif
+if g:IDE_CFG_CCTREE_DB != ''
+    " echo "Open "g:IDE_CFG_CCTREE_DB
+    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_CFG_CCTREE_DB
+    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_CFG_CCTREE_DB
 endif
 
 " Folding
@@ -167,6 +182,7 @@ set wildmenu                " Display command line’s tab complete options as a
 set completeopt+=menu
 set completeopt+=menuone
 set completeopt+=longest
+set wildignore+=*.so,*.swp,*.zip,*.o,*.a,*.d,*.img,*.tar.*
 " set completeopt+=preview  " complete menu use list insdead of window, this will move main window(stable-window may fix)
 
 " Status/Command

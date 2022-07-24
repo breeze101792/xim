@@ -119,6 +119,7 @@ let g:NERDTreeDirArrowCollapsible = '▾'
 " let NERDTreeNodeDelimiter="\u00b7"
 let NERDTreeNodeDelimiter = "\t"
 let g:NERDTreeWinPos = "left"
+autocmd FileType nerdtree setlocal nocursorline
 
 """"    vim-comment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -249,7 +250,6 @@ let g:SrcExpl_isUpdateTags = 0
 "             \ "Yellow",
 "             \ "Magenta"
 "             \ ]
-autocmd FileType nerdtree setlocal nocursorline
 
 """"    CCTree
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

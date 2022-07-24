@@ -1,5 +1,33 @@
-" Golobal ENV
-let g:IDE_ENV_IDE_TITLE = "VIM"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Golobal vim env                            """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
+let g:IDE_CFG_CSCOPE_DB = get(g:, 'IDE_CFG_CSCOPE_DB', "")
+let g:IDE_CFG_CCTREE_DB = get(g:, 'IDE_CFG_CCTREE_DB', "")
+let g:IDE_CFG_PROJ_SCRIPT = get(g:, 'IDE_CFG_PROJ_SCRIPT', "")
+
+if $VIDE_SH_CSCOPE_DB != ""
+    let g:IDE_CFG_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
+endif
+if $VIDE_SH_CCTREE_DB != ""
+    let g:IDE_CFG_CCTREE_DB = $VIDE_SH_CCTREE_DB
+endif
+if $VIDE_SH_PROJ_SCRIPT != ""
+    let g:IDE_CFG_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
+endif
+" if $VIDE_SH_TMP != ""
+"     let g:IDE_CFG_TMP = "y"
+" else
+"     let g:IDE_CFG_TMP = "n"
+" endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Functions of env                          """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Buffer Env 
 " let b:IDE_ENV_CURRENT_FUNC = ""
 " let b:IDE_ENV_GIT_BRANCH = ""

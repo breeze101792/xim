@@ -21,7 +21,7 @@ so ~/.vim/vim-ide/utility/CodeEnhance.vim
 so ~/.vim/vim-ide/utility/Lab.vim
 so ~/.vim/vim-ide/utility/Template.vim
 
-if version >= 704
+if version >= 704 || IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
     so ~/.vim/vim-ide/plugin/Plugins.vim
     so ~/.vim/vim-ide/plugin/PluginsConfig.vim
