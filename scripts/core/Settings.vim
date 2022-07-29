@@ -123,29 +123,31 @@ if $CSCOPE_DB != ''
     " echo "Open "$CSCOPE_DB
     cscope add $CSCOPE_DB
 endif
-if $PROJ_VIM != ''
-    " echo "Source "$PROJ_VIM
-    so $PROJ_VIM
-endif
 if $CCTREE_DB != ''
     " echo "Open "$CCTREE_DB
     " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
     autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
     " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
 endif
+if $PROJ_VIM != ''
+    " echo "Source "$PROJ_VIM
+    so $PROJ_VIM
+endif
 " -------------------------------------------
-if g:IDE_CFG_CSCOPE_DB != ''
-    " echo "Open "g:IDE_CFG_CSCOPE_DB
-    cscope add g:IDE_CFG_CSCOPE_DB
+if g:IDE_ENV_CSCOPE_DB != ''
+    " echo "Open "g:IDE_ENV_CSCOPE_DB
+    " cscope add $VIDE_SH_CSCOPE_DB
+    execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+    " autocmd VimEnter * cscope add g:IDE_ENV_CSCOPE_DB
 endif
-if g:IDE_CFG_CCTREE_DB != ''
-    " echo "Source "g:IDE_CFG_CCTREE_DB
-    so g:IDE_CFG_CCTREE_DB
+if g:IDE_ENV_CCTREE_DB != ''
+    " echo "Open "g:IDE_ENV_CCTREE_DB
+    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_ENV_CCTREE_DB
+    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_ENV_CCTREE_DB
 endif
-if g:IDE_CFG_CCTREE_DB != ''
-    " echo "Open "g:IDE_CFG_CCTREE_DB
-    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_CFG_CCTREE_DB
-    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_CFG_CCTREE_DB
+if g:IDE_ENV_PROJ_SCRIPT != ''
+    " echo "Source "g:IDE_ENV_PROJ_SCRIPT
+    so g:IDE_ENV_PROJ_SCRIPT
 endif
 
 " Folding

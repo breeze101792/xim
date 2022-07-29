@@ -6,7 +6,6 @@
 let g:IDE_CFG_GIT_ENV = get(g:, 'IDE_CFG_GIT_ENV', "n")
 let g:IDE_CFG_SPECIAL_CHARS = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n")
-
 let g:IDE_CFG_PLUGIN_ENABLE = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -16,12 +15,18 @@ let g:IDE_CFG_PLUGIN_ENABLE = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if $VIDE_SH_SPECIAL_CHARS == "y"
     let g:IDE_CFG_SPECIAL_CHARS = "y"
-else
+elseif $VIDE_SH_SPECIAL_CHARS == "n"
     let g:IDE_CFG_SPECIAL_CHARS = "n"
+else
+    let g:IDE_CFG_SPECIAL_CHARS = ""
 endif
+" echo g:IDE_CFG_SPECIAL_CHARS
 
 if $VIDE_SH_PLUGIN_ENABLE == "y"
     let g:IDE_CFG_PLUGIN_ENABLE = "y"
-else
+elseif $VIDE_SH_PLUGIN_ENABLE == "n"
     let g:IDE_CFG_PLUGIN_ENABLE = "n"
+else
+    let g:IDE_CFG_PLUGIN_ENABLE = "y"
 endif
+" echo g:IDE_CFG_PLUGIN_ENABLE

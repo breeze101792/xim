@@ -6,6 +6,9 @@
 
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
+    silent! so ~/.vim/tools/save_colorscheme.vim
+endif
 try
     " use generated color scheme to accerate start up speed
     colorscheme autogen
@@ -68,7 +71,8 @@ if g:IDE_CFG_SPECIAL_CHARS == "y"
 endif
 
 function! LightlineNoexpandtab()
-  return &expandtab ? '' : 'noet'
+    " htab stand for hard tab
+    return &expandtab ? '' : 'htab'
 endfunction
 
 function! LightlineTitle()
