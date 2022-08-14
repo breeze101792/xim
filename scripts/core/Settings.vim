@@ -9,6 +9,9 @@
 set nocompatible                 " disable vi compatiable
 set shortmess=I                  " Disable screen welcome message, Read :help shortmess for everything else.
 set encoding=utf-8
+set termencoding=utf-8
+set formatoptions+=mM
+set fencs=utf-8
 set autochdir
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
