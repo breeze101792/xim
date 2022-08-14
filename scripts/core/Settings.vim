@@ -122,33 +122,36 @@ set nocscopeverbose        " set cscopeverbose
 " Tag setup
 " TODO Remove this compatiable code
 " -------------------------------------------
-if $CSCOPE_DB != ''
-    " echo "Open "$CSCOPE_DB
-    cscope add $CSCOPE_DB
-endif
-if $PROJ_VIM != ''
-    " echo "Source "$PROJ_VIM
-    so $PROJ_VIM
-endif
-if $CCTREE_DB != ''
-    " echo "Open "$CCTREE_DB
-    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
-    autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
-    " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
-endif
+" if $CSCOPE_DB != ''
+"     " echo "Open "$CSCOPE_DB
+"     cscope add $CSCOPE_DB
+" endif
+" if $CCTREE_DB != ''
+"     " echo "Open "$CCTREE_DB
+"     " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
+"     autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
+"     " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
+" endif
+" if $PROJ_VIM != ''
+"     " echo "Source "$PROJ_VIM
+"     so $PROJ_VIM
+" endif
 " -------------------------------------------
-if g:IDE_CFG_CSCOPE_DB != ''
-    " echo "Open "g:IDE_CFG_CSCOPE_DB
-    cscope add g:IDE_CFG_CSCOPE_DB
+if g:IDE_ENV_CSCOPE_DB != ''
+    " echo "Open "g:IDE_ENV_CSCOPE_DB
+    " cscope add $VIDE_SH_CSCOPE_DB
+    execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+    " autocmd VimEnter * cscope add g:IDE_ENV_CSCOPE_DB
 endif
-if g:IDE_CFG_CCTREE_DB != ''
-    " echo "Source "g:IDE_CFG_CCTREE_DB
-    so g:IDE_CFG_CCTREE_DB
+" FIXME don't use autocmd ousside group, fix/test it with ccglue
+if g:IDE_ENV_CCTREE_DB != ''
+    " echo "Open "g:IDE_ENV_CCTREE_DB
+    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_ENV_CCTREE_DB
+    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_ENV_CCTREE_DB
 endif
-if g:IDE_CFG_CCTREE_DB != ''
-    " echo "Open "g:IDE_CFG_CCTREE_DB
-    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_CFG_CCTREE_DB
-    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_CFG_CCTREE_DB
+if g:IDE_ENV_PROJ_SCRIPT != ''
+    " echo "Source "g:IDE_ENV_PROJ_SCRIPT
+    so g:IDE_ENV_PROJ_SCRIPT
 endif
 
 " Folding
@@ -228,8 +231,11 @@ set fillchars+=vert:│
 " autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
 
 " autocmd FileType c,cpp setlocal equalprg=clang-format
-" memorize last open line
-autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+augroup file_open_gp
+    autocmd!
+    " memorize last open line
+    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+augroup END
 
 " set mouse mode when exit
 augroup mouse_gp

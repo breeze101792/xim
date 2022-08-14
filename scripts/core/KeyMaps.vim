@@ -109,6 +109,14 @@ nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 
+" Session copy/pates
+map <silent> <Leader>y :call SessionYank()<CR>
+vmap <silent> <Leader>y y:call SessionYank()<CR>
+vmap <silent> <Leader>Y Y:call SessionYank()<CR>
+nmap <silent> <Leader>p :call SessionPaste("p")<CR>
+nmap <silent> <Leader>P :call SessionPaste("P")<CR>
+nmap <silent> <Leader>o :call ClipOpen()<CR>
+
 """"    Function map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle
@@ -145,7 +153,7 @@ nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 map <C-_> :Commentary<CR>
 
 " GitGutter settings
-map <C-g> :GitGutterToggle<CR>
+" map <C-g> :GitGutterToggle<CR>
 nmap ]c :GitGutterNextHunk<CR>
 nmap [c :GitGutterPrevHunk<CR>
 

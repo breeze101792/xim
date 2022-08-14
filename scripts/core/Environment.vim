@@ -4,23 +4,24 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
-let g:IDE_CFG_CSCOPE_DB = get(g:, 'IDE_CFG_CSCOPE_DB', "")
-let g:IDE_CFG_CCTREE_DB = get(g:, 'IDE_CFG_CCTREE_DB', "")
-let g:IDE_CFG_PROJ_SCRIPT = get(g:, 'IDE_CFG_PROJ_SCRIPT', "")
+let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
+let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
+let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
+let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', "~/.vim/clip")
 
 if $VIDE_SH_CSCOPE_DB != ""
-    let g:IDE_CFG_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
+    let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
 endif
 if $VIDE_SH_CCTREE_DB != ""
-    let g:IDE_CFG_CCTREE_DB = $VIDE_SH_CCTREE_DB
+    let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
 endif
 if $VIDE_SH_PROJ_SCRIPT != ""
-    let g:IDE_CFG_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
+    let g:IDE_ENV_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
 endif
 " if $VIDE_SH_TMP != ""
-"     let g:IDE_CFG_TMP = "y"
+"     let g:IDE_ENV_TMP = "y"
 " else
-"     let g:IDE_CFG_TMP = "n"
+"     let g:IDE_ENV_TMP = "n"
 " endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -35,7 +36,11 @@ endif
 " let b:IDE_ENV_GIT_PROJECT_ROOT = ""
 func! IDE_UpdateEnv_CursorHold()
     " let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
-    let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s ','','f')
+    if g:IDE_CFG_PLUGIN_ENABLE == "y"
+        let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
+    else
+        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    endif
 endfunc
 
 func! IDE_UpdateEnv_BufOpen()
@@ -48,7 +53,12 @@ func! IDE_UpdateEnv_BufOpen()
         let b:IDE_ENV_GIT_PROJECT_NAME = ""
         let b:IDE_ENV_GIT_PROJECT_ROOT = ""
     endif
-    let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
+    if g:IDE_CFG_PLUGIN_ENABLE == "y"
+        let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
+    else
+        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    endif
+
 endfunc
 
 augroup environment_gp
