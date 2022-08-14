@@ -1,83 +1,6 @@
 " Function Settings
 " ===========================================
 " -------------------------------------------
-"  TabsOrSpaces
-" -------------------------------------------
-function TabsOrSpaces()
-    " Determines whether to use spaces or tabs on the current buffer.
-    if getfsize(bufname("%")) > 256000
-        " File is very large, just use the default.
-        return
-    endif
-
-    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
-    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
-    " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
-
-    if numTabs > numSpaces
-        setlocal noexpandtab
-    endif
-endfunction
-
-" Call the function after opening a buffer
-autocmd BufReadPost * call TabsOrSpaces()
-" -------------------------------------------
-"  Display FunctionName
-" -------------------------------------------
-"this mapping assigns a variable to be the name of the function found by
-"FunctionName() then echoes it back so it isn't erased if Vim shifts your
-"location on screen returning to the line you started from in FunctionName()
-" map \func :let name = FunctionName()<CR> :echo name<CR>
-
-command! CurrentFunction call CurrentFunction()
-fun CurrentFunction()
-    let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
-    let counter = 0
-    let max_find = 5
-    let foundcontrol = 1
-    let position = ""
-    let pos=getpos(".")          " This saves the cursor position
-    let view=winsaveview()       " This saves the window view
-    while (foundcontrol)
-        let counter = counter + 1
-        if counter > max_find
-            call cursor(pos)
-            call winrestview(view)
-            return ""
-        endif
-        let foundcontrol = 0
-        normal [{
-        call search('\S','bW')
-        let tempchar = getline(".")[col(".") - 1]
-        if (match(tempchar, ")") >=0 )
-            normal %
-            call search('\S','bW')
-        endif
-        let tempstring = getline(".")
-        for item in strList
-            if( match(tempstring,item) >= 0 )
-                let position = item . " - " . position
-                let foundcontrol = 1
-                break
-            endif
-        endfor
-        if(foundcontrol == 0)
-            call cursor(pos)
-            call winrestview(view)
-            return tempstring.position
-        endif
-    endwhile
-    call cursor(pos)
-    call winrestview(view)
-    return tempstring.position
-endfun
-
-
-
-" Function Settings
-" ===========================================
-
-" -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
 let g:mouse_mode = 1 " 0 = a, 1 = c
@@ -94,7 +17,6 @@ func! MouseToggle()
     endif
     return
 endfunc
-
 " -------------------------------------------
 "  Toggle Hexmode
 " -------------------------------------------
@@ -154,21 +76,61 @@ function! DebugToggle()
     endif
 endfunction
 " -------------------------------------------
-"  Clip
+"  Clip/Session Clip
 " -------------------------------------------
 command! ClipRead call ClipRead()
 
 func! ClipRead()
-    let @c = system('cat ${HOME}/.vim/clip')
-    echo 'Read '.@c.'to reg c'
+    " let @c = system('cat ' . g:IDE_ENV_CLIP_PATH)
+    " echo 'Read '.@c.'to reg c'
+    echo system('cat ' . g:IDE_ENV_CLIP_PATH)
 endfunc
 
 command! ClipOpen call ClipOpen()
 
 func! ClipOpen()
-    let l:clip_buf = system('cat ${HOME}/.vim/clip')
-    execute 'tabnew ' . l:clip_buf
+    let l:clip_buf = system('cat ' . g:IDE_ENV_CLIP_PATH . '|tail -n 1 | tr -d "\n\r"')
+    if !empty(glob(l:clip_buf))
+        execute 'tabnew ' . l:clip_buf
+    else
+        " echo 'File not found'
+        echo 'File not found. "' . l:clip_buf . '"'
+    endif
 endfunc
+
+function SessionYank()
+    new
+    "v"                 for characterwise text
+    "V"                 for linewise text
+    "<CTRL-V>{width}"   for blockwise-visual text
+    ""                  for an empty or unknown register
+    " call setline(1,getregtype())
+    let l:setline_msg=substitute(setline(1,getregtype()), '\n\+', '', '')
+    " Put the text [from register x] after the cursor
+    let l:yank_msg=substitute(execute('put'), '\n\+', '', '')
+
+    silent! exec 'wq! ' . g:IDE_ENV_CLIP_PATH
+    silent! exec 'bdelete ' . g:IDE_ENV_CLIP_PATH
+    echo 'SessionYank, ' . l:yank_msg .", " . l:setline_msg
+endfunction
+
+function SessionPaste(command)
+    silent exec 'sview ' . g:IDE_ENV_CLIP_PATH
+    let l:opt=getline(1)
+    " let l:paste_msg=substitute(execute('2,$yank'), '\n\+', '', '')
+    let l:paste_msg=substitute(execute('2,$yank'), '\n\+', '', '')
+    let l:paste_msg=substitute(l:paste_msg, 'yanked', 'pasted', '')
+    " 2,$yank
+    if (l:opt == 'v')
+        call setreg('"', strpart(@",0,strlen(@")-1), l:opt) " strip trailing endline ?
+    else
+        call setreg('"', @", l:opt)
+    endif
+    silent exec 'bdelete ' . g:IDE_ENV_CLIP_PATH
+    silent exec 'normal ' . a:command
+    " echo 'SessionPaste'
+    echo 'SessionPaste, ' . l:paste_msg
+endfunction
 
 " -------------------------------------------
 "  Title
@@ -318,6 +280,14 @@ function! RepeatText(text, times)
     call append('.', l:text)
     echo 'Repeate text '.a:times.' times done.'
 endfunction
+" -------------------------------------------
+"  TmpFile
+" -------------------------------------------
+function! TmpFile()
+    tabnew ~/.vim/tmpfile
+endfunction
+command! TmpFile call TmpFile()
+
 " -------------------------------------------
 "  DisplayColorSchemes
 " -------------------------------------------

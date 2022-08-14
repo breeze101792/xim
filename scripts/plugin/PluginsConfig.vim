@@ -102,12 +102,23 @@ function! LightlineFilename()
     let root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "")
     let name = expand('%:t')
 
+    " :help expand
+    " :echo expand("%:p")    " absolute path
+    " :echo expand("%:p:h")  " absolute path dirname
+    " :echo expand("%:p:h:h")" absolute path dirname dirname
+    " :echo expand("%:.")    " relative path
+    " :echo expand("%:.:h")  " relative path dirname
+    " :echo expand("%:.:h:h")" relative path dirname dirname
+    " :echo expand("<sfile>:p")  " absolute path to [this] vimscript
+    " :help filename-modifiers
+
+    " echo root . '/' . name
     if len(root) != 0 && len(name) != 0
         return l:root.l:name
     elseif len(name) == 0
         return "[No Name]"
     else
-        return expand('%')
+        return expand('%:p')
     endif
 endfunction
 
