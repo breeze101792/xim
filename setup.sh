@@ -117,6 +117,23 @@ function setup()
     echo "Don't forget to init submodule."
 
 }
+function setup_lite()
+{
+    if test -f ${HOME}/.vimrc
+    then
+        echo "${HOME}/.vimrc exist, do you want to override it?(y/N)"
+        read user_input
+        if [ ${user_input} = 'y' ] || [ ${user_input} = 'Y' ]
+        then
+            cp -rf ${IDE_ROOT}/tools/vimlite.vim ${HOME}/.vimrc
+        else
+            return 0
+        fi
+    else
+        echo "Copy vimlite to ${HOME}/.vimrc"
+        cp -rf ${IDE_ROOT}/tools/vimlite.vim ${HOME}/.vimrc
+    fi
+}
 function setup_cus_config()
 {
     touch ${VIM_ROOT}/Config_Customize.vim
@@ -157,11 +174,15 @@ function main()
     local flag_plugins_check="n"
     local flag_compre_colorscheme="n"
     local flag_temp_config="n"
+    local flag_lite="n"
     while [[ "$#" != 0 ]]
     do
         case ${1} in
             -s|--setup)
                 flag_setup="y"
+                ;;
+            -l|--lite)
+                flag_lite="y"
                 ;;
             -p|--plugins-check)
                 flag_plugins_check="y"
@@ -181,6 +202,7 @@ function main()
             -h|--help)
                 echo "VIM IDE Setup Tool"
                 printf  "    %s ->%s \n" "-s|--setup" "Setup up vim ide"
+                printf  "    %s ->%s \n" "-l|--lite" "Setup up lite script"
                 printf  "    %s ->%s \n" "-p|--plugins-check)" "Check plugins with Plugins.vim"
                 printf  "    %s ->%s \n" "-cc|--colorscheme-compare)" "Compare two different color scheme and export missing one"
                 printf  "    %s ->%s \n" "-c|--ccglue)" "Download ccglue"
@@ -199,6 +221,10 @@ function main()
     then
         setup
         # setup_after
+    elif [ "${flag_lite}" = "y" ]
+    then
+        setup_lite
+
     fi
     if [ "${flag_plugins_check}" = "y" ]
     then
