@@ -159,3 +159,13 @@ vnoremap <silent> <expr> <SID>SetCursorLineNrColorVisual SetCursorLineNrColorVis
 nnoremap <silent> <script> v v<SID>SetCursorLineNrColorVisual
 nnoremap <silent> <script> V V<SID>SetCursorLineNrColorVisual
 
+" -------------------------------------------
+"  Mylog
+" -------------------------------------------
+function! Mylog(message, file)
+  new
+  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+  put=a:message
+  execute 'w >>' a:file
+  q
+endfun

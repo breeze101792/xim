@@ -5,6 +5,12 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " <leader> : \
 " let mapleader="\"
+""""    Patch for disable anoying key mapping
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" nnoremap q: <nop>
+" nnoremap q/ <nop>
+nnoremap q: :
+nnoremap q/ /
 
 " n  Normal mode map. Defined using ':nmap' or ':nnoremap'.
 " i  Insert mode map. Defined using ':imap' or ':inoremap'.

@@ -24,6 +24,10 @@ set updatetime=500
 set ttyfast                      " Send more characters at a given time.
 set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 " set redrawtime=10000
+"" Command timeout
+" set timeout
+" set ttimeout
+" set timeoutlen=100
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
@@ -55,12 +59,6 @@ set linebreak                                     " Avoid wrapping a line in the
 set number                                        " show line number
 " set relativenumber                                " use relaaive number
 " set numberwidth=5                               " width of numbers line (default on gvim is 4)
-"  Auto change relativenumber
-" augroup numbertoggle
-"   autocmd!
-"   autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | set rnu   | endif
-"   autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | set nornu | endif
-" augroup END
 
 " Search
 set ignorecase smartcase                          " search with ignore case
@@ -119,41 +117,6 @@ set tags=./tags,tags;/     " tag path
 set cscopetag              " set tags=tags
 set nocscopeverbose        " set cscopeverbose
 
-" Tag setup
-" TODO Remove this compatiable code
-" -------------------------------------------
-" if $CSCOPE_DB != ''
-"     " echo "Open "$CSCOPE_DB
-"     cscope add $CSCOPE_DB
-" endif
-" if $CCTREE_DB != ''
-"     " echo "Open "$CCTREE_DB
-"     " autocmd VimEnter * CCTreeLoadXRefDBFromDisk $CCTREE_DB
-"     autocmd VimEnter * CCTreeLoadXRefDB $CCTREE_DB
-"     " autocmd VimEnter * CCTreeLoadDB $CSCOPE_DB
-" endif
-" if $PROJ_VIM != ''
-"     " echo "Source "$PROJ_VIM
-"     so $PROJ_VIM
-" endif
-" -------------------------------------------
-if g:IDE_ENV_CSCOPE_DB != ''
-    " echo "Open "g:IDE_ENV_CSCOPE_DB
-    " cscope add $VIDE_SH_CSCOPE_DB
-    execute "cscope add ".g:IDE_ENV_CSCOPE_DB
-    " autocmd VimEnter * cscope add g:IDE_ENV_CSCOPE_DB
-endif
-" FIXME don't use autocmd ousside group, fix/test it with ccglue
-if g:IDE_ENV_CCTREE_DB != ''
-    " echo "Open "g:IDE_ENV_CCTREE_DB
-    " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_ENV_CCTREE_DB
-    autocmd VimEnter * CCTreeLoadXRefDB g:IDE_ENV_CCTREE_DB
-endif
-if g:IDE_ENV_PROJ_SCRIPT != ''
-    " echo "Source "g:IDE_ENV_PROJ_SCRIPT
-    so g:IDE_ENV_PROJ_SCRIPT
-endif
-
 " Folding
 set foldmethod=indent " can be set to syntax, indent, manual
 set foldnestmax=10    " Only fold up to three nested levels.
@@ -170,9 +133,6 @@ set nofoldenable
 " let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
 " let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
 " let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
-
-" automatically open and close the popup menu / preview window
-au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
 
 """"    Interface Settings (Out side buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -217,33 +177,6 @@ endif
 " Windows fill chars
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
-
-
-""""    Advance Settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" remove the trailing space
-" autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
-" auto retab
-" autocmd FileType c,cpp,h,py,vim,sh autocmd BufWritePre <buffer> :retab
-" Remove empty lines with space
-" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\($\n\s*\)\+\%$//e
-" remove double next line
-" autocmd FileType c,cpp,h,py,vim autocmd BufWritePre <buffer> :%s/\(\n\n\)\n\+/\1/e
-
-" autocmd FileType c,cpp setlocal equalprg=clang-format
-augroup file_open_gp
-    autocmd!
-    " memorize last open line
-    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
-augroup END
-
-" set mouse mode when exit
-augroup mouse_gp
-    autocmd!
-    autocmd VimEnter * :set mouse=c
-    " autocmd BufReadPost * :set mouse=c
-    autocmd VimLeave * :set mouse=c
-augroup END
 
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -10,6 +10,7 @@ so ~/.vim/vim-ide/core/Config.vim
 so ~/.vim/vim-ide/core/Environment.vim
 so ~/.vim/vim-ide/core/Settings.vim
 so ~/.vim/vim-ide/core/KeyMaps.vim
+so ~/.vim/vim-ide/core/Autocmd.vim
 
 " utility function related
 so ~/.vim/vim-ide/utility/Library.vim
@@ -36,6 +37,7 @@ func! Refresh()
     so ~/.vim/vim-ide/core/Environment.vim
     so ~/.vim/vim-ide/core/Settings.vim
     so ~/.vim/vim-ide/core/KeyMaps.vim
+    so ~/.vim/vim-ide/core/Autocmd.vim
 
     " utility function related
     so ~/.vim/vim-ide/utility/Library.vim
@@ -43,4 +45,7 @@ func! Refresh()
     so ~/.vim/vim-ide/utility/CodeEnhance.vim
     so ~/.vim/vim-ide/utility/Lab.vim
     so ~/.vim/vim-ide/utility/Template.vim
+
+    redraw
+    echo 'Vim refresh done.'
 endfunc

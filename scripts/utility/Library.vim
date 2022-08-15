@@ -1,7 +1,7 @@
 " -------------------------------------------
 "  TabsOrSpaces
 " -------------------------------------------
-function TabsOrSpaces()
+function! TabsOrSpaces()
     " Determines whether to use spaces or tabs on the current buffer.
     if getfsize(bufname("%")) > 256000
         " File is very large, just use the default.
@@ -17,12 +17,6 @@ function TabsOrSpaces()
     endif
 endfunction
 
-" Call the function after opening a buffer
-augroup tab_gp
-    autocmd!
-    autocmd BufReadPost * call TabsOrSpaces()
-augroup END
-
 " -------------------------------------------
 "  Display FunctionName
 " -------------------------------------------
@@ -32,7 +26,7 @@ augroup END
 " map \func :let name = FunctionName()<CR> :echo name<CR>
 
 command! CurrentFunction call CurrentFunction()
-fun CurrentFunction()
+function! CurrentFunction()
     let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
     let counter = 0
     let max_find = 5

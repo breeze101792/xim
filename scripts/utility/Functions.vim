@@ -7,7 +7,7 @@ let g:mouse_mode = 1 " 0 = a, 1 = c
 
 command! MouseToggle call MouseToggle()
 
-func! MouseToggle()
+function! MouseToggle()
     if g:mouse_mode == 0
         let g:mouse_mode = 1
         set mouse=c
@@ -21,10 +21,10 @@ endfunc
 "  Toggle Hexmode
 " -------------------------------------------
 " ex command for toggling hex mode - define mapping if desired
-command -bar HexToggle call HexToggle()
+command! -bar HexToggle call HexToggle()
 
 " helper function to toggle hex mode
-function HexToggle()
+function! HexToggle()
     " hex mode should be considered a read-only operation
     " save values for modified and read-only for restoration later,
     " and clear the read-only flag for now
@@ -80,7 +80,7 @@ endfunction
 " -------------------------------------------
 command! ClipRead call ClipRead()
 
-func! ClipRead()
+function! ClipRead()
     " let @c = system('cat ' . g:IDE_ENV_CLIP_PATH)
     " echo 'Read '.@c.'to reg c'
     echo system('cat ' . g:IDE_ENV_CLIP_PATH)
@@ -88,7 +88,7 @@ endfunc
 
 command! ClipOpen call ClipOpen()
 
-func! ClipOpen()
+function! ClipOpen()
     let l:clip_buf = system('cat ' . g:IDE_ENV_CLIP_PATH . '|tail -n 1 | tr -d "\n\r"')
     if !empty(glob(l:clip_buf))
         execute 'tabnew ' . l:clip_buf
@@ -98,7 +98,7 @@ func! ClipOpen()
     endif
 endfunc
 
-function SessionYank()
+function! SessionYank()
     new
     "v"                 for characterwise text
     "V"                 for linewise text
@@ -114,7 +114,7 @@ function SessionYank()
     echo 'SessionYank, ' . l:yank_msg .", " . l:setline_msg
 endfunction
 
-function SessionPaste(command)
+function! SessionPaste(command)
     silent exec 'sview ' . g:IDE_ENV_CLIP_PATH
     let l:opt=getline(1)
     " let l:paste_msg=substitute(execute('2,$yank'), '\n\+', '', '')
@@ -130,6 +130,32 @@ function SessionPaste(command)
     silent exec 'normal ' . a:command
     " echo 'SessionPaste'
     echo 'SessionPaste, ' . l:paste_msg
+endfunction
+" -------------------------------------------
+"  Session Load/Open
+" -------------------------------------------
+command! SessionStore :call SessionStore()
+function! SessionStore()
+    let bufcount = bufnr("$")
+    let currbufnr = 1
+
+    " let g:IDE_ENV_SESSION_PATH = ${HOME}.'/.vim/session'
+    call writefile(['" Vim session file'], g:IDE_ENV_SESSION_PATH, "")
+    while currbufnr <= bufcount
+        let currbufname = expand('#' . currbufnr . ':p')
+        if !empty(glob(currbufname))
+            " echo currbufnr . ": ". currbufname
+            call writefile(['edit ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
+        endif
+        let currbufnr = currbufnr + 1
+    endwhile
+    echo 'Session Stored finished.'
+endfunction
+
+command! SessionLoad :call SessionLoad()
+function! SessionLoad()
+    silent! exec 'source' . g:IDE_ENV_SESSION_PATH
+    echo 'Session loaded. BufCnt:'.bufnr("$")
 endfunction
 
 " -------------------------------------------
@@ -152,7 +178,7 @@ endfunc
 " -------------------------------------------
 command! TagUpdate call TagUpdate()
 
-func! TagUpdate()
+function! TagUpdate()
     execute 'cscope reset'
 endfunc
 
@@ -161,7 +187,7 @@ endfunc
 " -------------------------------------------
 command! ConvertFileProp call ConvertFileProp()
 
-func! ConvertFileProp()
+function! ConvertFileProp()
     set ff=unix
     set fileencoding=utf8
 endfunc
@@ -310,7 +336,15 @@ command! DisplayColorSchemes call DisplayColorSchemes()
 "  GenerateCachedColorScheme
 " -------------------------------------------
 function! GenerateCachedColorScheme()
-    silent! so ~/.vim/tools/save_colorscheme.vim
+    silent! source ~/.vim/tools/save_colorscheme.vim
 endfunction
 command! GenerateCachedColorScheme call GenerateCachedColorScheme()
 
+" -------------------------------------------
+"  info
+" -------------------------------------------
+command! Info call Info()
+
+function! Info()
+    echo 'Path:' . expand('%:p')
+endfunc

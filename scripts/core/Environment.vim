@@ -7,7 +7,12 @@ let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
 let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
-let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', "~/.vim/clip")
+
+" Path config
+let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
+" let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', $HOME."/.vim/session")
+let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
+let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
 if $VIDE_SH_CSCOPE_DB != ""
     let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
@@ -34,7 +39,7 @@ endif
 " let b:IDE_ENV_GIT_BRANCH = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_ROOT = ""
-func! IDE_UpdateEnv_CursorHold()
+function! IDE_UpdateEnv_CursorHold()
     " let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     if g:IDE_CFG_PLUGIN_ENABLE == "y"
         let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
@@ -43,7 +48,7 @@ func! IDE_UpdateEnv_CursorHold()
     endif
 endfunc
 
-func! IDE_UpdateEnv_BufOpen()
+function! IDE_UpdateEnv_BufOpen()
     if g:IDE_CFG_GIT_ENV == "y"
         let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
         let b:IDE_ENV_GIT_PROJECT_NAME = system('git remote -v 2> /dev/null |grep fetch | sed "s/\/ / /g" | rev | cut -d "/" -f 1 | rev | cut -d " " -f 1 | tr -d "\n"')
@@ -58,12 +63,4 @@ func! IDE_UpdateEnv_BufOpen()
     else
         let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
-
 endfunc
-
-augroup environment_gp
-    autocmd!
-    autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
-    " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
-    autocmd BufReadPost * :call IDE_UpdateEnv_BufOpen()
-augroup END

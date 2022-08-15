@@ -7,7 +7,7 @@
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
-    silent! so ~/.vim/tools/save_colorscheme.vim
+    silent! source ~/.vim/tools/save_colorscheme.vim
 endif
 try
     " use generated color scheme to accerate start up speed
@@ -134,17 +134,6 @@ let g:NERDTreeDirArrowCollapsible = '▾'
 " let NERDTreeNodeDelimiter="\u00b7"
 let NERDTreeNodeDelimiter = "\t"
 let g:NERDTreeWinPos = "left"
-autocmd FileType nerdtree setlocal nocursorline
-
-""""    vim-comment
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-autocmd FileType gitcommit setlocal commentstring=#\ %s
-autocmd FileType c,cpp,hxx,hpp,cxx,verilog setlocal commentstring=//\ %s
-
-""""    tagbar
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" cursor line will slow down tagbar
-autocmd FileType tagbar setlocal nocursorline
 
 """"    ctrlp
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
