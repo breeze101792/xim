@@ -50,8 +50,11 @@ endfunc
 
 function! IDE_UpdateEnv_BufOpen()
     if g:IDE_CFG_GIT_ENV == "y"
-        let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
+        " FIXME, git above git 2.22.0 support --show-current
+        " let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
+        let b:IDE_ENV_GIT_BRANCH = system('git rev-parse --abbrev-ref HEAD 2> /dev/null | sed "s/^HEAD$//g" | tr -d "\n"')
         let b:IDE_ENV_GIT_PROJECT_NAME = system('git remote -v 2> /dev/null |grep fetch | sed "s/\/ / /g" | rev | cut -d "/" -f 1 | rev | cut -d " " -f 1 | tr -d "\n"')
+        " FIXME file on git root will should return ./
         let b:IDE_ENV_GIT_PROJECT_ROOT = system('git rev-parse --show-prefix 2> /dev/null | cut -d " " -f 1 | tr -d "\n"')
     else
         let b:IDE_ENV_GIT_BRANCH = ""

@@ -5,6 +5,7 @@ function! TabsOrSpaces()
     " Determines whether to use spaces or tabs on the current buffer.
     if getfsize(bufname("%")) > 256000
         " File is very large, just use the default.
+        setlocal expandtab
         return
     endif
 
@@ -14,6 +15,8 @@ function! TabsOrSpaces()
 
     if numTabs > numSpaces
         setlocal noexpandtab
+    else
+        setlocal expandtab
     endif
 endfunction
 

@@ -8,11 +8,10 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 function! PostInit()
-
     " Tag setup
     " -------------------------------------------
     if g:IDE_ENV_CSCOPE_DB != ''
-        " echo "Open "g:IDE_ENV_CSCOPE_DB
+        echo "Open "g:IDE_ENV_CSCOPE_DB
         " cscope add $VIDE_SH_CSCOPE_DB
         execute "cscope add ".g:IDE_ENV_CSCOPE_DB
         " autocmd VimEnter * cscope add g:IDE_ENV_CSCOPE_DB
@@ -78,8 +77,9 @@ augroup END
 augroup environment_gp
     autocmd!
     autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
-    " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
-    autocmd BufReadPost * :call IDE_UpdateEnv_BufOpen()
+    " bufread will have issue on the new file(don't need to read buffer)
+    " bufenter will have issue on vimdiff, sice only one window we be entered.
+    autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
 augroup END
 
 """"    Edictor Variable

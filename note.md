@@ -93,6 +93,10 @@ for tag prototype hilight
 ```
 git clone https://github.com/vim-scripts/TagHighlight.git -b master
 ```
+grep string, not really usefull
+```
+https://github.com/dkprice/vim-easygrep.git
+```
 
 keep color consistency in different terms
 ```

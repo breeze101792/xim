@@ -3,19 +3,28 @@
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-let g:mouse_mode = 1 " 0 = a, 1 = c
-
 command! MouseToggle call MouseToggle()
 
 function! MouseToggle()
-    if g:mouse_mode == 0
-        let g:mouse_mode = 1
-        set mouse=c
-    else
-        let g:mouse_mode = 0
+    if &mouse == 'c'
         set mouse=a
+    else
+        set mouse=c
     endif
     return
+endfunc
+" -------------------------------------------
+"  Fast mode for slow device
+" -------------------------------------------
+command! FastMode call FastMode()
+
+function! FastMode()
+    if exists(":NoMatchParen")
+        " reenable matchparent
+        " :DoMatchParen
+        :NoMatchParen
+
+    endif
 endfunc
 " -------------------------------------------
 "  Toggle Hexmode

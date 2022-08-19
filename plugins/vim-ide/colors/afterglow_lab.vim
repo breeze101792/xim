@@ -469,7 +469,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     augroup END
 
     " LaTeX
-    augroup ft_go
+    augroup ft_tex
         autocmd!
         autocmd FileType tex call <SID>X_HI("texStatement",s:blue, "", "")
         autocmd FileType tex call <SID>X_HI("texMath", s:wine, "", "NONE")
