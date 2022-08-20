@@ -56,7 +56,8 @@ function ccglue()
 {
     local ccglue_url="https://versaweb.dl.sourceforge.net/project/ccglue/binaries/ccglue-x86-linux-elf-glib-2.0-v_0.1.2.tar.gz"
     local target_file="ccglue.tgz"
-    mkdir -p ${IDE_ROOT}/tools
+    # or download it from git@github.com:breeze101792/ccglue.git
+    mkdir -p ${IDE_ROOT}/bin
     mkdir -p ${IDE_ROOT}/tmp
     cd ${IDE_ROOT}/tmp/
     curl --insecure ${ccglue_url} -o "${target_file}"
@@ -69,7 +70,7 @@ function ccglue()
         aria2c "${ccglue_url}" -o "${target_file}"
         tar xvzf "${target_file}"
     fi
-    cp release-0.1.2/bin/ccglue ${IDE_ROOT}/tools
+    cp release-0.1.2/bin/ccglue ${IDE_ROOT}/bin
     rm -rf ${IDE_ROOT}/tmp
     echo "Please do and add ~/bin to your patch"
     echo "cp tools/* ~/.bin"
