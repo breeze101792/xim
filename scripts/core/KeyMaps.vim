@@ -5,6 +5,10 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " <leader> : \
 " let mapleader="\"
+
+" Don't may this keys
+" nnoremap <C-[> " cause esc notworking
+
 """"    Patch for disable anoying key mapping
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " nnoremap q: <nop>
@@ -50,7 +54,8 @@ nmap <F7> :NERDTreeToggle<CR>
 " SrcExpl
 nmap <F8> :SrcExplToggle<CR>
 
-" SrcExpl
+" cctree
+" will be needed first CCTreeTraceForward
 nmap <F9> :CCTreeWindowToggle<CR>
 
 "" function
@@ -69,9 +74,6 @@ nnoremap <leader>q :q<CR>
 nnoremap <leader>qq :q!<CR>
 nnoremap <leader>wqa :wqa<CR>
 nnoremap qq :q!<CR>
-
-" Toggle Hex Mode
-nmap <Leader>h :HexToggle<CR>
 
 " open an shell without close vim
 nnoremap <leader>sh :sh<CR>
@@ -115,6 +117,8 @@ nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 
+""""    Function map
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Session copy/pates
 map <silent> <Leader>y :call SessionYank()<CR>
 vmap <silent> <Leader>y y:call SessionYank()<CR>
@@ -123,10 +127,15 @@ nmap <silent> <Leader>p :call SessionPaste("p")<CR>
 nmap <silent> <Leader>P :call SessionPaste("P")<CR>
 nmap <silent> <Leader>o :call ClipOpen()<CR>
 
-""""    Function map
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Toggle
+" Mouse Toggle
 nnoremap <silent> <C-m> :MouseToggle<CR>
+
+" Toggle Hex Mode
+nmap <Leader>h :HexToggle<CR>
+
+""""    Plugins map
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" IDE map
 
 " cscope
 " a: Find places where this symbol is assigned a value
@@ -148,12 +157,8 @@ nnoremap <silent>ci :cscope find i <cword><CR>
 nnoremap <silent>cs :cscope find s <cword><CR>
 nnoremap <silent>ct :cscope find t <cword><CR>
 
-" srcexpl
-nnoremap <silent><Leader>t :SrcExplRefresh<CR>
-
-""""    Plugins map
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" IDE map
+" " srcexpl
+" nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 
 " Commentary settings
 map <C-_> :Commentary<CR>
@@ -174,6 +179,10 @@ noremap <C-p> :CtrlP<CR>
 
 " bufferexpl
 noremap <leader>b :ToggleBufExplorer<CR>
+
+"  cctree trace
+noremap <leader>] :CCTreeTraceForward<CR>
+noremap <leader>[ :CCTreeTraceReverse<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""

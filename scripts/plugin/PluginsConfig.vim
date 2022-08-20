@@ -6,15 +6,15 @@
 
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
-    silent! source ~/.vim/tools/save_colorscheme.vim
-endif
 try
     " use generated color scheme to accerate start up speed
     colorscheme autogen
 catch /^Vim\%((\a\+)\)\=:E185/
     try
         colorscheme afterglow_lab
+        if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
+            silent! source ~/.vim/tools/save_colorscheme.vim
+        endif
     catch /^Vim\%((\a\+)\)\=:E185/
         colorscheme vimdefault
     endtry
@@ -23,52 +23,86 @@ endtry
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-            \ 'colorscheme'         : 'wombat_lab',
-            \ 'active'              : {
-            \ 'left'            : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
-            \ 'right'           : [['lineinfo', 'percent'], ['noet', 'fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
+            \ 'colorscheme'        : 'wombat_lab',
+            \ 'active'             : {
+            \ 'left'               : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
+            \ 'right'              : [['lineinfo', 'percent'], ['info'], ['CurrentFunction']]
             \ },
-            \ 'inactive'          : {
-            \ 'left'            : [['filename']],
-            \ 'right'           : [['lineinfo'], ['percent']]
+            \ 'inactive'           : {
+            \ 'left'               : [['filename']],
+            \ 'right'              : [['lineinfo'], ['percent']]
             \ },
-            \ 'component_expand': {
-            \ 'noet': 'LightlineNoexpandtab',
+            \ 'component_expand'   : {
+            \ 'noet'               : 'LightlineNoexpandtab',
             \ },
-            \ 'component_function'  : {
-            \ 'filename'        : 'LightlineFilename',
-            \ 'CurrentFunction' : 'LightlineFuncName',
-            \ 'gitinfo'         : 'LightlineGitInfo',
-            \ 'title'           : 'LightlineTitle',
+            \ 'component_function' : {
+            \ 'filename'           : 'LightlineFilename',
+            \ 'CurrentFunction'    : 'LightlineFuncName',
+            \ 'gitinfo'            : 'LightlineGitInfo',
+            \ 'title'              : 'LightlineTitle',
+            \ 'info'               : 'LightlineFileInfo',
             \ },
-            \ 'tabline'             : {
-            \ 'left'            : [['title'], ['tabs']],
-            \ 'right'           : [['bufnum'], ['gitinfo'] ]
+            \ 'tabline'            : {
+            \ 'left'               : [['title'], ['tabs']],
+            \ 'right'              : [['bufnum'], ['gitinfo'] ]
             \ },
             \ 'mode_map' : {
-            \ 'n' : 'N',
-            \ 'i' : 'I',
-            \ 'R' : 'R',
-            \ 'v' : 'V',
-            \ 'V' : 'V-LINE',
-            \ 'c' : 'C',
-            \ 's' : 'S',
-            \ 'S' : 'S-LINE',
-            \ 't' : 'T',
-            \ "\<C-v>": 'V-BLOCK',
-            \ "\<C-s>": 'S-BLOCK',
+            \ 'v'        : 'V',
+            \ 't'        : 'T',
+            \ 's'        : 'S',
+            \ 'n'        : 'N',
+            \ 'i'        : 'I',
+            \ 'c'        : 'C',
+            \ 'V'        : 'V-LINE',
+            \ 'S'        : 'S-LINE',
+            \ 'R'        : 'R',
+            \ "\<C-v>"   : 'V-BLOCK',
+            \ "\<C-s>"   : 'S-BLOCK',
             \ },
             \ }
 
-        " \ 'component_type': {
-        " \   'paste': 'warning',
-        " \   'noet': 'error',
-        " \ },
+" \ 'right'           : [['lineinfo', 'percent'], ['status', 'noet', 'fileformat', 'fileencoding', 'filetype'], ['CurrentFunction']]
+" \ 'component_type': {
+    " \   'paste': 'warning',
+    " \   'noet': 'error',
+    " \ },
 
 if g:IDE_CFG_SPECIAL_CHARS == "y"
     let g:lightline.separator = { 'left': '', 'right': '' }
     let g:lightline.subseparator = {'left': '', 'right': '' }
+else
+    let g:lightline.subseparator = {'left': '|', 'right': '|' }
 endif
+
+function! LightlineFileInfo()
+    let msg = &filetype
+    let sep = ' '.g:lightline.subseparator['right'].' '
+    let smart_info = 1
+
+    if winwidth(0) < 70 || smart_info == 1
+        if &fileformat != 'unix'
+            let msg = msg . sep . &fileformat
+        endif
+
+        if &fileencoding != 'utf-8'
+            let msg = msg . sep . &fileencoding
+        endif
+        if !&expandtab
+            " htab stand for hard tab
+            " return &expandtab ? '' : 'htab'
+            let msg = msg . sep . 'htab'
+        endif
+    else
+        let msg = &filetype
+        let msg = msg . sep  . &fileformat . sep  . &fileencoding
+        if !&expandtab
+            " htab stand for hard tab
+            " return &expandtab ? '' : 'htab'
+            let msg = msg . sep  . 'htab'
+        endif
+    endif
+    return msg
+endfunction
 
 function! LightlineNoexpandtab()
     " htab stand for hard tab
@@ -99,8 +133,15 @@ function! LightlineGitInfo()
 endfunction
 
 function! LightlineFilename()
-    let root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "")
+    let proj_root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "-1")
+    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "-1")
     let name = expand('%:t')
+    let full_name = expand('%:p')
+
+    " FIXME, find an event when file not exist. so we don't need to call it.
+    if proj_root == -1 || proj_name == -1
+        call IDE_UpdateEnv_BufOpen()
+    endif
 
     " :help expand
     " :echo expand("%:p")    " absolute path
@@ -112,13 +153,19 @@ function! LightlineFilename()
     " :echo expand("<sfile>:p")  " absolute path to [this] vimscript
     " :help filename-modifiers
 
-    " echo root . '/' . name
-    if len(root) != 0 && len(name) != 0
-        return l:root.l:name
-    elseif len(name) == 0
+    " echo proj_root . '/' . name
+    if len(name) == 0
         return "[No Name]"
+    elseif winwidth(0) > 70 
+        if len(proj_name) != 0 && len(name) != 0 && len(proj_root.name) < 72
+            return l:proj_root.l:name
+        elseif len(full_name) <= 72
+            return l:full_name
+        else
+            return substitute(getcwd(), '^.*/', '', '').'/'.l:name
+        endif
     else
-        return expand('%:p')
+        return substitute(getcwd(), '^.*/', '', '').'/'.l:name
     endif
 endfunction
 

@@ -14,7 +14,6 @@ Plug '~/.vim/plugins/lightline.vim'
 Plug '~/.vim/plugins/vim-ide'
 Plug '~/.vim/plugins/vim-ingo-library'
 Plug '~/.vim/plugins/tagbar'
-Plug '~/.vim/plugins/bufexplorer'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
@@ -30,6 +29,8 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
     Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
     Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
+    " Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
+    Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -41,6 +42,8 @@ else
     Plug '~/.vim/plugins/ctrlp'
     Plug '~/.vim/plugins/syntastic'
     Plug '~/.vim/plugins/Colorizer'
+    " Plug '~/.vim/plugins/vim-easygrep'
+    Plug '~/.vim/plugins/bufexplorer'
 endif
 
 
@@ -65,12 +68,14 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/vim-mark', { 'on':  [] }
     Plug '~/.vim/plugins/vim-surround', { 'on':  [] }
     Plug '~/.vim/plugins/gitgutter', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-easygrep', { 'on':  [] }
 else
     Plug '~/.vim/plugins/supertab'
     Plug '~/.vim/plugins/vim-multiple-cursors'
     Plug '~/.vim/plugins/vim-mark'
     Plug '~/.vim/plugins/vim-surround'
     Plug '~/.vim/plugins/gitgutter'
+    Plug '~/.vim/plugins/vim-easygrep'
 endif
 
 " Initialize plugin system
@@ -82,6 +87,7 @@ call plug#end()
 function! DealyLoading(timer) abort
     " no reshape
     call plug#load('vim-surround')
+    call plug#load('vim-easygrep')
 
     " load plugins
     call plug#load('supertab')

@@ -24,14 +24,16 @@ set updatetime=500
 set ttyfast                      " Send more characters at a given time.
 set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 " set redrawtime=10000
-"" Command timeout
+"" Command timeout, only affect on mapping command
 " set timeout
 " set ttimeout
 " set timeoutlen=100
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
-set magic                        " Enable extended regexes.
+set magic                          " Enable extended regexes.
+set regexpengine=1                 " use old reg eng, this may disable some reg syntax
+
 
 ""    Others
 set report=0                     " Show all changes.
@@ -161,7 +163,7 @@ set ruler        " enable status bar ruler
 
 " Other settings
 " use group to set it
-" set mouse=c
+set mouse=c
 " set mouse=a
 " set paste
 
@@ -177,6 +179,13 @@ endif
 " Windows fill chars
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
+
+""""    Patch For vim Plugins
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Match paren
+" let g:loaded_matchparen = 1 " do this will not load plugin
+let g:matchparen_timeout = 60
+let g:matchparen_insert_timeout = 60
 
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
