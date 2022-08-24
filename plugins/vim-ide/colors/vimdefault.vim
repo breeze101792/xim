@@ -48,37 +48,37 @@ hi WarningMsg cterm=none ctermfg=1 ctermbg=none
 hi Ignore cterm=none ctermfg=15 ctermbg=none
 hi SpecialKey cterm=none ctermfg=4 ctermbg=none
 hi Constant cterm=none ctermfg=1 ctermbg=none
-hi link String Constant
+hi! link String Constant
 hi StringDelimiter cterm=none ctermfg=none ctermbg=none
-hi link Character Constant
-hi link Number Constant
-hi link Boolean Constant
-hi link Float Constant
+hi! link Character Constant
+hi! link Number Constant
+hi! link Boolean Constant
+hi! link Float Constant
 hi Identifier cterm=none ctermfg=6 ctermbg=none
-hi link Function Identifier
+hi! link Function Identifier
 hi Statement cterm=none ctermfg=130 ctermbg=none
-hi link Conditional Statement
-hi link Repeat Statement
-hi link Label Statement
-hi link Operator Statement
-hi link Keyword Statement
-hi link Exception Statement
+hi! link Conditional Statement
+hi! link Repeat Statement
+hi! link Label Statement
+hi! link Operator Statement
+hi! link Keyword Statement
+hi! link Exception Statement
 hi Comment cterm=none ctermfg=4 ctermbg=none
 hi Special cterm=none ctermfg=5 ctermbg=none
-hi link SpecialChar Special
-hi link Tag Special
-hi link Delimiter Special
-hi link SpecialComment Special
-hi link Debug Special
+hi! link SpecialChar Special
+hi! link Tag Special
+hi! link Delimiter Special
+hi! link SpecialComment Special
+hi! link Debug Special
 hi PreProc cterm=none ctermfg=5 ctermbg=none
-hi link Include PreProc
-hi link Define PreProc
-hi link Macro PreProc
-hi link PreCondit PreProc
+hi! link Include PreProc
+hi! link Define PreProc
+hi! link Macro PreProc
+hi! link PreCondit PreProc
 hi Type cterm=none ctermfg=2 ctermbg=none
-hi link StorageClass Type
-hi link Structure Type
-hi link Typedef Type
+hi! link StorageClass Type
+hi! link Structure Type
+hi! link Typedef Type
 hi DiffAdd cterm=none ctermfg=none ctermbg=81
 hi DiffChange cterm=none ctermfg=none ctermbg=225
 hi DiffDelete cterm=none ctermfg=12 ctermbg=159

@@ -127,19 +127,23 @@ function! LightlineGitInfo()
         let l:git_chars=" "
     endif
     if winwidth(0) > 70 && l:proj_name != ''
-        return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
+        if l:proj_branch != '' && len(l:proj_branch . l:proj_name) < 70
+            return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
+        else
+            return l:proj_name
+        endif
     endif
     return ''
 endfunction
 
 function! LightlineFilename()
-    let proj_root = get(b:, 'IDE_ENV_GIT_PROJECT_ROOT', "-1")
+    let proj_path = get(b:, 'IDE_ENV_GIT_PROJECT_PATH', "-1")
     let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "-1")
     let name = expand('%:t')
     let full_name = expand('%:p')
 
     " FIXME, find an event when file not exist. so we don't need to call it.
-    if proj_root == -1 || proj_name == -1
+    if proj_path == -1 || proj_name == -1
         call IDE_UpdateEnv_BufOpen()
     endif
 
@@ -153,12 +157,12 @@ function! LightlineFilename()
     " :echo expand("<sfile>:p")  " absolute path to [this] vimscript
     " :help filename-modifiers
 
-    " echo proj_root . '/' . name
+    " echo proj_path . '/' . name
     if len(name) == 0
         return "[No Name]"
     elseif winwidth(0) > 70 
-        if len(proj_name) != 0 && len(name) != 0 && len(proj_root.name) < 72
-            return l:proj_root.l:name
+        if len(proj_name) != 0 && len(name) != 0 && len(proj_path.name) < 72
+            return l:proj_path.l:name
         elseif len(full_name) <= 72
             return l:full_name
         else

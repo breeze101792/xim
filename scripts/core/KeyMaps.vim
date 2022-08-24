@@ -11,10 +11,8 @@
 
 """"    Patch for disable anoying key mapping
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" nnoremap q: <nop>
-" nnoremap q/ <nop>
-nnoremap q: :
-nnoremap q/ /
+nnoremap q: <nop>
+nnoremap q/ <nop>
 
 " n  Normal mode map. Defined using ':nmap' or ':nnoremap'.
 " i  Insert mode map. Defined using ':imap' or ':inoremap'.
@@ -180,9 +178,33 @@ noremap <C-p> :CtrlP<CR>
 " bufferexpl
 noremap <leader>b :ToggleBufExplorer<CR>
 
+" mark
+" nmap <unique> <Leader>m <Plug>MarkSet
+nmap <Leader>m <Plug>MarkSet
+
 "  cctree trace
 noremap <leader>] :CCTreeTraceForward<CR>
 noremap <leader>[ :CCTreeTraceReverse<CR>
+
+" supertab
+" imap <script> <Plug>SuperTabForward <c-r>=SuperTab('n')<cr>
+" imap <script> <Plug>SuperTabBackward <c-r>=SuperTab('p')<cr>
+" imap <silent> <tab> <Plug>SuperTabForward
+
+" vim easy-grep
+map <silent> <Leader>vo <plug>EgMapGrepOptions
+map <silent> <Leader>vv <plug>EgMapGrepCurrentWord_v
+vmap <silent> <Leader>vv <plug>EgMapGrepSelection_v
+map <silent> <Leader>vV <plug>EgMapGrepCurrentWord_V
+vmap <silent> <Leader>vV <plug>EgMapGrepSelection_V
+map <silent> <Leader>va <plug>EgMapGrepCurrentWord_a
+vmap <silent> <Leader>va <plug>EgMapGrepSelection_a
+map <silent> <Leader>vA <plug>EgMapGrepCurrentWord_A
+vmap <silent> <Leader>vA <plug>EgMapGrepSelection_A
+map <silent> <Leader>vr <plug>EgMapReplaceCurrentWord_r
+vmap <silent> <Leader>vr <plug>EgMapReplaceSelection_r
+map <silent> <Leader>vR <plug>EgMapReplaceCurrentWord_R
+vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -19,12 +19,22 @@ endfunc
 command! FastMode call FastMode()
 
 function! FastMode()
-    if exists(":NoMatchParen")
-        " reenable matchparent
-        " :DoMatchParen
+    if &cursorline
+        echo 'Enable fast mode'
         :NoMatchParen
-
+        set nocursorline
+    else
+        echo 'Disable fast mode'
+        :DoMatchParen
+        set cursorline
     endif
+    " if exists(":NoMatchParen")
+    "     " reenable matchparent
+    "     " :DoMatchParen
+    "     :NoMatchParen
+
+    " endif
+
 endfunc
 " -------------------------------------------
 "  Toggle Hexmode
@@ -355,5 +365,24 @@ command! GenerateCachedColorScheme call GenerateCachedColorScheme()
 command! Info call Info()
 
 function! Info()
-    echo 'Path:' . expand('%:p')
+    if empty(glob(expand('%:p')))
+        echo 'No file found'
+        return 0
+    endif
+    let sep="\n"
+    let msg=printf('%- 16s: %s', 'Path', expand('%:p'))
+    let msg=msg . sep . printf('%- 16s: %s', 'Attr ', &fileformat . ', '  . &fileencoding . ', ' . (&expandtab ? 'htab':'stab'))
+
+    " update buf info
+    call IDE_UpdateEnv_BufOpen()
+    let proj_path = get(b:, 'IDE_ENV_GIT_PROJECT_PATH', "-1")
+    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "-1")
+    let proj_branch = get(b:, 'IDE_ENV_GIT_BRANCH', "")
+
+    if proj_name!=''
+        let msg=msg . sep . printf('%- 16s: %s', 'Git Info', (proj_branch == '' ? '':proj_branch . '@'). proj_name)
+        let msg=msg . sep . printf('%- 16s: %s', 'Git Path', (proj_path == '' ? '.':proj_path))
+    endif
+
+    echo msg
 endfunc

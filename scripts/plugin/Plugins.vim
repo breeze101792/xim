@@ -12,15 +12,14 @@ let plugin_debug = 0
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 Plug '~/.vim/plugins/lightline.vim'
 Plug '~/.vim/plugins/vim-ide'
-Plug '~/.vim/plugins/vim-ingo-library'
-Plug '~/.vim/plugins/tagbar'
+" Plug '~/.vim/plugins/vim-ingo-library'
+" Plug '~/.vim/plugins/tagbar'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if plugin_debug == 0
     Plug '~/.vim/plugins/nerdtree', { 'on':  'NERDTreeToggle' }
-    " Plug '~/.vim/plugins/tagbar', { 'on':  'TagbarToggle' }
     Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
     Plug '~/.vim/plugins/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
@@ -29,8 +28,10 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
     Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
     Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
-    " Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
     Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
+    Plug '~/.vim/plugins/vim-mark', { 'on':  ['<Plug>MarkSet'] }
+    Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterEnable'] }
+    Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -42,8 +43,10 @@ else
     Plug '~/.vim/plugins/ctrlp'
     Plug '~/.vim/plugins/syntastic'
     Plug '~/.vim/plugins/Colorizer'
-    " Plug '~/.vim/plugins/vim-easygrep'
     Plug '~/.vim/plugins/bufexplorer'
+    Plug '~/.vim/plugins/vim-mark'
+    Plug '~/.vim/plugins/gitgutter'
+    Plug '~/.vim/plugins/vim-easygrep'
 endif
 
 
@@ -63,19 +66,19 @@ endif
 """"    Auto-start loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if plugin_debug == 0
-    Plug '~/.vim/plugins/supertab', { 'on':  [] }
+    Plug '~/.vim/plugins/vim-ingo-library', { 'on':  [] }
+    Plug '~/.vim/plugins/tagbar', { 'on':  ['TagbarToggle'] }
+
+    Plug '~/.vim/plugins/supertab', { 'on':  ['<Plug>SuperTabForward'] }
     Plug '~/.vim/plugins/vim-multiple-cursors', { 'on':  [] }
-    Plug '~/.vim/plugins/vim-mark', { 'on':  [] }
     Plug '~/.vim/plugins/vim-surround', { 'on':  [] }
-    Plug '~/.vim/plugins/gitgutter', { 'on':  [] }
-    Plug '~/.vim/plugins/vim-easygrep', { 'on':  [] }
 else
+    Plug '~/.vim/plugins/vim-ingo-library'
+    Plug '~/.vim/plugins/tagbar'
+
     Plug '~/.vim/plugins/supertab'
     Plug '~/.vim/plugins/vim-multiple-cursors'
-    Plug '~/.vim/plugins/vim-mark'
     Plug '~/.vim/plugins/vim-surround'
-    Plug '~/.vim/plugins/gitgutter'
-    Plug '~/.vim/plugins/vim-easygrep'
 endif
 
 " Initialize plugin system
@@ -87,17 +90,19 @@ call plug#end()
 function! DealyLoading(timer) abort
     " no reshape
     call plug#load('vim-surround')
-    call plug#load('vim-easygrep')
+
+    call plug#load('vim-ingo-library')
+    call plug#load('tagbar')
 
     " load plugins
     call plug#load('supertab')
     call plug#load('vim-multiple-cursors')
-    call plug#load('vim-mark')
-    call plug#load('gitgutter')
-    : GitGutterEnable
+
+    :GitGutterEnable
 endfunction
 
 if version >= 800 && plugin_debug == 0
     " Call loadPlug after 500ms
-    call timer_start(200, 'DealyLoading')
+    " all init shuld be done before first 500ms
+    call timer_start(500, 'DealyLoading')
 endif

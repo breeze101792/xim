@@ -26,6 +26,16 @@ function! PostInit()
         " echo "Source "g:IDE_ENV_PROJ_SCRIPT
         execute 'source' . g:IDE_ENV_PROJ_SCRIPT
     endif
+
+    " Moving from delay loading function will slow down the launch time.
+    " try
+    "     :GitGutterEnable
+    " catch
+    "     echo 'Fail to load Gitgutter'
+    " endtry
+    " call plug#load('vim-surround')
+    " call plug#load('supertab')
+    " call plug#load('vim-multiple-cursors')
 endfunction
 
 augroup init_gp

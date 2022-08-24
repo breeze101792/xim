@@ -69,6 +69,6 @@
 	path = plugins/Colorizer
 	url = https://github.com/chrisbra/Colorizer.git
 	branch = master
-[submodule "plugin/vim-easygrep"]
-	path = plugin/vim-easygrep
+[submodule "plugins/vim-easygrep"]
+	path = plugins/vim-easygrep
 	url = https://github.com/dkprice/vim-easygrep.git

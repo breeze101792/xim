@@ -108,11 +108,12 @@ set list
 """"    IDE Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax one
-syntax enable              " enable syntax hi, cann't be place after theme settings
+" set synmaxcol=100        " arbitrary number < 3000 (default value)
 syntax sync maxlines=50
 " syntax sync minlines=200
-" set synmaxcol=100        " arbitrary number < 3000 (default value)
-filetype plugin indent on  " base on file type do auto indend
+" since vim-plug will auto enable the following 2 lines, don't enable it
+" syntax enable              " Enable syntax at theme, otherwise it will source to may file, enable syntax hi, cann't be place after theme settings
+" filetype plugin indent on  " base on file type do auto indend
 
 " set formatoptions
 set tags=./tags,tags;/     " tag path
@@ -155,9 +156,9 @@ set wildignore+=*.so,*.swp,*.zip,*.o,*.a,*.d,*.img,*.tar.*
 
 " Status/Command
 set showcmd      " show partial command on last line of screen.
+set laststatus=2 " status bar always show
 set cmdheight=1  " Command line height
-set laststatus=2 " status bar height
-set shortmess=aO  " option to avoid hit enter, a for all, O for overwrite when reading file
+set shortmess=aO " option to avoid hit enter, a for all, O for overwrite when reading file
 set ruler        " enable status bar ruler
 " set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
 
