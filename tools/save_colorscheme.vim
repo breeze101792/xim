@@ -111,17 +111,18 @@ let s:names = [
 exec "tabnew" . s:file_path
 call append('$', ('" Set ''background'' back to the default.  The value can''t always be estimated'))
 call append('$', ('" and is then guessed.'))
-call append('$', ('hi clear Normal'))
+" call append('$', ('hi clear Normal'))
 " call append('$', ('set background&'))
 call append('$', ('set background='.&background))
 call append('$', (''))
 call append('$', ('" Remove all existing highlighting and set the defaults.'))
 call append('$', ('hi clear'))
 call append('$', (''))
-call append('$', ('" Load the syntax highlighting defaults, if it''s enabled.'))
-call append('$', ('if exists("syntax_on")'))
-call append('$', ('  syntax reset'))
-call append('$', ('endif'))
+" this alrady done by hi clear
+" call append('$', ('" Load the syntax highlighting defaults, if it''s enabled.'))
+" call append('$', ('if exists("syntax_on")'))
+" call append('$', ('  syntax reset'))
+" call append('$', ('endif'))
 call append('$', (''))
 
 if (s:save_all_highlights == 1)
@@ -172,4 +173,4 @@ call append('$', (''))
 call append('$', "let g:colors_name = '".s:scheme_name."'")
 
 exec "write"
-exec "close"
+exec "bd"

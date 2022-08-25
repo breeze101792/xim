@@ -8,9 +8,10 @@
 set background=dark
 if version > 580
     hi clear
-    if exists("syntax_on")
-        syntax reset
-    endif
+    " already done by hi clear
+    " if exists("syntax_on")
+    "     syntax reset
+    " endif
 endif
 
 let g:colors_name = "afterglow_lab"
