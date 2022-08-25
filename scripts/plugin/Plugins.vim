@@ -88,17 +88,17 @@ call plug#end()
 """"    Delay Loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! DealyLoading(timer) abort
-    " no reshape
+    " load redraw plugins first, to prevent status restore
+    call plug#load('supertab') " this will restore line number
+    call plug#load('vim-multiple-cursors')
+
+    :GitGutterEnable
+
+    " no redraw
     call plug#load('vim-surround')
 
     call plug#load('vim-ingo-library')
     call plug#load('tagbar')
-
-    " load plugins
-    call plug#load('supertab')
-    call plug#load('vim-multiple-cursors')
-
-    :GitGutterEnable
 endfunction
 
 if version >= 800 && plugin_debug == 0

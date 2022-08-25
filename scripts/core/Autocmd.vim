@@ -11,15 +11,12 @@ function! PostInit()
     " Tag setup
     " -------------------------------------------
     if g:IDE_ENV_CSCOPE_DB != ''
-        echo "Open "g:IDE_ENV_CSCOPE_DB
-        " cscope add $VIDE_SH_CSCOPE_DB
+        " echo "Open "g:IDE_ENV_CSCOPE_DB
         execute "cscope add ".g:IDE_ENV_CSCOPE_DB
-        " autocmd VimEnter * cscope add g:IDE_ENV_CSCOPE_DB
     endif
     " FIXME don't use autocmd ousside group, fix/test it with ccglue
     if g:IDE_ENV_CCTREE_DB != ''
         " echo "Open "g:IDE_ENV_CCTREE_DB
-        " autocmd VimEnter * CCTreeLoadXRefDBFromDisk g:IDE_ENV_CCTREE_DB
         silent! execute "CCTreeLoadXRefDB" . g:IDE_ENV_CCTREE_DB
     endif
     if g:IDE_ENV_PROJ_SCRIPT != ''
@@ -98,6 +95,11 @@ augroup END
 augroup tab_gp
     autocmd!
     autocmd BufReadPost * call TabsOrSpaces()
+augroup END
+
+augroup filetype_gp
+    autocmd!
+    au BufRead,BufNewFile *.log set filetype=log
 augroup END
 
 """"    Plugins cmd

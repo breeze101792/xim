@@ -95,7 +95,23 @@ function! DebugToggle()
     endif
 endfunction
 " -------------------------------------------
-"  Clip/Session Clip
+"  File op
+" -------------------------------------------
+command! -range FileOpen call FileOpen()
+
+function! FileOpen()
+    " ~/.bashrc
+    let l:file_name = VisualSelection()
+    echo l:file_name
+    if !empty(glob(l:file_name))
+        execute 'tabnew ' . l:file_name
+    else
+        " echo 'File not found'
+        echo 'File not found. "' . l:file_name . '"'
+    endif
+endfunc
+" -------------------------------------------
+"  Clip/Session op
 " -------------------------------------------
 command! ClipRead call ClipRead()
 

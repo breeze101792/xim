@@ -47,5 +47,5 @@ func! Refresh()
     so ~/.vim/vim-ide/utility/Template.vim
 
     redraw
-    echo 'Vim refresh done.'
+    echo 'Vim Setting Refreshed.'
 endfunc
