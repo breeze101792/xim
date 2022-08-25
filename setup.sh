@@ -8,7 +8,7 @@ function plugins_check()
     for each_plugin in $(ls ${IDE_ROOT}/plugins)
     do
         # echo ${each_plugin}
-        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${IDE_ROOT}/scripts/Plugins.vim | grep ${each_plugin} > /dev/null
+        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${IDE_ROOT}/scripts/plugin/Plugins.vim | grep ${each_plugin} > /dev/null
         then
             echo Plugin ${each_plugin} not found in Plugins.vim
             var_check="fail"
@@ -112,6 +112,8 @@ function setup()
     mkdir -p ${VIM_ROOT}/autoload/
     mkdir -p ${VIM_ROOT}/colors/
     mkdir -p ${VIM_ROOT}/swp/
+    # patch for accerate startup speed
+    # ln -sf ${VIM_ROOT}/plugins/vim-plug/plug.vim ${VIM_ROOT}/autoload/
     ln -sf ${VIM_ROOT}/plugins/vim-plug/plug.vim ${VIM_ROOT}/autoload/
     setup_cus_config
 
@@ -138,7 +140,7 @@ function setup_lite()
 function setup_cus_config()
 {
     touch ${VIM_ROOT}/Config_Customize.vim
-    for each_config in $(cat scripts/Config.vim | grep let | cut -d ':' -f 2 | cut -d '=' -f 1)
+    for each_config in $(cat scripts/core/Config.vim | grep let | cut -d ':' -f 2 | cut -d '=' -f 1)
     do
         # echo "Checking ${each_config}"
         if cat ${VIM_ROOT}/Config_Customize.vim | grep ${each_config} > /dev/null
@@ -146,8 +148,8 @@ function setup_cus_config()
             echo "Skip config ${each_config}, already exist"
         else
             echo "Adding config ${each_config}"
-            cat scripts/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${VIM_ROOT}/Config_Customize.vim
-            cat scripts/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${VIM_ROOT}/Config_Customize.vim
+            cat scripts/core/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${VIM_ROOT}/Config_Customize.vim
+            cat scripts/core/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${VIM_ROOT}/Config_Customize.vim
         fi
     done
 }

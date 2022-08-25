@@ -13,7 +13,8 @@ catch /^Vim\%((\a\+)\)\=:E185/
     try
         colorscheme afterglow_lab
         if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
-            silent! source ~/.vim/tools/save_colorscheme.vim
+            " silent source ~/.vim/tools/save_colorscheme.vim
+            source ~/.vim/tools/save_colorscheme.vim
         endif
     catch /^Vim\%((\a\+)\)\=:E185/
         colorscheme vimdefault
