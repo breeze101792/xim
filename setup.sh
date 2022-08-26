@@ -139,17 +139,17 @@ function setup_lite()
 }
 function setup_cus_config()
 {
-    touch ${VIM_ROOT}/Config_Customize.vim
-    for each_config in $(cat scripts/core/Config.vim | grep let | cut -d ':' -f 2 | cut -d '=' -f 1)
+    touch ${VIM_ROOT}/ConfigCustomize.vim
+    for each_config in $(cat scripts/core/Config.vim | grep let |tr -s ' ' | cut -d ':' -f 2 | cut -d '=' -f 1 | sort | uniq)
     do
-        # echo "Checking ${each_config}"
-        if cat ${VIM_ROOT}/Config_Customize.vim | grep ${each_config} > /dev/null
+        echo "Checking ${each_config}"
+        if cat ${VIM_ROOT}/ConfigCustomize.vim | grep ${each_config} > /dev/null
         then
-            echo "Skip config ${each_config}, already exist"
+            echo " - Skip config ${each_config}, already exist"
         else
-            echo "Adding config ${each_config}"
-            cat scripts/core/Config.vim | grep ${each_config} | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${VIM_ROOT}/Config_Customize.vim
-            cat scripts/core/Config.vim | grep ${each_config} | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${VIM_ROOT}/Config_Customize.vim
+            echo " - Adding config ${each_config}"
+            cat scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${VIM_ROOT}/ConfigCustomize.vim
+            cat scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${VIM_ROOT}/ConfigCustomize.vim
         fi
     done
 }

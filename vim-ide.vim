@@ -2,8 +2,13 @@
 """"    initialize
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Source needed scripts
-if !empty(glob("~/.vim/Config_Customize.vim"))
-    so ~/.vim/Config_Customize.vim
+if !empty(glob("~/.vim/ConfigCustomize.vim"))
+    so ~/.vim/ConfigCustomize.vim
+else
+    " TODO remove it
+    if !empty(glob("~/.vim/Config_Customize.vim"))
+        so ~/.vim/Config_Customize.vim
+    endif
 endif
 
 so ~/.vim/vim-ide/core/Config.vim

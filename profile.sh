@@ -83,7 +83,7 @@ function fexample()
 function flab_setup()
 {
     # fPrintHeader ${FUNCNAME[0]}
-    [ -d ${PATH_LAB} ] && mkdir -p ${PATH_LAB}
+    [ ! -d ${PATH_LAB} ] && mkdir -p ${PATH_LAB}
 }
 function fprofiling()
 {
