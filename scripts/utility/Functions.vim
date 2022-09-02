@@ -34,7 +34,41 @@ function! FastMode()
     "     :NoMatchParen
 
     " endif
+endfunc
+" -------------------------------------------
+"  Pure mode
+" -------------------------------------------
+command! PasteToggle call PasteToggle()
 
+function! PasteToggle()
+    if &paste
+        echo 'Disable Pure mode'
+        set nopaste
+        set cursorline
+        set number
+
+        :DoMatchParen
+        :GitGutterDisable
+
+        " if g:IDE_CFG_SPECIAL_CHARS == "y"
+        "     set showbreak=↪\
+        "     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+        " else
+        "     set showbreak=→\
+        "     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+        " endif
+    else
+        echo 'Enable Pure mode'
+        set paste
+        set nocursorline
+        set nonumber
+
+        :NoMatchParen
+        :GitGutterEnable
+
+        " set showbreak= 
+        " set listchars=tab: ,nbsp: ,trail: ,precedes: ,extends: 
+    endif
 endfunc
 " -------------------------------------------
 "  Toggle Hexmode
@@ -197,8 +231,8 @@ endfunction
 "  Title
 " -------------------------------------------
 command! -nargs=? Title :call <SID>Title(<q-args>)
-function! s:Title(fun_name)
-    let g:IDE_ENV_IDE_TITLE=a:fun_name
+function! s:Title(title_name)
+    let g:IDE_ENV_IDE_TITLE=a:title_name
     if version >= 802
         redrawtabline
     else
@@ -209,12 +243,17 @@ function! s:Title(fun_name)
 endfunc
 
 " -------------------------------------------
-"  Tags
+"  Tags/cscope
 " -------------------------------------------
 command! TagUpdate call TagUpdate()
 
 function! TagUpdate()
     execute 'cscope reset'
+endfunc
+
+command! -nargs=? TagFind :call <SID>TagFind(<q-args>)
+function! s:TagFind(tag_name)
+    execute 'cs find g ' . a:tag_name
 endfunc
 
 " -------------------------------------------

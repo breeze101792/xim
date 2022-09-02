@@ -22,7 +22,7 @@ syn match logError /\cerr\(or\)\?/
 
 " syn match logError /\c[^a-zA-Z]fail\(ed\)\?/
 " syn match logError /\c^fail\(ed\)\?/
-syn match logError /\c^fail\(ed\)\?/
+syn match logError /\cfail\(ed\)\?/
 
 syn match logWarning /\cwarn\(ing\)\?/
 
