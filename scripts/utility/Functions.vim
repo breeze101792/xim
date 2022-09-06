@@ -426,7 +426,8 @@ function! Info()
     endif
     let sep="\n"
     let msg=printf('%- 16s: %s', 'Path', expand('%:p'))
-    let msg=msg . sep . printf('%- 16s: %s', 'Attr ', &fileformat . ', '  . &fileencoding . ', ' . (&expandtab ? 'htab':'stab'))
+    let msg=msg . sep . printf('%- 16s: %s', 'Attr ', &fileformat . ', '  . &fileencoding . ', ' . (&expandtab ? 'stab':'htab'))
+    let msg=msg . sep . printf('%- 16s: %s', 'Filetype ', &filetype)
 
     " update buf info
     call IDE_UpdateEnv_BufOpen()
@@ -436,7 +437,7 @@ function! Info()
 
     if proj_name!=''
         let msg=msg . sep . printf('%- 16s: %s', 'Git Info', (proj_branch == '' ? '':proj_branch . '@'). proj_name)
-        let msg=msg . sep . printf('%- 16s: %s', 'Git Path', (proj_path == '' ? '.':proj_path))
+        let msg=msg . sep . printf('%- 16s: %s', 'Git Path', (proj_path == '' ? './':proj_path))
     endif
 
     echo msg

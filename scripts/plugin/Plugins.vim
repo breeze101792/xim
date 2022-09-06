@@ -57,9 +57,11 @@ endif
 if plugin_debug == 0
     Plug '~/.vim/plugins/OmniCppComplete', { 'for':  ['cpp', 'c'] }
     Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  ['cpp', 'c'] }
+    Plug '~/.vim/plugins/vim-python-pep8-indent', { 'for':  ['python'] }
 else
     Plug '~/.vim/plugins/OmniCppComplete'
     Plug '~/.vim/plugins/vim-cpp-enhanced-highlight'
+    Plug '~/.vim/plugins/vim-python-pep8-indent'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

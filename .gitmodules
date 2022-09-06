@@ -72,3 +72,7 @@
 [submodule "plugins/vim-easygrep"]
 	path = plugins/vim-easygrep
 	url = https://github.com/dkprice/vim-easygrep.git
+[submodule "plugins/vim-python-pep8-indent"]
+	path = plugins/vim-python-pep8-indent
+	url = https://github.com/Vimjas/vim-python-pep8-indent.git
+	branch = master

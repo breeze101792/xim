@@ -14,6 +14,11 @@ if you want to first yank a section of a line, then use "v" and move with cursor
 ## vim script note
 http://vimdoc.sourceforge.net/htmldoc/usr_41.html
 
+## add subproject
+```
+git submodule add [url] [folder]
+```
+
 ## update subproject
 ```
 git submodule foreach git pull origin master
