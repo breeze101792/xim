@@ -213,8 +213,12 @@ function! SessionStore()
     while currbufnr <= bufcount
         let currbufname = expand('#' . currbufnr . ':p')
         if !empty(glob(currbufname))
+            " FIXME delete buffer will also show on the list, remove it in the
+            " future
             " echo currbufnr . ": ". currbufname
-            call writefile(['edit ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
+            " call writefile(['edit ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
+            " use buffer add to accerate speed
+            call writefile(['badd ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
         endif
         let currbufnr = currbufnr + 1
     endwhile
