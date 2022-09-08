@@ -1,4 +1,40 @@
 
+command! PlugBufexplorer call PlugBufexplorer()
+
+function! PlugBufexplorer()
+
+    if exists("g:bufexplorer_version")
+        " call <Plug>setup()
+        " let sid = '~/tools/vim-ide/plugins/bufexplorer/plugin/bufexplorer.vim' " Parse :scriptnames output
+        let sid = '~/tools/vim-ide/plugins/bufexplorer/plugin/bufexplorer.vim' " Parse :scriptnames output
+        let MyFuncref = function("<SNR>" . sid . '_' ."setup")
+        echo call(MyFuncref, [])
+    endif
+    echo 'Toggle bufexplorer'
+    execute 'ToggleBufExplorer'
+endfunc
+
+" -------------------------------------------
+"  Get IDs
+" -------------------------------------------
+function FindScriptID(name)
+    for tabnr in function
+        echo tabnr
+    endfor
+    return [0, 0]
+endfunction
+" function s:FindWinID(id)
+"     for tabnr in range(1, tabpagenr('$'))
+"         for winnr in range(1, tabpagewinnr(tabnr, '$'))
+"             if gettabwinvar(tabnr, winnr, 'id') is a:id
+"                 return [tabnr, winnr]
+"             endif
+"         endfor
+"     endfor
+"     return [0, 0]
+" endfunction
+
+
 " " -------------------------------------------
 " "  Largfile handle
 " " -------------------------------------------

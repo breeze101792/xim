@@ -333,6 +333,10 @@ let g:gitgutter_override_sign_column_highlight = 1
 " autocmd VimEnter * highlight GitGutterDelete ctermfg=1 ctermbg=None
 " autocmd VimEnter * highlight GitGutterChangeDelete ctermfg=4 ctermbg=None
 
+""""    bufexplorer
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:bufExplorerSortBy='name'
+
 """"    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " let g:syntastic_always_populate_loc_list = 1

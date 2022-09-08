@@ -15,9 +15,13 @@ Plug '~/.vim/plugins/vim-ide'
 " Plug '~/.vim/plugins/vim-ingo-library'
 " Plug '~/.vim/plugins/tagbar'
 
+" FIXME, contain vimenter for init, this will not trigger it.
+Plug '~/.vim/plugins/bufexplorer'
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+"FIXME if autocommand contain vimenter for init, this will not trigger it.
 if plugin_debug == 0
     Plug '~/.vim/plugins/nerdtree', { 'on':  'NERDTreeToggle' }
     Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
@@ -28,10 +32,10 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
     Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
     Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
-    Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
     Plug '~/.vim/plugins/vim-mark', { 'on':  ['<Plug>MarkSet'] }
     Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterEnable'] }
     Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
+    " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
 else
     Plug '~/.vim/plugins/nerdtree'
     " Plug '~/.vim/plugins/tagbar'
@@ -43,10 +47,10 @@ else
     Plug '~/.vim/plugins/ctrlp'
     Plug '~/.vim/plugins/syntastic'
     Plug '~/.vim/plugins/Colorizer'
-    Plug '~/.vim/plugins/bufexplorer'
     Plug '~/.vim/plugins/vim-mark'
     Plug '~/.vim/plugins/gitgutter'
     Plug '~/.vim/plugins/vim-easygrep'
+    " Plug '~/.vim/plugins/bufexplorer'
 endif
 
 
