@@ -144,6 +144,18 @@ function! FileOpen()
         echo 'File not found. "' . l:file_name . '"'
     endif
 endfunc
+
+command! -nargs=? RenameFile :call RenameFile(<q-args>)
+function! RenameFile(new_name)
+    let old_name = expand('%')
+    " let new_name = input('New file name: ', expand('%'), 'file')
+    if a:new_name != '' && a:new_name != old_name
+        exec ':saveas ' . a:new_name
+        exec ':silent !rm ' . old_name
+        redraw!
+    endif
+endfunction
+map <leader>n :call RenameFile()<cr>
 " -------------------------------------------
 "  Clip/Session op
 " -------------------------------------------
