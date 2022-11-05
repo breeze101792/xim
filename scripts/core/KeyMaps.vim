@@ -160,6 +160,7 @@ nnoremap <silent>ct :cscope find t <cword><CR>
 
 " Commentary settings
 map <C-_> :Commentary<CR>
+map <Leader>/ :Commentary<CR>
 
 " GitGutter settings
 " map <C-g> :GitGutterToggle<CR>
