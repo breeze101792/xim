@@ -157,6 +157,35 @@ function! RenameFile(new_name)
 endfunction
 map <leader>n :call RenameFile()<cr>
 " -------------------------------------------
+"  Tab op
+" -------------------------------------------
+function! TabCloseOthers(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+function! TabCloseRight(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+endfunction
+
+function! TabCloseLeft(bang)
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+command! -bang Tabcloseothers call TabCloseOthers('<bang>')
+command! -bang Tabcloseright call TabCloseRight('<bang>')
+command! -bang Tabcloseleft call TabCloseLeft('<bang>')
+" -------------------------------------------
 "  Clip/Session op
 " -------------------------------------------
 command! ClipRead call ClipRead()
@@ -241,6 +270,12 @@ command! SessionLoad :call SessionLoad()
 function! SessionLoad()
     silent! exec 'source' . g:IDE_ENV_SESSION_PATH
     echo 'Session loaded. BufCnt:'.bufnr("$")
+endfunction
+command! SessionOpen :call SessionOpen()
+function! SessionOpen()
+    silent! exec 'source' . g:IDE_ENV_SESSION_PATH
+    silent! exec 'tab sball'
+    echo 'Session loaded & opened. BufCnt:'.bufnr("$")
 endfunction
 
 " -------------------------------------------
