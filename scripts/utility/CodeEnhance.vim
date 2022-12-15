@@ -140,3 +140,50 @@ function! s:PyProp(property)
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
     call append('.', l:text)
 endfunction
+
+" -------------------------------------------
+"  Python Main
+" -------------------------------------------
+command! -nargs=? PyMain :call <SID>PyMain(<q-args>)
+command! PyMain :call <SID>PyMain("main")
+function! s:PyMain(main_func)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:main_func
+    if l:tmpl == ""
+        let l:tmpl="main"
+    endif
+    let l:text = [
+        \ 'if __name__ == "__main__":',
+        \ '    <TMPL>()'
+    \ ]
+
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+" -------------------------------------------
+"  Python Trace
+" -------------------------------------------
+command! PyTrace :call <SID>PyTrace()
+function! s:PyTrace()
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=''
+    " if l:tmpl == ""
+    "     let l:tmpl="main"
+    " endif
+    let l:text = [
+        \ 'import traceback',
+        \ 'try:',
+        \ '    pass',
+        \ 'except Exception as e:',
+        \ '    print(e)',
+        \ '',
+        \ '    traceback_output = traceback.format_exc()',
+        \ '    print(traceback_output)',
+        \ 'finally:',
+        \ '    pass',
+    \ ]
+
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
