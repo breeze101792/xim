@@ -156,6 +156,18 @@ function! RenameFile(new_name)
     endif
 endfunction
 map <leader>n :call RenameFile()<cr>
+
+command! -nargs=? DuplicateFile :call DuplicateFile(<q-args>)
+function! DuplicateFile(new_name)
+    let old_name = expand('%')
+    " let new_name = input('New file name: ', expand('%'), 'file')
+    if a:new_name != '' && a:new_name != old_name
+        exec ':saveas ' . a:new_name
+        exec ':silent !cp ' . old_name
+        redraw!
+    endif
+endfunction
+map <leader>n :call DuplicateFile()<cr>
 " -------------------------------------------
 "  Tab op
 " -------------------------------------------
