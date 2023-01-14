@@ -17,7 +17,7 @@ endfunc
 " -------------------------------------------
 "  Get IDs
 " -------------------------------------------
-function FindScriptID(name)
+function! FindScriptID(name)
     for tabnr in function
         echo tabnr
     endfor
