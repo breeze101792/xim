@@ -365,6 +365,14 @@ function! Beautify() range
 
 endfunction
 
+command! -range FormatCode <line1>,<line2>call FormatCode()
+function! FormatCode() range
+    " may need to migrate to beautify
+    silent! execute a:firstline.','.a:lastline.'s/;/;\r/g'
+    silent! execute a:firstline.','.a:lastline.'s/{/{\r/g'
+    silent! execute a:firstline.','.a:lastline.'s/}/}\r/g'
+endfun
+
 " -------------------------------------------
 "  Duplicate Function
 " -------------------------------------------

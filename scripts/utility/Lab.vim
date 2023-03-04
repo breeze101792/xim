@@ -1,4 +1,7 @@
 
+" -------------------------------------------
+"  PlugBufexplorer
+" -------------------------------------------
 command! PlugBufexplorer call PlugBufexplorer()
 
 function! PlugBufexplorer()
