@@ -27,6 +27,7 @@ set smartindent                                   " smart indent
 set showmatch                                     " show the matching part of the pair for [] {} and ()
 set backspace=indent,eol,start                    " when press backspace
 
+colorscheme desert
 syntax enable              " enable syntax hi, cann't be place after theme settings
 syntax sync maxlines=50
 " syntax sync minlines=200

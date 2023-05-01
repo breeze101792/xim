@@ -130,12 +130,31 @@ function! s:PyProp(property)
         let l:tmpl="py_prop"
     endif
     let l:text = [
-        \ '@property',
-        \ 'def <TMPL>(self):',
-        \ '    return self._<TMPL>',
-        \ '@<TMPL>.setter',
+        \ '    @property',
+        \ '    def <TMPL>(self):',
+        \ '        return self._<TMPL>',
+        \ '    @<TMPL>.setter',
         \ '    def <TMPL>(self,val):',
         \ '        self._<TMPL> = val'
+    \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+" -------------------------------------------
+"  Python Class
+" -------------------------------------------
+command! -nargs=? PyClass :call <SID>PyClass(<q-args>)
+command! PyClass :call <SID>PyClass("Test")
+function! s:PyClass(name)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:name
+    if l:tmpl == ""
+        let l:tmpl="py_prop"
+    endif
+    let l:text = [
+        \ 'class <TMPL>:',
+        \ '    def __init__(self):',
+        \ '        pass'
     \ ]
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
     call append('.', l:text)
@@ -168,9 +187,7 @@ command! PyTrace :call <SID>PyTrace()
 function! s:PyTrace()
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=''
-    " if l:tmpl == ""
-    "     let l:tmpl="main"
-    " endif
+
     let l:text = [
         \ 'import traceback',
         \ 'try:',

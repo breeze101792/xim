@@ -452,6 +452,19 @@ function! RepeatText(text, times)
     echo 'Repeate text '.a:times.' times done.'
 endfunction
 " -------------------------------------------
+"  Select
+" -------------------------------------------
+command! SelAll call SelAll()
+command! SelBlock call SelBlock()
+
+function! SelAll()
+    call feedkeys('ggVG')
+endfunction
+function! SelBlock()
+    call feedkeys('[{')
+    call feedkeys('V]}')
+endfunction
+" -------------------------------------------
 "  TmpFile
 " -------------------------------------------
 function! TmpFile()

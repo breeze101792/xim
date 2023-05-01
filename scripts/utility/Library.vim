@@ -3,11 +3,11 @@
 " -------------------------------------------
 function! TabsOrSpaces()
     " Determines whether to use spaces or tabs on the current buffer.
-    if getfsize(bufname("%")) > 256000
-        " File is very large, just use the default.
-        setlocal expandtab
-        return
-    endif
+    " if getfsize(bufname("%")) > 256000
+    "     " File is very large, just use the default.
+    "     setlocal expandtab
+    "     return
+    " endif
 
     let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
     let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
@@ -94,3 +94,16 @@ function! CurrentFunction()
     call winrestview(view)
     return tempstring.position
 endfun
+" -------------------------------------------
+"  Conditional Pair
+" -------------------------------------------
+" This matches character pairs that are defined.
+function! ConditionalPairMap(open, close) abort
+    let line = getline('.')
+    let col = col('.')
+    if col < col('$') || stridx(line, a:close, col + 1) != -1
+        return a:open
+    else
+        return a:open . a:close . repeat("\<left>", len(a:close))
+    endif
+endfunction

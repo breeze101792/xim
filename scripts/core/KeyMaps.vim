@@ -131,6 +131,11 @@ nnoremap <silent> <C-m> :MouseToggle<CR>
 " Toggle Hex Mode
 nmap <Leader>h :HexToggle<CR>
 
+" Match & complete patterns
+inoremap <expr> ( ConditionalPairMap('(', ')')
+inoremap <expr> { ConditionalPairMap('{', '}')
+inoremap <expr> [ ConditionalPairMap('[', ']')
+
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " IDE map
