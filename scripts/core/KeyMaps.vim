@@ -78,6 +78,7 @@ nnoremap <leader>sh :sh<CR>
 
 " select all content
 map <C-a> <Esc>ggVG<CR>
+map <leader>a <Esc>ggVG<CR>
 
 " Edit
 nnoremap <S-k> <Esc>dd<Up>P

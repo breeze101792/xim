@@ -81,7 +81,6 @@ endfunction
 "  C Printf
 " -------------------------------------------
 command! -nargs=? CPrintf :call <SID>CPrintf(<q-args>)
-command! CPrintf :call <SID>CPrintf("")
 function! s:CPrintf(content)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:content
@@ -99,7 +98,6 @@ endfunction
 "  C Macro if
 " -------------------------------------------
 command! -nargs=? CMIf :call <SID>CMIf(<q-args>)
-command! CMIf :call <SID>CMIf("")
 function! s:CMIf(content)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:content
@@ -122,7 +120,6 @@ endfunction
 "  Python Prop
 " -------------------------------------------
 command! -nargs=? PyProp :call <SID>PyProp(<q-args>)
-command! PyProp :call <SID>PyProp("python_prop")
 function! s:PyProp(property)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:property
@@ -143,8 +140,8 @@ endfunction
 " -------------------------------------------
 "  Python Class
 " -------------------------------------------
+
 command! -nargs=? PyClass :call <SID>PyClass(<q-args>)
-command! PyClass :call <SID>PyClass("Test")
 function! s:PyClass(name)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:name
@@ -164,7 +161,6 @@ endfunction
 "  Python Main
 " -------------------------------------------
 command! -nargs=? PyMain :call <SID>PyMain(<q-args>)
-command! PyMain :call <SID>PyMain("main")
 function! s:PyMain(main_func)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:main_func

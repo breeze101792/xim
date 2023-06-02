@@ -85,6 +85,7 @@ function! HexToggle()
     let l:oldreadonly=&readonly
     let &readonly=0
     let l:oldmodifiable=&modifiable
+
     let &modifiable=1
     if !exists("b:editHex") || !b:editHex
         " save old options
@@ -98,7 +99,7 @@ function! HexToggle()
         " set status
         let b:editHex=1
         " switch to hex editor
-        %!xxd -c 32
+        %!xxd -c 16
     else
         " restore old options
         let &ft=b:oldft
@@ -108,12 +109,18 @@ function! HexToggle()
         " set status
         let b:editHex=0
         " return to normal editing
-        %!xxd -r -c 32
+        %!xxd -r -c 16
     endif
     " restore values for modified and read only state
     let &mod=l:modified
     let &readonly=l:oldreadonly
     let &modifiable=l:oldmodifiable
+endfunction
+" mark file as binary
+command! Binary call Binary()
+function! Binary()
+    setlocal binary
+    :e
 endfunction
 " -------------------------------------------
 "  Toggle Debug message
@@ -151,7 +158,7 @@ function! RenameFile(new_name)
     " let new_name = input('New file name: ', expand('%'), 'file')
     if a:new_name != '' && a:new_name != old_name
         exec ':saveas ' . a:new_name
-        exec ':silent !rm ' . old_name
+        exec ':silent !mv ' . old_name . ' ' . old_name.strftime("_RN_%Y%m%d_%I%M%S")
         redraw!
     endif
 endfunction
@@ -218,6 +225,11 @@ function! ClipOpen()
         " echo 'File not found'
         echo 'File not found. "' . l:clip_buf . '"'
     endif
+endfunc
+
+command! ClipCopy call ClipCopy()
+function! ClipCopy()
+    echo system('echo ' . expand('%:p') . ' > ' . g:IDE_ENV_CLIP_PATH)
 endfunc
 
 function! SessionYank()
