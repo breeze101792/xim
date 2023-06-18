@@ -38,9 +38,9 @@ endfunc
 " -------------------------------------------
 "  Pure mode
 " -------------------------------------------
-command! PasteToggle call PasteToggle()
+command! PureToggle call PureToggle()
 
-function! PasteToggle()
+function! PureToggle()
     if &paste
         echo 'Disable Pure mode'
         set nopaste
