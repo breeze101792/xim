@@ -33,11 +33,12 @@ if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
 endif
 
 " -------------------------------------------
-"  Refresh
+"  Reload
 " -------------------------------------------
-command! Refresh call Refresh()
+command! Reload call Reload()
+command! Refresh call Reload()
 
-func! Refresh()
+func! Reload()
     so ~/.vim/vim-ide/core/Config.vim
     so ~/.vim/vim-ide/core/Environment.vim
     so ~/.vim/vim-ide/core/Settings.vim
