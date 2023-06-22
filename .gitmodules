@@ -41,7 +41,7 @@
 [submodule "plugins/gitgutter"]
 	path = plugins/gitgutter
 	url = https://github.com/airblade/vim-gitgutter.git
-	branch = master
+	branch = main
 [submodule "plugins/srcexpl"]
 	path = plugins/srcexpl
 	url = https://github.com/breeze101792/SrcExpl.git
