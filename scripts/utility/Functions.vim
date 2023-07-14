@@ -162,7 +162,6 @@ function! RenameFile(new_name)
         redraw!
     endif
 endfunction
-map <leader>n :call RenameFile()<cr>
 
 command! -nargs=? DuplicateFile :call DuplicateFile(<q-args>)
 function! DuplicateFile(new_name)
@@ -174,7 +173,6 @@ function! DuplicateFile(new_name)
         redraw!
     endif
 endfunction
-map <leader>n :call DuplicateFile()<cr>
 " -------------------------------------------
 "  Tab op
 " -------------------------------------------

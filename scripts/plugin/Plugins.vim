@@ -38,7 +38,6 @@ if plugin_debug == 0
     " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
 else
     Plug '~/.vim/plugins/nerdtree'
-    " Plug '~/.vim/plugins/tagbar'
     Plug '~/.vim/plugins/srcexpl'
     Plug '~/.vim/plugins/vim-commentary'
     Plug '~/.vim/plugins/cctree'
@@ -93,22 +92,21 @@ call plug#end()
 
 """"    Delay Loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-function! DealyLoading(timer) abort
-    " load redraw plugins first, to prevent status restore
-    call plug#load('supertab') " this will restore line number
-    call plug#load('vim-multiple-cursors')
+if plugin_debug == 0
+    function! IDE_PlugInDealyLoading()
+        " load redraw plugins first, to prevent status restore
+        call plug#load('supertab') " this will restore line number
+        call plug#load('vim-multiple-cursors')
 
-    :GitGutterEnable
+        :GitGutterEnable
 
-    " no redraw
-    call plug#load('vim-surround')
+        " no redraw
+        call plug#load('vim-surround')
 
-    call plug#load('vim-ingo-library')
-    call plug#load('tagbar')
-endfunction
-
-if version >= 800 && plugin_debug == 0
-    " Call loadPlug after 500ms
-    " all init shuld be done before first 500ms
-    call timer_start(500, 'DealyLoading')
+        call plug#load('vim-ingo-library')
+        call plug#load('tagbar')
+    endfunction
+else
+    function! IDE_PlugInDealyLoading()
+    endfunction
 endif

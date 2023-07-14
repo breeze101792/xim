@@ -7,37 +7,23 @@
 """"    Auto function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-function! PostInit()
-    " Tag setup
-    " -------------------------------------------
-    if g:IDE_ENV_CSCOPE_DB != ''
-        " echo "Open "g:IDE_ENV_CSCOPE_DB
-        execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+function! IDE_PostInit(timer) abort
+    call IDE_EnvSetup()
+    if g:IDE_CFG_PLUGIN_ENABLE == "y"
+        call IDE_PlugInDealyLoading()
     endif
-    " FIXME don't use autocmd ousside group, fix/test it with ccglue
-    if g:IDE_ENV_CCTREE_DB != ''
-        " echo "Open "g:IDE_ENV_CCTREE_DB
-        silent! execute "CCTreeLoadXRefDB" . g:IDE_ENV_CCTREE_DB
-    endif
-    if g:IDE_ENV_PROJ_SCRIPT != ''
-        " echo "Source "g:IDE_ENV_PROJ_SCRIPT
-        execute 'source' . g:IDE_ENV_PROJ_SCRIPT
-    endif
-
-    " Moving from delay loading function will slow down the launch time.
-    " try
-    "     :GitGutterEnable
-    " catch
-    "     echo 'Fail to load Gitgutter'
-    " endtry
-    " call plug#load('vim-surround')
-    " call plug#load('supertab')
-    " call plug#load('vim-multiple-cursors')
+    " echo 'Post Init finished'
 endfunction
 
 augroup init_gp
     autocmd!
-    autocmd VIMEnter * call PostInit()
+    if version >= 800
+        " Call loadPlug after 500ms
+        " all init shuld be done after vim enter 100ms
+        autocmd VIMEnter * call timer_start(100, 'IDE_PostInit')
+    else
+        autocmd VIMEnter * call IDE_PostInit(0)
+    endif
 augroup END
 
 """"    Advance Settings

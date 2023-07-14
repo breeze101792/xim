@@ -4,6 +4,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
+let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
 let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
 let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
@@ -14,6 +15,9 @@ let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
+if $VIDE_SH_TAGS_DB != ""
+    let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
+endif
 if $VIDE_SH_CSCOPE_DB != ""
     let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
 endif
@@ -39,6 +43,27 @@ endif
 " let b:IDE_ENV_GIT_BRANCH = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_PATH = ""
+function! IDE_EnvSetup()
+    " Tag setup
+    " -------------------------------------------
+    if g:IDE_ENV_CSCOPE_DB != ''
+        " echo "Open ".g:IDE_ENV_TAGS_DB
+        execute "set tags=".g:IDE_ENV_TAGS_DB
+    endif
+    if g:IDE_ENV_CSCOPE_DB != ''
+        " echo "Open "g:IDE_ENV_CSCOPE_DB
+        execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+    endif
+    " FIXME don't use autocmd outside group, fix/test it with ccglue
+    if g:IDE_ENV_CCTREE_DB != ''
+        " echo "Open ".g:IDE_ENV_CCTREE_DB
+        silent! execute "CCTreeLoadXRefDB" . g:IDE_ENV_CCTREE_DB
+    endif
+    if g:IDE_ENV_PROJ_SCRIPT != ''
+        " echo "Source ".g:IDE_ENV_PROJ_SCRIPT
+        execute 'source' . g:IDE_ENV_PROJ_SCRIPT
+    endif
+endfunction
 function! IDE_UpdateEnv_CursorHold()
     " if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
     if g:IDE_CFG_PLUGIN_ENABLE == "y"
