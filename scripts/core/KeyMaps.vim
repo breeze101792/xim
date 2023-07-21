@@ -165,7 +165,7 @@ nnoremap <silent>ct :cscope find t <cword><CR>
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 
 " Commentary settings
-nmap <C-_> :Commentary<CR>
+map <C-_> :Commentary<CR>
 map! <Leader>/ :Commentary<CR>
 
 " GitGutter settings

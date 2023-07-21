@@ -34,7 +34,7 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
     Plug '~/.vim/plugins/vim-mark', { 'on':  ['<Plug>MarkSet'] }
     Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterEnable'] }
-    Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
+    Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
     " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
 else
     Plug '~/.vim/plugins/nerdtree'
@@ -51,7 +51,6 @@ else
     Plug '~/.vim/plugins/vim-easygrep'
     " Plug '~/.vim/plugins/bufexplorer'
 endif
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand file type loading

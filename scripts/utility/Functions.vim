@@ -138,12 +138,16 @@ endfunction
 " -------------------------------------------
 "  File op
 " -------------------------------------------
-command! -range FileOpen call FileOpen()
+command! -range FileOpen call FileOpen('')
 
-function! FileOpen()
+function! FileOpen(filename)
     " ~/.bashrc
-    let l:file_name = VisualSelection()
-    echo l:file_name
+    let l:file_name = a:filename
+    if l:file_name == ''
+        l:file_name = VisualSelection()
+    endif
+    echo 'File name: '.l:file_name
+
     if !empty(glob(l:file_name))
         execute 'tabnew ' . l:file_name
     else
@@ -151,6 +155,31 @@ function! FileOpen()
         echo 'File not found. "' . l:file_name . '"'
     endif
 endfunc
+
+command! -nargs=? FindFile call FindFile(<q-args>)
+command! -range FindFile call FindFile('')
+function! FindFile(filename)
+    let l:file_name=a:filename
+
+    if l:file_name == ''
+        try
+            echo 
+            let l:file_name = VisualSelection()
+        catch
+            let l:file_name = expand("<cword>")
+        endtry
+    endif
+    echo 'Search File:'.l:file_name
+
+    let l:target_file = system('find . -name '.l:file_name.' | sort | head -n 1 | xargs realpath | tr -d "\n"' )
+
+    if !empty(glob(l:target_file))
+        execute 'tabnew ' . l:target_file
+    else
+        " echo 'File not found'
+        echo 'File not found. "' . l:file_name . '"'
+    endif
+endfun
 
 command! -nargs=? RenameFile :call RenameFile(<q-args>)
 function! RenameFile(new_name)

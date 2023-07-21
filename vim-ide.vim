@@ -52,6 +52,11 @@ func! Reload()
     so ~/.vim/vim-ide/utility/Lab.vim
     so ~/.vim/vim-ide/utility/Template.vim
 
+    if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
+        " plugins related
+        so ~/.vim/vim-ide/plugin/PluginsConfig.vim
+    endif
+
     redraw
-    echo 'Vim Setting Refreshed.'
+    echo 'Vim Setting Reloaded.'
 endfunc
