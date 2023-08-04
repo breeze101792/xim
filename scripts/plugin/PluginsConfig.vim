@@ -161,7 +161,7 @@ function! LightlineFilename()
     " echo proj_path . '/' . name
     if len(name) == 0
         return "[No Name]"
-    elseif winwidth(0) > 70 
+    elseif winwidth(0) > 70
         if len(proj_name) != 0 && len(name) != 0 && len(proj_path.name) < 72
             return l:proj_path.l:name
         elseif len(full_name) <= 72
@@ -339,16 +339,19 @@ let g:bufExplorerSortBy='name'
 
 """"    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:syntastic_always_populate_loc_list = 1
-" let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 0
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 1
-" let g:syntastic_aggregate_errors = 1
+let g:syntastic_aggregate_errors = 1
 
+" Python
 let g:syntastic_python_checkers = ['pylint']
 
+" C
 let g:syntastic_c_remove_include_errors = 1
-" let g:syntastic_c_compiler =['gcc', 'clang','make']
+" let g:syntastic_c_compiler = ['clang','gcc', 'make']
+let g:syntastic_c_compiler = 'cppcheck'
 " let g:syntastic_c_compiler_options ='-Wpedantic -g'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -388,26 +391,26 @@ let g:syntastic_c_remove_include_errors = 1
 
 """""    Ale
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
-"let g:ale_lint_on_enter = 0
-"let g:ale_set_signs = 1
-"let g:ale_sign_error = '◈'
-"let g:ale_sign_warning = '◈'
-"" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
-"let g:ale_echo_msg_error_str = 'E'
-"let g:ale_echo_msg_warning_str = 'W'
-"let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-" let g:airline#extensions#ale#error_symbol = 'E'
-" let g:airline#extensions#ale#warning_symbol = 'W'
-"let g:ale_pattern_options = {
-"            \   '.*\.sh$': {'ale_enabled': 0},
-"            \   '.*\.json$': {'ale_enabled': 0},
-"            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
-"            \}
-"let g:ale_linters = {
-"            \   'c++': ['clang'],
-"            \   'c': ['clang'],
-"            \   'python': ['pylint'],
-"            \}
+let g:ale_lint_on_enter = 0
+let g:ale_set_signs = 1
+let g:ale_sign_error = '◈'
+let g:ale_sign_warning = '◈'
+" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
+let g:ale_echo_msg_error_str = 'E'
+let g:ale_echo_msg_warning_str = 'W'
+let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
+ let g:airline#extensions#ale#error_symbol = 'E'
+ let g:airline#extensions#ale#warning_symbol = 'W'
+let g:ale_pattern_options = {
+            \   '.*\.sh$': {'ale_enabled': 0},
+            \   '.*\.json$': {'ale_enabled': 0},
+            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
+            \}
+let g:ale_linters = {
+            \   'c++': ['clang'],
+            \   'c': ['clang'],
+            \   'python': ['pylint'],
+            \}
 
 """"    Taglist
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

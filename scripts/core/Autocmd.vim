@@ -4,6 +4,18 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""""    Worker Checker function
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! W_TagUpdate()
+    if g:IDE_ENV_CSCOPE_DB != "" && g:IDE_ENV_REQ_TAG_UPDATE == 1
+        " g:IDE_ENV_REQ_TAG_UPDATE
+        " 0: Can be request to update
+        " 1: Request to update
+        " 2: Doing update, will ignore all request
+        call PvUpdate()
+    endif
+endfunc
+
 """"    Auto function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -15,17 +27,31 @@ function! IDE_PostInit(timer) abort
     " echo 'Post Init finished'
 endfunction
 
+function! IDE_Worker(timer) abort
+    " echo 'VIM Worker Heart Beat'
+    if g:IDE_CFG_AUTO_TAG_UPDATE == "y"
+        call W_TagUpdate()
+    endif
+
+    " Next Heart Beat
+    call timer_start(g:IDE_ENV_HEART_BEAT, 'IDE_Worker')
+endfunction
+
 augroup init_gp
     autocmd!
     if version >= 800
         " Call loadPlug after 500ms
-        " all init shuld be done after vim enter 100ms
+        " all init should be done after vim enter 100ms
         autocmd VIMEnter * call timer_start(100, 'IDE_PostInit')
+        if g:IDE_CFG_BACKGROUND_WORKER == 'y'
+            autocmd VIMEnter * call timer_start(g:IDE_ENV_HEART_BEAT, 'IDE_Worker')
+        endif
     else
         autocmd VIMEnter * call IDE_PostInit(0)
     endif
 augroup END
 
+autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
 """"    Advance Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " remove the trailing space
@@ -42,6 +68,11 @@ augroup file_open_gp
     autocmd!
     " memorize last open line
     autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+augroup END
+
+augroup file_write_gp
+    autocmd!
+    autocmd FileType c,cc,c++,cxx,cpp,h,hh,h++,hxx,hpp autocmd BufWritePost * if g:IDE_ENV_REQ_TAG_UPDATE == 0|let g:IDE_ENV_REQ_TAG_UPDATE=1|endif
 augroup END
 
 " set mouse mode when exit
@@ -96,7 +127,7 @@ augroup plugin_gp
 
     "" vim-comment
     autocmd FileType gitcommit setlocal commentstring=#\ %s
-    autocmd FileType c,cpp,hxx,hpp,cxx,verilog setlocal commentstring=//\ %s
+    " autocmd FileType c,cpp,h,hxx,hpp,cxx,verilog setlocal commentstring=//\ %s
 
     "" tagbar
     " cursor line will slow down tagbar

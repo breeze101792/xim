@@ -3,11 +3,13 @@
 """"    Golobal vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_SCRIPT', "./")
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
 let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
 let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
+let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 
 " Path config
 let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
@@ -15,6 +17,9 @@ let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
+if $VIDE_SH_PROJ_DATA_PATH != ""
+    let g:IDE_ENV_PROJ_DATA_PATH = $VIDE_SH_PROJ_DATA_PATH
+endif
 if $VIDE_SH_TAGS_DB != ""
     let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
 endif
@@ -32,6 +37,10 @@ endif
 " else
 "     let g:IDE_ENV_TMP = "n"
 " endif
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Golobal vim var                           """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:IDE_ENV_REQ_TAG_UPDATE=0
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

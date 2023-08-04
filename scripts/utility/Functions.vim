@@ -350,12 +350,56 @@ endfunc
 command! TagUpdate call TagUpdate()
 
 function! TagUpdate()
-    execute 'cscope reset'
+    try
+        execute 'cscope reset'
+    catch
+        if g:IDE_ENV_CSCOPE_DB != ''
+            " echo "Open "g:IDE_ENV_CSCOPE_DB
+            execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+        endif
+    endtry
 endfunc
 
 command! -nargs=? TagFind :call <SID>TagFind(<q-args>)
 function! s:TagFind(tag_name)
     execute 'cs find g ' . a:tag_name
+endfunc
+
+command! TagSetup call TagSetup()
+
+function! TagSetup()
+    " May need to setup by search for db file in vim
+    try
+        if $VIDE_SH_TAGS_DB != ""
+            let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
+        endif
+        if $VIDE_SH_CSCOPE_DB != ""
+            let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
+            call TagUpdate()
+        endif
+        if $VIDE_SH_CCTREE_DB != ""
+            let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
+        endif
+    catch
+    endtry
+endfunc
+
+command! PvUpdate call PvUpdate()
+
+function! PvUpdate()
+    function! Pvhandler(ch, msg)
+        " echom 'Pvhandler '.a:ch.' '.a:msg
+        call TagUpdate()
+
+        " This is for auto update system
+        let g:IDE_ENV_REQ_TAG_UPDATE = 0
+    endfunc
+    let g:IDE_ENV_REQ_TAG_UPDATE = 2
+    try
+        let l:job = job_start('hsexc pvupdate', { 'callback': 'Pvhandler' })
+    catch
+        echom "PvUpdate Failed"
+    endtry
 endfunc
 
 " -------------------------------------------

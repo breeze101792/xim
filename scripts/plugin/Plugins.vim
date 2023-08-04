@@ -30,7 +30,6 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/tabular', { 'on':  ['Tabularize'] }
     Plug '~/.vim/plugins/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
     Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
-    Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'] }
     Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
     Plug '~/.vim/plugins/vim-mark', { 'on':  ['<Plug>MarkSet'] }
     Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterEnable'] }
@@ -44,7 +43,6 @@ else
     Plug '~/.vim/plugins/tabular'
     Plug '~/.vim/plugins/vim-bookmarks'
     Plug '~/.vim/plugins/ctrlp'
-    Plug '~/.vim/plugins/syntastic'
     Plug '~/.vim/plugins/Colorizer'
     Plug '~/.vim/plugins/vim-mark'
     Plug '~/.vim/plugins/gitgutter'
@@ -60,10 +58,14 @@ if plugin_debug == 0
     Plug '~/.vim/plugins/OmniCppComplete', { 'for':  ['cpp', 'c'] }
     Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  ['cpp', 'c'] }
     Plug '~/.vim/plugins/vim-python-pep8-indent', { 'for':  ['python'] }
+    " Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'], 'for':  ['cpp', 'c', 'python', 'sh'] }
+    Plug '~/.vim/plugins/ale', { 'for':  ['sh', 'cpp', 'c'] }
 else
     Plug '~/.vim/plugins/OmniCppComplete'
     Plug '~/.vim/plugins/vim-cpp-enhanced-highlight'
     Plug '~/.vim/plugins/vim-python-pep8-indent'
+    " Plug '~/.vim/plugins/syntastic'
+    Plug '~/.vim/plugins/ale'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

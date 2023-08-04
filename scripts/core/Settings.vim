@@ -147,7 +147,7 @@ set display+=lastline       " Always try to show a paragraph’s last line.
 set noerrorbells            " Disable beep on errors.
 
 " Menu
-set wildmode=longest,list:list
+" set wildmode=longest,list:list
 set wildmenu                " Display command line’s tab complete options as a menu.
 set completeopt+=menu
 set completeopt+=menuone
