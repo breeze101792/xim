@@ -23,11 +23,14 @@ set lazyredraw                   " don't update the display while executing macr
 set updatetime=500
 set ttyfast                      " Send more characters at a given time.
 set switchbuf+=usetab,newtab     " use new tab when open through quickfix
-" set redrawtime=10000
+set redrawtime=1000
 "" Command timeout, only affect on mapping command
-" set timeout
+"" timeout and timeoutlen apply to mappings
+set timeout
+set timeoutlen=300
+"" ttimeout and ttimeoutlen apply to key codes.
 " set ttimeout
-" set timeoutlen=100
+" set ttimeoutlen=-1
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
@@ -161,7 +164,7 @@ set laststatus=2 " status bar always show
 set cmdheight=1  " Command line height
 set shortmess=aO " option to avoid hit enter, a for all, O for overwrite when reading file
 set ruler        " enable status bar ruler
-" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\ 
+" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
 
 " Other settings
 " use group to set it

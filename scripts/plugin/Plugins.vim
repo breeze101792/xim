@@ -1,90 +1,99 @@
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Vars
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let VAR_PLUGIN_PATH = '~/.vim/plugins'
+
+
+" Make sure you use single quotes
+let VAR_PLUGIN_DEBUG = 0
+" let VAR_PLUGIN_DEBUG = 1
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Plugins Entry
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Specify a directory for plugins
 " - For Neovim: stdpath('data') . '/plugins'
 " - Avoid using standard Vim directory names like 'plugins'
-call plug#begin('~/.vim/plugins/')
-
-" Make sure you use single quotes
-let plugin_debug = 0
-" let plugin_debug = 1
+call plug#begin(VAR_PLUGIN_PATH)
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Always loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-Plug '~/.vim/plugins/lightline.vim'
-Plug '~/.vim/plugins/vim-ide'
-" Plug '~/.vim/plugins/vim-ingo-library'
-" Plug '~/.vim/plugins/tagbar'
+Plug VAR_PLUGIN_PATH.'/lightline.vim'
+Plug VAR_PLUGIN_PATH.'/vim-ide'
+" Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
+" Plug VAR_PLUGIN_PATH.'/tagbar'
 
 " FIXME, contain vimenter for init, this will not trigger it.
-Plug '~/.vim/plugins/bufexplorer'
+Plug VAR_PLUGIN_PATH.'/bufexplorer'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 "FIXME if autocommand contain vimenter for init, this will not trigger it.
-if plugin_debug == 0
-    Plug '~/.vim/plugins/nerdtree', { 'on':  'NERDTreeToggle' }
-    Plug '~/.vim/plugins/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
-    Plug '~/.vim/plugins/vim-commentary', { 'on':  'Commentary' }
-    Plug '~/.vim/plugins/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
-    Plug '~/.vim/plugins/tabular', { 'on':  ['Tabularize'] }
-    Plug '~/.vim/plugins/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
-    Plug '~/.vim/plugins/ctrlp', { 'on':  ['CtrlP'] }
-    Plug '~/.vim/plugins/Colorizer', { 'on':  ['ColorToggle'] }
-    Plug '~/.vim/plugins/vim-mark', { 'on':  ['<Plug>MarkSet'] }
-    Plug '~/.vim/plugins/gitgutter', { 'on':  ['GitGutterEnable'] }
-    Plug '~/.vim/plugins/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
-    " Plug '~/.vim/plugins/bufexplorer', { 'on':  ['ToggleBufExplorer'] }
+if VAR_PLUGIN_DEBUG == 0
+    Plug VAR_PLUGIN_PATH.'/Colorizer', { 'on':  ['ColorToggle'] }
+    Plug VAR_PLUGIN_PATH.'/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
+    Plug VAR_PLUGIN_PATH.'/ctrlp', { 'on':  ['CtrlP'] }
+    Plug VAR_PLUGIN_PATH.'/gitgutter', { 'on':  ['GitGutterEnable'] }
+    Plug VAR_PLUGIN_PATH.'/nerdtree', { 'on':  'NERDTreeToggle' }
+    Plug VAR_PLUGIN_PATH.'/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
+    Plug VAR_PLUGIN_PATH.'/tabular', { 'on':  ['Tabularize'] }
+    Plug VAR_PLUGIN_PATH.'/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
+    Plug VAR_PLUGIN_PATH.'/tcomment', { 'on':  ['TComment', 'TCommentBlock'] }
+    " Plug VAR_PLUGIN_PATH.'/vim-commentary', { 'on':  'Commentary' }
+    Plug VAR_PLUGIN_PATH.'/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
+    Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet'] }
 else
-    Plug '~/.vim/plugins/nerdtree'
-    Plug '~/.vim/plugins/srcexpl'
-    Plug '~/.vim/plugins/vim-commentary'
-    Plug '~/.vim/plugins/cctree'
-    Plug '~/.vim/plugins/tabular'
-    Plug '~/.vim/plugins/vim-bookmarks'
-    Plug '~/.vim/plugins/ctrlp'
-    Plug '~/.vim/plugins/Colorizer'
-    Plug '~/.vim/plugins/vim-mark'
-    Plug '~/.vim/plugins/gitgutter'
-    Plug '~/.vim/plugins/vim-easygrep'
-    " Plug '~/.vim/plugins/bufexplorer'
+    Plug VAR_PLUGIN_PATH.'/Colorizer'
+    Plug VAR_PLUGIN_PATH.'/cctree'
+    Plug VAR_PLUGIN_PATH.'/ctrlp'
+    Plug VAR_PLUGIN_PATH.'/gitgutter'
+    Plug VAR_PLUGIN_PATH.'/nerdtree'
+    Plug VAR_PLUGIN_PATH.'/srcexpl'
+    Plug VAR_PLUGIN_PATH.'/tabular'
+    Plug VAR_PLUGIN_PATH.'/vim-bookmarks'
+    Plug VAR_PLUGIN_PATH.'/tcomment'
+    " Plug VAR_PLUGIN_PATH.'/vim-commentary'
+    Plug VAR_PLUGIN_PATH.'/vim-easygrep'
+    Plug VAR_PLUGIN_PATH.'/vim-mark'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand file type loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " TODO add file type loading
-if plugin_debug == 0
-    Plug '~/.vim/plugins/OmniCppComplete', { 'for':  ['cpp', 'c'] }
-    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight', { 'for':  ['cpp', 'c'] }
-    Plug '~/.vim/plugins/vim-python-pep8-indent', { 'for':  ['python'] }
-    " Plug '~/.vim/plugins/syntastic', { 'on':  ['SyntasticCheck'], 'for':  ['cpp', 'c', 'python', 'sh'] }
-    Plug '~/.vim/plugins/ale', { 'for':  ['sh', 'cpp', 'c'] }
+if VAR_PLUGIN_DEBUG == 0
+    " Plug VAR_PLUGIN_PATH.'/syntastic', { 'on':  ['SyntasticCheck'], 'for':  ['cpp', 'c', 'python', 'sh'] }
+    Plug VAR_PLUGIN_PATH.'/OmniCppComplete', { 'for':  ['cpp', 'c'] }
+    Plug VAR_PLUGIN_PATH.'/ale', { 'on':  ['ALEEnable'],'for':  ['sh', 'cpp', 'c'] }
+    Plug VAR_PLUGIN_PATH.'/vim-cpp-enhanced-highlight', { 'for':  ['cpp', 'c'] }
+    Plug VAR_PLUGIN_PATH.'/vim-python-pep8-indent', { 'for':  ['python'] }
 else
-    Plug '~/.vim/plugins/OmniCppComplete'
-    Plug '~/.vim/plugins/vim-cpp-enhanced-highlight'
-    Plug '~/.vim/plugins/vim-python-pep8-indent'
-    " Plug '~/.vim/plugins/syntastic'
-    Plug '~/.vim/plugins/ale'
+    " Plug VAR_PLUGIN_PATH.'/syntastic'
+    Plug VAR_PLUGIN_PATH.'/OmniCppComplete'
+    Plug VAR_PLUGIN_PATH.'/ale'
+    Plug VAR_PLUGIN_PATH.'/vim-cpp-enhanced-highlight'
+    Plug VAR_PLUGIN_PATH.'/vim-python-pep8-indent'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Auto-start loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-if plugin_debug == 0
-    Plug '~/.vim/plugins/vim-ingo-library', { 'on':  [] }
-    Plug '~/.vim/plugins/tagbar', { 'on':  ['TagbarToggle'] }
+if VAR_PLUGIN_DEBUG == 0
+    Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  [] }
+    Plug VAR_PLUGIN_PATH.'/tagbar', { 'on':  ['TagbarToggle'] }
 
-    Plug '~/.vim/plugins/supertab', { 'on':  ['<Plug>SuperTabForward'] }
-    Plug '~/.vim/plugins/vim-multiple-cursors', { 'on':  [] }
-    Plug '~/.vim/plugins/vim-surround', { 'on':  [] }
+    Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
+    Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors', { 'on':  [] }
+    Plug VAR_PLUGIN_PATH.'/vim-surround', { 'on':  [] }
 else
-    Plug '~/.vim/plugins/vim-ingo-library'
-    Plug '~/.vim/plugins/tagbar'
+    Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
+    Plug VAR_PLUGIN_PATH.'/tagbar'
 
-    Plug '~/.vim/plugins/supertab'
-    Plug '~/.vim/plugins/vim-multiple-cursors'
-    Plug '~/.vim/plugins/vim-surround'
+    Plug VAR_PLUGIN_PATH.'/supertab'
+    Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors'
+    Plug VAR_PLUGIN_PATH.'/vim-surround'
 endif
 
 " Initialize plugin system
@@ -93,7 +102,7 @@ call plug#end()
 
 """"    Delay Loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-if plugin_debug == 0
+if VAR_PLUGIN_DEBUG == 0
     function! IDE_PlugInDealyLoading()
         " load redraw plugins first, to prevent status restore
         call plug#load('supertab') " this will restore line number

@@ -26,10 +26,6 @@
 	path = plugins/vim-bookmarks
 	url = https://github.com/MattesGroeger/vim-bookmarks.git
 	branch = master
-[submodule "plugins/vim-commentary"]
-	path = plugins/vim-commentary
-	url = https://github.com/tpope/vim-commentary.git
-	branch = master
 [submodule "plugins/OmniCppComplete"]
 	path = plugins/OmniCppComplete
 	url = https://github.com/vim-scripts/OmniCppComplete.git
@@ -89,3 +85,7 @@
 [submodule "plugins/ale"]
 	path = plugins/ale
 	url = https://github.com/dense-analysis/ale.git
+[submodule "plugins/tcomment"]
+	path = plugins/tcomment
+	url = https://github.com/breeze101792/tcomment_vim.git
+	branch = master

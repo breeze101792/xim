@@ -127,11 +127,15 @@ function! LightlineGitInfo()
     if g:IDE_CFG_SPECIAL_CHARS == "y"
         let l:git_chars=" "
     endif
-    if winwidth(0) > 70 && l:proj_name != ''
-        if l:proj_branch != '' && len(l:proj_branch . l:proj_name) < 70
+    " FIXME, there is a bug on 70 char check, i don't count the word like
+    " @/@locl
+    if winwidth(0) > 70
+        if l:proj_name != '' && l:proj_branch != '' && len(l:proj_branch . l:proj_name) < 70
             return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
-        else
-            return l:proj_name
+        elseif l:proj_name != '' && len(l:proj_name ) < 70
+            return l:git_chars.'@'.l:proj_name
+        elseif l:proj_branch != '' && len(l:proj_branch ) < 70
+            return l:git_chars.l:proj_branch.'@local'
         endif
     endif
     return ''
@@ -162,7 +166,7 @@ function! LightlineFilename()
     if len(name) == 0
         return "[No Name]"
     elseif winwidth(0) > 70
-        if len(proj_name) != 0 && len(name) != 0 && len(proj_path.name) < 72
+        if len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < 72
             return l:proj_path.l:name
         elseif len(full_name) <= 72
             return l:full_name
@@ -196,7 +200,7 @@ let g:ctrlp_lazy_update = 250
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_switch_buffer = 'et'
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20,results:20'
-let g:ctrlp_root_markers = ['Makefile', 'Android.mk', 'Android.bp', '.git', 'cscope.db', '.repo']
+let g:ctrlp_root_markers = ['vimproj', '.git', '.repo', 'Makefile', 'Android.mk', 'Android.bp', 'cscope.db']
 let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
 " while using user command, ignore will not work
@@ -354,6 +358,39 @@ let g:syntastic_c_remove_include_errors = 1
 let g:syntastic_c_compiler = 'cppcheck'
 " let g:syntastic_c_compiler_options ='-Wpedantic -g'
 
+"""""    Ale
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:ale_lint_on_enter = 0
+" let g:ale_set_signs = 1
+" let g:ale_sign_error = '◈'
+" let g:ale_sign_warning = '◈'
+" " let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
+" let g:ale_echo_msg_error_str = 'E'
+" let g:ale_echo_msg_warning_str = 'W'
+" let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
+"  let g:airline#extensions#ale#error_symbol = 'E'
+"  let g:airline#extensions#ale#warning_symbol = 'W'
+" let g:ale_pattern_options = {
+"             \   '.*\.sh$': {'ale_enabled': 0},
+"             \   '.*\.json$': {'ale_enabled': 0},
+"             \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
+"             \}
+let g:ale_linters = {
+            \   'cpp': ['cppcheck'],
+            \   'c': ['cppcheck'],
+            \   'python': ['pylint'],
+            \}
+" let g:ale_c_cppcheck_options='-f -q --std=c99 --enable=unusedFunction'
+let g:ale_c_cppcheck_options='-f -q --std=c99'
+
+""""    TComment
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:tcomment#replacements_c = {
+            \     '/*': {'guard_rx': '^\s*/\?\*', 'subst': '//|*'},
+            \     '*/': {'guard_rx': '^\s*/\?\*', 'subst': '*|'},
+            \ }
+let g:tcomment_maps=0
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -388,29 +425,6 @@ let g:syntastic_c_compiler = 'cppcheck'
 " " if version >= 802
 " "     autocmd VimEnter * :AirlineRefresh
 " " endif
-
-"""""    Ale
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ale_lint_on_enter = 0
-let g:ale_set_signs = 1
-let g:ale_sign_error = '◈'
-let g:ale_sign_warning = '◈'
-" let g:ale_statusline_format = ['E:%d', 'W:%d', 'ok']
-let g:ale_echo_msg_error_str = 'E'
-let g:ale_echo_msg_warning_str = 'W'
-let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
- let g:airline#extensions#ale#error_symbol = 'E'
- let g:airline#extensions#ale#warning_symbol = 'W'
-let g:ale_pattern_options = {
-            \   '.*\.sh$': {'ale_enabled': 0},
-            \   '.*\.json$': {'ale_enabled': 0},
-            \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
-            \}
-let g:ale_linters = {
-            \   'c++': ['clang'],
-            \   'c': ['clang'],
-            \   'python': ['pylint'],
-            \}
 
 """"    Taglist
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

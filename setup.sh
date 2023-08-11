@@ -118,6 +118,7 @@ function setup()
     setup_cus_config
 
     echo "Don't forget to init submodule."
+    echo "Install cppcheck if you want to use cppcheck"
 
 }
 function setup_lite()

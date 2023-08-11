@@ -1,3 +1,21 @@
+
+" -------------------------------------------
+"  Test
+" -------------------------------------------
+
+command! TestJob call TestJob()
+function! TestJob()
+    function! PMsg(ch, msg)
+        echom 'PMsg '.a:ch.' '.a:msg
+    endfunc
+    let g:IDE_ENV_REQ_TAG_UPDATE = 2
+    try
+        let l:job = job_start('hsexc pwd', { 'callback': 'PMsg' })
+    catch
+        echom "Test Failed"
+    endtry
+endfunc
+
 " -------------------------------------------
 "  PlugBufexplorer
 " -------------------------------------------

@@ -1,3 +1,7 @@
+" Commands Settings
+" ===========================================
+" command! -nargs=1 Count :%s/<args>//n
+
 " Function Settings
 " ===========================================
 " -------------------------------------------
@@ -41,33 +45,28 @@ endfunc
 command! PureToggle call PureToggle()
 
 function! PureToggle()
+
     if &paste
         echo 'Disable Pure mode'
-        set nopaste
-        set cursorline
-        set number
+        " backup vars
+        setlocal nopaste
+        " setlocal cursorline
+        setlocal number
+        setlocal list
 
         :DoMatchParen
         :GitGutterDisable
 
-        " if g:IDE_CFG_SPECIAL_CHARS == "y"
-        "     set showbreak=↪\
-        "     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
-        " else
-        "     set showbreak=→\
-        "     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
-        " endif
     else
         echo 'Enable Pure mode'
-        set paste
-        set nocursorline
-        set nonumber
+        setlocal paste
+        " setlocal nocursorline
+        setlocal nonumber
+        setlocal nolist
 
         :NoMatchParen
         :GitGutterEnable
 
-        " set showbreak= 
-        " set listchars=tab: ,nbsp: ,trail: ,precedes: ,extends: 
     endif
 endfunc
 " -------------------------------------------
@@ -163,7 +162,7 @@ function! FindFile(filename)
 
     if l:file_name == ''
         try
-            echo 
+            echo
             let l:file_name = VisualSelection()
         catch
             let l:file_name = expand("<cword>")
@@ -370,17 +369,50 @@ command! TagSetup call TagSetup()
 function! TagSetup()
     " May need to setup by search for db file in vim
     try
-        if $VIDE_SH_TAGS_DB != ""
-            let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
+        "" Add Tag by project
+        " Setup cscope db
+        if g:IDE_ENV_PROJ_DATA_PATH != ""
+            let l:cscope_db_list=system('ls '.g:IDE_ENV_PROJ_DATA_PATH.'/*.db')
+            for each_db in split(l:cscope_db_list, '\n')
+                " echom each_db
+                silent! execute "cscope add ".each_db
+            endfor
         endif
-        if $VIDE_SH_CSCOPE_DB != ""
-            let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
-            call TagUpdate()
+        " Add tags
+        if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/tags"))
+            silent! execute "set tags=".g:IDE_ENV_PROJ_DATA_PATH."/tags"
         endif
-        if $VIDE_SH_CCTREE_DB != ""
-            let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
+
+        " Legacy tag
+        " FIXME Need to be removed
+        {
+            if g:IDE_ENV_TAGS_DB != ''
+                " echo "Open ".g:IDE_ENV_TAGS_DB
+                execute "set tags=".g:IDE_ENV_TAGS_DB
+            endif
+            if g:IDE_ENV_CSCOPE_DB != ''
+                " echo "Open "g:IDE_ENV_CSCOPE_DB
+                execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+            endif
+            }
+
+        " cctree
+        if g:IDE_ENV_CCTREE_DB != ''
+            " echo "Open ".g:IDE_ENV_CCTREE_DB
+            silent! execute "CCTreeLoadXRefDB" . g:IDE_ENV_CCTREE_DB
         endif
+        " cctree will only enable when specify
+        " if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/cctree.db"))
+        "     silent! execute "CCTreeLoadXRefDB ".g:IDE_ENV_PROJ_DATA_PATH."/cctree.db"
+        " endif
+        if g:IDE_ENV_PROJ_SCRIPT != ''
+            " echo "Source ".g:IDE_ENV_PROJ_SCRIPT
+            execute 'source' . g:IDE_ENV_PROJ_SCRIPT
+        endif
+
+
     catch
+
     endtry
 endfunc
 
@@ -456,6 +488,27 @@ function! FormatCode() range
     silent! execute a:firstline.','.a:lastline.'s/}/}\r/g'
 endfun
 
+command! -range CommentCode <line1>,<line2>call CommentCode()
+function! CommentCode() range
+    " echo 'comment'.a:firstline.','.a:lastline
+
+    if a:lastline - a:firstline == 0
+        silent! TComment
+    else
+        " echo &filetype
+        " if &filetype ==# 'c' || &filetype ==# 'cpp'
+        "     let l:pattern_cnt=execute(a:firstline.','.a:lastline.'CountPattern *')
+        "     echom 'Pattern'.l:pattern_cnt
+        "     if a:lastline - a:firstline + 1 == l:pattern_cnt
+        "         silent! execute a:firstline.','.a:lastline.' TComment'
+        "         return
+        "     endif
+        " endif
+        " echo 'block'
+        silent! execute a:firstline.','.a:lastline.' TCommentBlock'
+    endif
+endfun
+
 " -------------------------------------------
 "  Duplicate Function
 " -------------------------------------------
@@ -478,6 +531,36 @@ function! DuplicateLine(times) range
     call append('.', l:text)
     echo 'Duplicate text '.a:times.' times done.'
 endfunction
+" -------------------------------------------
+"  CountPattern
+" -------------------------------------------
+command! -range -nargs=? CountPattern <line1>,<line2>call CountPattern(<q-args>)
+function! CountPattern(pattern) range
+    " echom 'Start->'.a:pattern.'<-'
+    try
+        let match_ret=execute(a:firstline.','.a:lastline.'s/'.a:pattern.'/ /n')
+
+        let token=split(match_ret[1:], ' ')
+        if len(token) < 4
+            echo 'Pattern not found'
+            return 0
+        endif
+
+        let pattern_matches=token[0]
+        let line_matches=token[3]
+        let test=char2nr(pattern_matches[0])
+        " echo 'word:'.pattern_matches.', lines:'.line_matches
+        " echo 'pattern:'.pattern_matches
+        echo pattern_matches
+        return pattern_matches
+
+    catch
+        echom 'Pattern not found'
+        echo 0
+        return 0
+    endtry
+endfunc
+
 
 " -------------------------------------------
 "  Generate num seq

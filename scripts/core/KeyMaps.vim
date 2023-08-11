@@ -165,8 +165,8 @@ nnoremap <silent>ct :cscope find t <cword><CR>
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 
 " Commentary settings
-map <C-_> :Commentary<CR>
-map! <Leader>/ :Commentary<CR>
+noremap <C-_> :CommentCode<CR>
+noremap <Leader>/ :CommentCode<CR>
 
 " GitGutter settings
 " map <C-g> :GitGutterToggle<CR>
@@ -212,6 +212,10 @@ map <silent> <Leader>vr <plug>EgMapReplaceCurrentWord_r
 vmap <silent> <Leader>vr <plug>EgMapReplaceSelection_r
 map <silent> <Leader>vR <plug>EgMapReplaceCurrentWord_R
 vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
+
+" Ale
+nmap <silent> <C-k> <Plug>(ale_previous_wrap)
+nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""
