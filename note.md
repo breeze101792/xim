@@ -1,5 +1,8 @@
 # Note about using VIM
 
+## QuickFix
+vim have a quick link window for access make file error link for quick fix something
+
 ## Userfull commands
 Search with copied text
 
@@ -119,4 +122,5 @@ git clone https://github.com/vim-scripts/colorsupport.vim.git
 git clone https://github.com/wesleyche/Trinity.git
 git clone https://github.com/zefei/vim-wintabs.git -b master
 git clone https://github.com/preservim/nerdcommenter.git
+git clone https://github.com/yssl/QFEnter/tree/master
 ```

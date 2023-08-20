@@ -392,6 +392,14 @@ let g:tcomment#replacements_c = {
 let g:tcomment_maps=0
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    EasyGrep
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" 0 - quickfix
+" 1 - location list
+" let g:EasyGrepWindow=1
+let g:EasyGrepRoot="repository"
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load pathogen

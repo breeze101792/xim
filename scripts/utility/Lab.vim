@@ -1,8 +1,6 @@
-
 " -------------------------------------------
 "  Test
 " -------------------------------------------
-
 command! TestJob call TestJob()
 function! TestJob()
     function! PMsg(ch, msg)

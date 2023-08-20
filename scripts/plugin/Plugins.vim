@@ -87,6 +87,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
     Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors', { 'on':  [] }
     Plug VAR_PLUGIN_PATH.'/vim-surround', { 'on':  [] }
+    Plug VAR_PLUGIN_PATH.'/qfenter', { 'on':  [] }
 else
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
     Plug VAR_PLUGIN_PATH.'/tagbar'
@@ -94,6 +95,7 @@ else
     Plug VAR_PLUGIN_PATH.'/supertab'
     Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors'
     Plug VAR_PLUGIN_PATH.'/vim-surround'
+    Plug VAR_PLUGIN_PATH.'/qfenter'
 endif
 
 " Initialize plugin system
@@ -107,6 +109,7 @@ if VAR_PLUGIN_DEBUG == 0
         " load redraw plugins first, to prevent status restore
         call plug#load('supertab') " this will restore line number
         call plug#load('vim-multiple-cursors')
+        call plug#load('qfenter')
 
         :GitGutterEnable
 

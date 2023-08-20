@@ -89,3 +89,7 @@
 	path = plugins/tcomment
 	url = https://github.com/breeze101792/tcomment_vim.git
 	branch = master
+[submodule "plugins/QFEnter"]
+	path = plugins/QFEnter
+	url = https://github.com/yssl/QFEnter.git
+	branch = master

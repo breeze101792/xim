@@ -199,7 +199,7 @@ noremap <leader>[ :CCTreeTraceReverse<CR>
 " imap <silent> <tab> <Plug>SuperTabForward
 
 " vim easy-grep
-map <silent> <Leader>vo <plug>EgMapGrepOptions
+" map <silent> <Leader>vo <plug>EgMapGrepOptions
 map <silent> <Leader>vv <plug>EgMapGrepCurrentWord_v
 vmap <silent> <Leader>vv <plug>EgMapGrepSelection_v
 map <silent> <Leader>vV <plug>EgMapGrepCurrentWord_V
@@ -212,6 +212,8 @@ map <silent> <Leader>vr <plug>EgMapReplaceCurrentWord_r
 vmap <silent> <Leader>vr <plug>EgMapReplaceSelection_r
 map <silent> <Leader>vR <plug>EgMapReplaceCurrentWord_R
 vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
+
+" QuickFix can open the current line with :.cc
 
 " Ale
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
