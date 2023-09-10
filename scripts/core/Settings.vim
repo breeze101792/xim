@@ -124,7 +124,7 @@ set cscopetag              " set tags=tags
 set nocscopeverbose        " set cscopeverbose
 
 " Folding
-set foldmethod=indent " can be set to syntax, indent, manual
+set foldmethod=syntax " can be set to syntax, indent, manual
 set foldnestmax=10    " Only fold up to three nested levels.
 set foldlevel=99
 " set foldminlines=3    " show the min line of folded code
@@ -174,6 +174,8 @@ set mouse=c
 
 " setup column cursor line, this will slow down vim speed
 " set cursorcolumn
+" This is for linux, we should not let our code length beyound 80 chars
+set colorcolumn=81
 
 " setup row cursor line
 set cursorline
