@@ -162,7 +162,6 @@ function! FindFile(filename)
 
     if l:file_name == ''
         try
-            echo
             let l:file_name = VisualSelection()
         catch
             let l:file_name = expand("<cword>")

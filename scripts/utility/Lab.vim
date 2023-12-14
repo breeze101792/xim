@@ -1,4 +1,24 @@
 " -------------------------------------------
+"  Help
+" -------------------------------------------
+" command! -nargs=? TestHelp call TestHelp(<q-args>)
+" command! -range TestHelp call TestHelp('')
+" function! TestHelp(filename)
+"     let l:file_name=a:filename
+"
+"     if l:file_name == ''
+"         try
+"             let l:file_name = VisualSelection()
+"         catch
+"             let l:file_name = expand("<cword>")
+"         endtry
+"     endif
+"
+"     let l:target_file = system('echo '.l:file_name.' | sort | head -n 1 | tr -d "\n"' )
+"     echo l:target_file
+" endfunc
+
+" -------------------------------------------
 "  Test
 " -------------------------------------------
 command! TestJob call TestJob()
