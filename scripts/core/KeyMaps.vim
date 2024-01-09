@@ -133,9 +133,10 @@ nnoremap <silent> <C-m> :MouseToggle<CR>
 nmap <Leader>h :HexToggle<CR>
 
 " Match & complete patterns
-inoremap <expr> ( ConditionalPairMap('(', ')')
-inoremap <expr> { ConditionalPairMap('{', '}')
-inoremap <expr> [ ConditionalPairMap('[', ']')
+" TODO, think another way to detect paried one, so disable it for now.
+" inoremap <expr> ( ConditionalPairMap('(', ')')
+" inoremap <expr> { ConditionalPairMap('{', '}')
+" inoremap <expr> [ ConditionalPairMap('[', ']')
 
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

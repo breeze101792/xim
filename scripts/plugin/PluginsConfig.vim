@@ -200,7 +200,8 @@ let g:ctrlp_lazy_update = 250
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_switch_buffer = 'et'
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20,results:20'
-let g:ctrlp_root_markers = ['vimproj', '.git', '.repo', 'Makefile', 'Android.mk', 'Android.bp', 'cscope.db']
+" let g:ctrlp_root_markers = ['vimproj', '.repo', '.git', 'Makefile', 'Android.mk', 'Android.bp', 'cscope.db']
+let g:ctrlp_root_markers = ['vimproj', '.repo']
 let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
 " while using user command, ignore will not work
@@ -397,7 +398,9 @@ let g:tcomment_maps=0
 " 0 - quickfix
 " 1 - location list
 " let g:EasyGrepWindow=1
-let g:EasyGrepRoot="repository"
+" let g:EasyGrepRoot="repository"
+" let g:EasyGrepRoot = "search:vimproj,.repo,.git,.hg,.svn"
+let g:EasyGrepRoot = "search:vimproj,.repo"
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
