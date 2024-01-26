@@ -237,7 +237,7 @@ command! ClipRead call ClipRead()
 function! ClipRead()
     " let @c = system('cat ' . g:IDE_ENV_CLIP_PATH)
     " echo 'Read '.@c.'to reg c'
-    echo system('cat ' . g:IDE_ENV_CLIP_PATH)
+    echo system('cat ' . g:IDE_ENV_CLIP_PATH . '|tail -n 1 | tr -d "\n\r"')
 endfunc
 
 command! ClipOpen call ClipOpen()
