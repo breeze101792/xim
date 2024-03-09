@@ -1,3 +1,49 @@
+
+" -------------------------------------------
+"  Trace
+" -------------------------------------------
+command! -nargs=* -complete=expression Trace
+    \ call Trace(<args>)
+
+function! Trace (...)
+    let mesg = join(a:000)
+    " let mesg = strftime("%Y-%m-%d %H:%M:%S") . " " . mesg
+    let mesg_list = split(mesg, "\n")
+    let orig_tabnr = tabpagenr()
+
+    if !exists("g:trace_bufnr") || !bufexists(g:trace_bufnr)
+        tabe
+        let g:trace_bufnr = bufnr("%")
+        file Trace
+        setlocal buftype=nofile bufhidden=hide
+    else
+        let trace_tabnr = 0
+        for t in range(tabpagenr("$"))
+            let a = tabpagebuflist(t + 1)
+            for i in a
+                if i == g:trace_bufnr
+                    let trace_tabnr = t + 1
+                endif
+            endfor
+        endfor
+        if trace_tabnr
+            exec "tabn " . trace_tabnr
+        else
+            exec "tab sbuf " . g:trace_bufnr
+        endif
+    endif
+
+    if line("$") == 1 && getline(1) == ""
+        let line = 1
+    else
+        let line = line("$") + 1
+    endif
+    call setline(line, mesg_list)
+    call cursor(line, 1)
+    exec "tabn " . orig_tabnr
+endfunction
+
+
 " -------------------------------------------
 "  Help
 " -------------------------------------------

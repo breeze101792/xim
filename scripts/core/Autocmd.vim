@@ -7,7 +7,7 @@
 """"    Worker Checker function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! W_TagUpdate()
-    if g:IDE_ENV_CSCOPE_DB != "" && g:IDE_ENV_REQ_TAG_UPDATE == 1
+    if g:IDE_ENV_PROJ_DATA_PATH != "" && g:IDE_ENV_REQ_TAG_UPDATE == 1
         " g:IDE_ENV_REQ_TAG_UPDATE
         " 0: Can be request to update
         " 1: Request to update
@@ -96,6 +96,23 @@ augroup END
 "   autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | set nornu | endif
 " augroup END
 
+""""    Highlight Variable
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Highlight TODO, FIXME, NOTE, etc.
+if has('autocmd') && v:version > 701
+    augroup syntax_hi_gp
+        autocmd!
+        " autocmd Syntax * call matchadd(
+        "             \ 'Debug',
+        "             \ '\v\W\zs<(NOTE|INFO|IDEA|TODO|FIXME|CHANGED|XXX|BUG|HACK|TRICKY)>'
+        "             \ )
+        autocmd Syntax * call matchadd(
+                    \ 'Debug',
+                    \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
+                    \ )
+    augroup END
+endif
+
 """"    Env Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 augroup environment_gp
@@ -117,6 +134,7 @@ augroup END
 augroup filetype_gp
     autocmd!
     au BufRead,BufNewFile *.log set filetype=log
+    au BufRead,BufNewFile *.iig set filetype=cpp
 augroup END
 
 """"    Plugins cmd

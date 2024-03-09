@@ -36,10 +36,9 @@ set redrawtime=1000
 "" Command timeout, only affect on mapping command
 "" timeout and timeoutlen apply to mappings
 set timeout
-set timeoutlen=300
+set timeoutlen=500
+set ttimeoutlen=200
 "" ttimeout and ttimeoutlen apply to key codes.
-" set ttimeout
-" set ttimeoutlen=-1
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
@@ -105,8 +104,13 @@ set shiftwidth=4                                  " When shifting, indent using 
 set smarttab                                      " Insert tabstop number of spaces when the tab key is pressed.
 
 " show special char
-set showbreak=→\
-" set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
+    set showbreak=↪\
+    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+else
+    set showbreak=→\
+    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+endif
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
@@ -168,7 +172,7 @@ set laststatus=2 " status bar always show
 set cmdheight=1  " Command line height
 set shortmess=aO " option to avoid hit enter, a for all, O for overwrite when reading file
 set ruler        " enable status bar ruler
-set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
+" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
 
 " Other settings
 " use group to set it
@@ -179,7 +183,7 @@ set mouse=c
 " setup column cursor line, this will slow down vim speed
 " set cursorcolumn
 " This is for linux, we should not let our code length beyound 80 chars
-" set colorcolumn=81
+set colorcolumn=81
 
 " setup row cursor line
 set cursorline
@@ -189,7 +193,7 @@ endif
 
 " Windows fill chars
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
-" set fillchars+=vert:│
+set fillchars+=vert:│
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " COPY End
@@ -205,76 +209,15 @@ set listchars=tab:>-,nbsp:␣,trail:·,precedes:←,extends:→
 set hlsearch
 " <--------
 
-""""    Legacy Setting
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" set nocompatible                 " disable vi compatiable
-"
-" set encoding=utf-8
-"
-" set hidden                       " can put buffer to the background without writing
-" " set lazyredraw                   " don't update the display while executing macros
-" " set updatetime=500
-" " set ttyfast                      " Send more characters at a given time.
-"
-" set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
-" set list
-" " set number                                        " show line number
-" set number
-" set numberwidth=4                               " width of numbers line (default on gvim is 4)
-" set ignorecase smartcase                          " search with ignore case
-" set incsearch                                     " increamental search
-" set smartindent                                   " smart indent
-" " set mps+=<:>                                    " hilighted matched ()
-" set showmatch                                     " show the matching part of the pair for [] {} and ()
-" set backspace=indent,eol,start                    " when press backspace
-"
-" colorscheme desert
-" syntax enable              " enable syntax hi, cann't be place after theme settings
-" syntax sync maxlines=50
-" " syntax sync minlines=200
-" " set synmaxcol=100        " arbitrary number < 3000 (default value)
-" filetype plugin indent on  " base on file type do auto indend
-"
-" set showcmd      " show partial command on last line of screen.
-" set cmdheight=1  " Command line height
-" set laststatus=2 " status bar height
-" set shortmess=aO  " option to avoid hit enter, a for all, O for overwrite when reading file
-" set ruler        " enable status bar ruler
-" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
-"
-" set t_Co=256                " force terminal use 256 color
-" set scroll=5                " scroll move for ctrl+u/d
-" set scrolloff=3             " scroll offset, n line for scroll when in top/buttom line
-" set sidescrolloff=5         " The number of screen columns to keep to the left and right of the cursor.
-" set display+=lastline       " Always try to show a paragraph’s last line.
-" set noerrorbells            " Disable beep on errors.
-"
-" set expandtab                                     " extend tab (soft tab)
-" set tabstop=4                                     " set tab len to 4
-" set softtabstop=4
-" set shiftround                                    " When shifting lines, round the indentation to the nearest multiple of  " shiftwidth.
-" set shiftwidth=4                                  " When shifting, indent using four spaces.
-" set smarttab
-"
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    AutoCmd
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-augroup file_open_gp
-    autocmd!
-    " memorize last open line
-    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
-augroup END
-
-" Call the function after opening a buffer
-augroup tab_gp
-    autocmd!
-    autocmd BufReadPost * call TabsOrSpaces()
-augroup END
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    KeyMap
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Patch for disable anoying key mapping
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap q: <nop>
+nnoremap q/ <nop>
+map q <nop>
+
 " for quick save and exit
 nnoremap <leader>wa :wa<CR>
 nnoremap <leader>qa :qa<CR>
@@ -314,6 +257,48 @@ map <C-o> <Esc>:tabnew<SPACE>
 " Add hilighted word with " or '
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
+
+"" Lite settings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" comments
+noremap <silent> ,cc :<C-b>silent <C-e>norm ^i<C-r>=b:comment_leader<CR><CR>
+noremap <silent> ,uc :<C-b>silent <C-e>norm ^xx<CR>
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Auto Groups
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+augroup file_open_gp
+    autocmd!
+    " memorize last open line
+    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+augroup END
+
+" Call the function after opening a buffer
+augroup tab_gp
+    autocmd!
+    autocmd BufReadPost * call TabsOrSpaces()
+augroup END
+
+augroup syntax_hi_gp
+    autocmd!
+    autocmd Syntax * call matchadd(
+                \ 'Debug',
+                \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
+                \ )
+augroup END
+
+"" Lite settings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" comments
+" TODO, change to use leader+m
+augroup comment_gp_
+    autocmd!
+    autocmd FileType c,cpp,go                let b:comment_leader = '// '
+    autocmd FileType ruby,python             let b:comment_leader = '# '
+    autocmd FileType conf,fstab,sh,bash,tmux let b:comment_leader = '# '
+    autocmd FileType tex                     let b:comment_leader = '% '
+    autocmd FileType mail                    let b:comment_leader = '> '
+    autocmd FileType vim                     let b:comment_leader = '" '
+augroup END
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function

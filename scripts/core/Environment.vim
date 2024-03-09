@@ -3,6 +3,8 @@
 """"    Golobal vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+"" Note. Update golbale variable only on functions, to avoid overide on
+"" restore variable
 let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_DATA_PATH', "./")
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
@@ -17,26 +19,6 @@ let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
-if $VIDE_SH_PROJ_DATA_PATH != ""
-    let g:IDE_ENV_PROJ_DATA_PATH = $VIDE_SH_PROJ_DATA_PATH
-endif
-if $VIDE_SH_TAGS_DB != ""
-    let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
-endif
-if $VIDE_SH_CSCOPE_DB != ""
-    let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
-endif
-if $VIDE_SH_CCTREE_DB != ""
-    let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
-endif
-if $VIDE_SH_PROJ_SCRIPT != ""
-    let g:IDE_ENV_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
-endif
-" if $VIDE_SH_TMP != ""
-"     let g:IDE_ENV_TMP = "y"
-" else
-"     let g:IDE_ENV_TMP = "n"
-" endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal vim var                           """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -57,6 +39,35 @@ function! IDE_EnvSetup()
     if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"))
         execute 'source '.g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"
     endif
+
+    if $VIDE_SH_PROJ_DATA_PATH != ""
+        let g:IDE_ENV_PROJ_DATA_PATH = $VIDE_SH_PROJ_DATA_PATH
+    endif
+    if $VIDE_SH_TAGS_DB != ""
+        let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
+    endif
+    if $VIDE_SH_CSCOPE_DB != ""
+        let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
+    endif
+    if $VIDE_SH_CCTREE_DB != ""
+        let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
+    endif
+    if $VIDE_SH_PROJ_SCRIPT != ""
+        let g:IDE_ENV_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
+    endif
+
+    " if $VIDE_SH_TMP != ""
+    "     let g:IDE_ENV_TMP = "y"
+    " else
+    "     let g:IDE_ENV_TMP = "n"
+    " endif
+
+    ""    NVIM
+    """"""""""""""""""""""""""""""""""""""""""""""""""""""
+    if has('nvim')
+        let g:IDE_ENV_IDE_TITLE = "NVIM"
+    endif
+
     " Tag setup
     " -------------------------------------------
     call TagSetup()

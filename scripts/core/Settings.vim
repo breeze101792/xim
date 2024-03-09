@@ -27,10 +27,9 @@ set redrawtime=1000
 "" Command timeout, only affect on mapping command
 "" timeout and timeoutlen apply to mappings
 set timeout
-set timeoutlen=300
+set timeoutlen=500
+set ttimeoutlen=200
 "" ttimeout and ttimeoutlen apply to key codes.
-" set ttimeout
-" set ttimeoutlen=-1
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
@@ -96,7 +95,7 @@ set shiftwidth=4                                  " When shifting, indent using 
 set smarttab                                      " Insert tabstop number of spaces when the tab key is pressed.
 
 " show special char
-if g:IDE_CFG_SPECIAL_CHARS == "y"
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     set showbreak=↪\
     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
 else

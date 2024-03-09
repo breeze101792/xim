@@ -355,6 +355,17 @@ function! TagUpdate()
             " echo "Open "g:IDE_ENV_CSCOPE_DB
             execute "cscope add ".g:IDE_ENV_CSCOPE_DB
         endif
+        if g:IDE_ENV_CCTREE_DB != ''
+            " echo "Open "g:IDE_ENV_CCTREE_DB
+            execute "CCTreeLoadXRefDB ".g:IDE_ENV_CCTREE_DB
+        endif
+    endtry
+endfunc
+
+command! CTreeUpdate call CTreeUpdate()
+function! CTreeUpdate()
+    try
+        execute "CCTreeLoadXRefDB ".g:IDE_ENV_CCTREE_DB
     endtry
 endfunc
 
@@ -371,7 +382,7 @@ function! TagSetup()
         "" Add Tag by project
         " Setup cscope db
         if g:IDE_ENV_PROJ_DATA_PATH != ""
-            let l:cscope_db_list=system('ls '.g:IDE_ENV_PROJ_DATA_PATH.'/*.db')
+            let l:cscope_db_list=system('ls -1 '.g:IDE_ENV_PROJ_DATA_PATH.'/cscope*.db')
             for each_db in split(l:cscope_db_list, '\n')
                 " echom each_db
                 silent! execute "cscope add ".each_db
@@ -384,16 +395,16 @@ function! TagSetup()
 
         " Legacy tag
         " FIXME Need to be removed
-        {
-            if g:IDE_ENV_TAGS_DB != ''
-                " echo "Open ".g:IDE_ENV_TAGS_DB
-                execute "set tags=".g:IDE_ENV_TAGS_DB
-            endif
-            if g:IDE_ENV_CSCOPE_DB != ''
-                " echo "Open "g:IDE_ENV_CSCOPE_DB
-                execute "cscope add ".g:IDE_ENV_CSCOPE_DB
-            endif
-            }
+        " {
+        "     if g:IDE_ENV_TAGS_DB != ''
+        "         " echo "Open ".g:IDE_ENV_TAGS_DB
+        "         execute "set tags=".g:IDE_ENV_TAGS_DB
+        "     endif
+        "     if g:IDE_ENV_CSCOPE_DB != ''
+        "         " echo "Open "g:IDE_ENV_CSCOPE_DB
+        "         execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+        "     endif
+        "     }
 
         " cctree
         if g:IDE_ENV_CCTREE_DB != ''
@@ -427,9 +438,15 @@ function! PvUpdate()
     endfunc
     let g:IDE_ENV_REQ_TAG_UPDATE = 2
     try
-        let l:job = job_start('hsexc pvupdate', { 'callback': 'Pvhandler' })
+        " if has('nvim')
+        "     " FIXME, don't do nvim in common layer
+        "     let l:job = jobstart('hsexc pvupdate', { 'callback': 'Pvhandler' })
+        " else
+        "     let l:job = job_start('hsexc pvupdate', { 'callback': 'Pvhandler' })
+        " endif
+        call AdpJobStart('hsexc pvupdate', 'Pvhandler')
     catch
-        echom "PvUpdate Failed"
+        echom "PvUpdate Failed, Please check if hsexc exist."
     endtry
 endfunc
 
@@ -688,6 +705,35 @@ function! Info()
         let msg=msg . sep . printf('%- 16s: %s', 'Git Info', (proj_branch == '' ? '':proj_branch . '@'). proj_name)
         let msg=msg . sep . printf('%- 16s: %s', 'Git Path', (proj_path == '' ? './':proj_path))
     endif
+
+    echo msg
+endfunc
+command! IdeInfo call IdeInfo()
+
+function! IdeInfo()
+    let sep="\n"
+    let msg="IDE Information"
+    let msg=msg . sep . printf("%s", "[Envs]")
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_IDE_TITLE', g:IDE_ENV_IDE_TITLE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_CONFIG_PATH', g:IDE_ENV_CONFIG_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_PATH', g:IDE_ENV_SESSION_PATH)
+
+    let msg=msg . sep . printf("%s", "[Vars]")
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_HEART_BEAT', g:IDE_ENV_HEART_BEAT)
+
+    let msg=msg . sep . printf("%s", "[Configs]")
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_CACHED_COLORSCHEME ', g:IDE_CFG_CACHED_COLORSCHEME)
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_GIT_ENV ', g:IDE_CFG_GIT_ENV)
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_PLUGIN_ENABLE ', g:IDE_CFG_PLUGIN_ENABLE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_SPECIAL_CHARS ', g:IDE_CFG_SPECIAL_CHARS)
+
+    "" Backgorund worker
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)
+    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_AUTO_TAG_UPDATE ', g:IDE_CFG_AUTO_TAG_UPDATE)
+
 
     echo msg
 endfunc

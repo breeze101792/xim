@@ -13,6 +13,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 nnoremap q: <nop>
 nnoremap q/ <nop>
+map q <nop>
 
 " n  Normal mode map. Defined using ':nmap' or ':nnoremap'.
 " i  Insert mode map. Defined using ':imap' or ':inoremap'.
@@ -74,7 +75,7 @@ nnoremap <leader>wqa :wqa<CR>
 nnoremap qq :q!<CR>
 
 " open an shell without close vim
-nnoremap <leader>sh :sh<CR>
+nnoremap <leader>sh :tab terminal<CR>
 
 " select all content
 map <C-a> <Esc>ggVG<CR>

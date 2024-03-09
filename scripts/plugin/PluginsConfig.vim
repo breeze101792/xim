@@ -27,7 +27,7 @@ let g:lightline = {
             \ 'colorscheme'        : 'wombat_lab',
             \ 'active'             : {
             \ 'left'               : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
-            \ 'right'              : [['lineinfo', 'percent'], ['info'], ['CurrentFunction']]
+            \ 'right'              : [['lineinfo', 'position'], ['info'], ['CurrentFunction']]
             \ },
             \ 'inactive'           : {
             \ 'left'               : [['filename']],
@@ -42,6 +42,7 @@ let g:lightline = {
             \ 'gitinfo'            : 'LightlineGitInfo',
             \ 'title'              : 'LightlineTitle',
             \ 'info'               : 'LightlineFileInfo',
+            \ 'position'           : 'LightlinePosition',
             \ },
             \ 'tabline'            : {
             \ 'left'               : [['title'], ['tabs']],
@@ -117,6 +118,10 @@ endfunction
 function! LightlineFuncName()
     let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
     return winwidth(0) < 70 ? '' : l:current_fun
+endfunction
+
+function! LightlinePosition()
+    return printf('%.2f%%', ( 100.0 * line('.') / line('$') ))
 endfunction
 
 function! LightlineGitInfo()
@@ -205,7 +210,9 @@ let g:ctrlp_root_markers = ['vimproj', '.repo']
 let g:ctrlp_extensions = ['tag']
 " ignore file on .gitignore
 " while using user command, ignore will not work
-let g:ctrlp_user_command = ['.git', "cd %s && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
+" let g:ctrlp_user_command = ['.git', "cd %s && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
+" cd to root of git path.
+let g:ctrlp_user_command = ['.git', "cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
 
 " unlet g:ctrlp_custom_ignore
 let g:ctrlp_custom_ignore = {
@@ -248,27 +255,27 @@ let g:bookmark_highlight_lines = 1
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:mwPalettes = {
                     \ 'mypalette': [
-                    \ { 'ctermbg':'Blue',         'ctermfg' :'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
-                    \ { 'ctermbg':'Cyan',         'ctermfg' :'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
+                    \ { 'ctermbg':'White',        'ctermfg' :'Black', 'guibg':'#E3E3D2', 'guifg':'#999999' },
+                    \ { 'ctermbg':'LightGreen',   'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+                    \ { 'ctermbg':'LightYellow',  'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#000000' },
+                    \ { 'ctermbg':'LightMagenta', 'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+                    \ { 'ctermbg':'LightCyan',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+                    \ { 'ctermbg':'DarkGreen',    'ctermfg' :'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
+                    \ { 'ctermbg':'DarkYellow',   'ctermfg' :'Black', 'guibg':'#FFFF00', 'guifg':'#6F6F4C' },
+                    \ { 'ctermbg':'DarkMagenta',  'ctermfg' :'White', 'guibg':'#A29CCF', 'guifg':'#120080' },
+                    \ { 'ctermbg':'DarkCyan',     'ctermfg' :'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
+                    \ { 'ctermbg':'DarkRed',      'ctermfg' :'White', 'guibg':'#F5A1FF', 'guifg':'#720080' },
                     \ { 'ctermbg':'Gray',         'ctermfg' :'Black', 'guibg':'#A3A396', 'guifg':'#222222' },
                     \ { 'ctermbg':'Green',        'ctermfg' :'Black', 'guibg':'#ACFFA1', 'guifg':'#0F8000' },
                     \ { 'ctermbg':'Magenta',      'ctermfg' :'White', 'guibg':'#FFA1C6', 'guifg':'#80005D' },
                     \ { 'ctermbg':'Red',          'ctermfg' :'Black', 'guibg':'#F3FFA1', 'guifg':'#6F8000' },
-                    \ { 'ctermbg':'White',        'ctermfg' :'Black', 'guibg':'#E3E3D2', 'guifg':'#999999' },
                     \ { 'ctermbg':'Yellow',       'ctermfg' :'Black', 'guibg':'#FFE8A1', 'guifg':'#806000' },
                     \ { 'ctermbg':'Brown',        'ctermfg' :'White', 'guibg':'#FFC4A1', 'guifg':'#803000' },
-                    \ { 'ctermbg':'DarkCyan',     'ctermfg' :'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
-                    \ { 'ctermbg':'DarkGreen',    'ctermfg' :'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
+                    \ { 'ctermbg':'Cyan',         'ctermfg' :'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
                     \ { 'ctermbg':'DarkBlue',     'ctermfg' :'White', 'guibg':'#A1DBFF', 'guifg':'#004E80' },
-                    \ { 'ctermbg':'DarkMagenta',  'ctermfg' :'White', 'guibg':'#A29CCF', 'guifg':'#120080' },
-                    \ { 'ctermbg':'DarkRed',      'ctermfg' :'White', 'guibg':'#F5A1FF', 'guifg':'#720080' },
-                    \ { 'ctermbg':'DarkYellow',   'ctermfg' :'Black', 'guibg':'#FFFF00', 'guifg':'#6F6F4C' },
-                    \ { 'ctermbg':'LightCyan',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightGray',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightGreen',   'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightMagenta', 'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
                     \ { 'ctermbg':'LightRed',     'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightYellow',  'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#000000' },
+                    \ { 'ctermbg':'LightGray',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+                    \ { 'ctermbg':'Blue',         'ctermfg' :'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
                     \ ],
                     \ }
 

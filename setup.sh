@@ -121,6 +121,27 @@ function setup()
     echo "Install cppcheck if you want to use cppcheck"
 
 }
+function setup_nvim()
+{
+    local var_nvim_root="${IDE_ROOT}/nvim"
+    local var_nvim_config_root="${HOME}/.config/nvim"
+    test -d "${var_nvim_config_root}" || mkdir "${var_nvim_config_root}"
+
+    if test -f "${var_nvim_config_root}/init.vim"
+    then
+        echo "${var_nvim_config_root}/init.vim exist, do you want to override it?(y/N)"
+        read user_input
+        if [ ${user_input} = 'y' ] || [ ${user_input} = 'Y' ]
+        then
+            ln -sf ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+        else
+            return 0
+        fi
+    else
+        echo "Link nvim init file to ${var_nvim_config_root}/"
+        ln -s ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+    fi
+}
 function setup_lite()
 {
     if test -f ${HOME}/.vimrc
@@ -179,11 +200,16 @@ function main()
     local flag_compre_colorscheme="n"
     local flag_temp_config="n"
     local flag_lite="n"
+    local flag_nvim="n"
+
     while [[ "$#" != 0 ]]
     do
         case ${1} in
             -s|--setup)
                 flag_setup="y"
+                ;;
+            -n|--nvim)
+                flag_nvim="y"
                 ;;
             -l|--lite)
                 flag_lite="y"
@@ -228,7 +254,10 @@ function main()
     elif [ "${flag_lite}" = "y" ]
     then
         setup_lite
-
+    fi
+    if [ "${flag_nvim}" = "y" ]
+    then
+        setup_nvim
     fi
     if [ "${flag_plugins_check}" = "y" ]
     then
