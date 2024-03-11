@@ -27,6 +27,10 @@ git submodule add [url] [folder]
 git submodule foreach git pull origin master
 git submodule foreach git reset --hard origin/master
 ```
+Update from remote repo
+```
+git submodule update --remote
+```
 ## Remove subproject
 1. Delete the relevant section from the .gitmodules file.
 2. Stage the .gitmodules changes:
