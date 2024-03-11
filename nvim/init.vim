@@ -1,4 +1,63 @@
-
 set runtimepath^=~/.vim runtimepath+=~/.vim/after
 let &packpath=&runtimepath
 source ~/.vimrc
+
+" luafile ~/.config/nvim/lua/plugins.lua
+
+" execute 'lua require("cscope_maps").setup({cscope={exec="cscope", db_file="'.g:IDE_ENV_PROJ_DATA_PATH.'", picker = "quickfix"}})'
+" lua require("cscope_maps").setup({cscope={db_file="test.db"}})
+
+" execute 'lua require("lspconfig").clangd.setup({filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" }, root_dir=root_pattern(".git")})'
+" execute 'lua require("lspconfig").clangd.setup({filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" }, root_dir=root_pattern(".git")})'
+" execute 'lua require'lspconfig'.clangd.setup{}'
+" lua << EOF
+" require("cscope_maps").setup({
+"     disable_maps = false,
+"     prefix = "<leader>s",
+"     -- cscope related defaults
+"     cscope = {
+"         -- location of cscope db file
+"         db_file = "./cscope.out",
+"         -- cscope executable
+"         exec = "gtags-cscope", -- "cscope" or "gtags-cscope"
+"         -- choose your fav picker
+"         picker = "quickfix", -- "telescope", "fzf-lua" or "quickfix"
+"         -- size of quickfix window
+"         qf_window_size = 5, -- any positive integer
+"         -- position of quickfix window
+"         qf_window_pos = "bottom", -- "bottom", "right", "left" or "top"
+"         -- "true" does not open picker for single result, just JUMP
+"         skip_picker_for_single_result = false, -- "false" or "true"
+"         -- these args are directly passed to "cscope -f <db_file> <args>"
+"         db_build_cmd_args = { "-bqkv" },
+"         -- statusline indicator, default is cscope executable
+"         statusline_indicator = nil,
+"         -- try to locate db_file in parent dir(s)
+"         project_rooter = {
+"             enable = false, -- "true" or "false"
+"             -- change cwd to where db_file is located
+"             change_cwd = false, -- "true" or "false"
+"         },
+"     }
+" })
+" lua << EOF
+" local lspconfig = require 'lspconfig'
+"
+" lspconfig.clangd.setup({
+"         filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+"         root_dir = function(fname)
+"         return require("lspconfig.util").root_pattern(
+"           "vimproj",
+"           "Makefile",
+"           "configure.ac",
+"           "configure.in",
+"           "config.h.in",
+"           "meson.build",
+"           "meson_options.txt",
+"           "build.ninja"
+"         )(fname) or require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(
+"           fname
+"         ) or require("lspconfig.util").find_git_ancestor(fname)
+"       end,
+"
+" })

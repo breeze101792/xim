@@ -93,3 +93,11 @@
 	path = plugins/QFEnter
 	url = https://github.com/yssl/QFEnter.git
 	branch = master
+[submodule "plugins/nvim-lspconfig"]
+	path = plugins/nvim-lspconfig
+	url = https://github.com/neovim/nvim-lspconfig.git
+	branch = master
+[submodule "plugins/cscope_maps.nvim"]
+	path = plugins/cscope_maps.nvim
+	url = https://github.com/breeze101792/cscope_maps.nvim.git
+	branch = xcscope

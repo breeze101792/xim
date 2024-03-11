@@ -134,12 +134,14 @@ function setup_nvim()
         if [ ${user_input} = 'y' ] || [ ${user_input} = 'Y' ]
         then
             ln -sf ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+            ln -sf ${var_nvim_root}/lua ${var_nvim_config_root}/
         else
             return 0
         fi
     else
         echo "Link nvim init file to ${var_nvim_config_root}/"
         ln -s ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+        ln -s ${var_nvim_root}/lua ${var_nvim_config_root}/
     fi
 }
 function setup_lite()
@@ -232,6 +234,7 @@ function main()
             -h|--help)
                 echo "VIM IDE Setup Tool"
                 printf  "    %s ->%s \n" "-s|--setup" "Setup up vim ide"
+                printf  "    %s ->%s \n" "-n|--nvim)" "Generate nvim init.vim file"
                 printf  "    %s ->%s \n" "-l|--lite" "Setup up lite script"
                 printf  "    %s ->%s \n" "-p|--plugins-check)" "Check plugins with Plugins.vim"
                 printf  "    %s ->%s \n" "-cc|--colorscheme-compare)" "Compare two different color scheme and export missing one"

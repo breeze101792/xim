@@ -153,15 +153,28 @@ nmap <Leader>h :HexToggle<CR>
 " i: Find files #including this file
 " s: Find this C symbol
 " t: Find this text string
-nnoremap <silent>ca :cscope find a <cword><CR>
-nnoremap <silent>cc :cscope find c <cword><CR>
-nnoremap <silent>cd :cscope find d <cword><CR>
-nnoremap <silent>ce :cscope find e <cword><CR>
-nnoremap <silent>cf :cscope find f <cword><CR>
-nnoremap <silent>cg :cscope find g <cword><CR>
-nnoremap <silent>ci :cscope find i <cword><CR>
-nnoremap <silent>cs :cscope find s <cword><CR>
-nnoremap <silent>ct :cscope find t <cword><CR>
+if has('nvim')
+
+    nnoremap <silent>ca :exec "Cscope find a ".expand('<cword>')<CR>
+    nnoremap <silent>cc :exec "Cscope find c ".expand('<cword>')<CR>
+    nnoremap <silent>cd :exec "Cscope find d ".expand('<cword>')<CR>
+    nnoremap <silent>ce :exec "Cscope find e ".expand('<cword>')<CR>
+    nnoremap <silent>cf :exec "Cscope find f ".expand('<cword>')<CR>
+    nnoremap <silent>cg :exec "Cscope find g ".expand('<cword>')<CR>
+    nnoremap <silent>ci :exec "Cscope find i ".expand('<cword>')<CR>
+    nnoremap <silent>cs :exec "Cscope find s ".expand('<cword>')<CR>
+    nnoremap <silent>ct :exec "Cscope find t ".expand('<cword>')<CR>
+else
+    nnoremap <silent>ca :cscope find a <cword><CR>
+    nnoremap <silent>cc :cscope find c <cword><CR>
+    nnoremap <silent>cd :cscope find d <cword><CR>
+    nnoremap <silent>ce :cscope find e <cword><CR>
+    nnoremap <silent>cf :cscope find f <cword><CR>
+    nnoremap <silent>cg :cscope find g <cword><CR>
+    nnoremap <silent>ci :cscope find i <cword><CR>
+    nnoremap <silent>cs :cscope find s <cword><CR>
+    nnoremap <silent>ct :cscope find t <cword><CR>
+endif
 
 " " srcexpl
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>

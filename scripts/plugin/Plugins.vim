@@ -3,7 +3,6 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let VAR_PLUGIN_PATH = '~/.vim/plugins'
 
-
 " Make sure you use single quotes
 let VAR_PLUGIN_DEBUG = 0
 " let VAR_PLUGIN_DEBUG = 1
@@ -27,10 +26,17 @@ Plug VAR_PLUGIN_PATH.'/vim-ide'
 " FIXME, contain vimenter for init, this will not trigger it.
 Plug VAR_PLUGIN_PATH.'/bufexplorer'
 
+""""    Nvim Entry
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has('nvim')
+    Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
+    Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
+endif
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    On-demand function loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-"FIXME if autocommand contain vimenter for init, this will not trigger it.
+"NOTE. if autocommand contain vimenter for init, this will not trigger it.
 if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/Colorizer', { 'on':  ['ColorToggle'] }
     Plug VAR_PLUGIN_PATH.'/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
@@ -118,6 +124,11 @@ if VAR_PLUGIN_DEBUG == 0
 
         call plug#load('vim-ingo-library')
         call plug#load('tagbar')
+
+        if has('nvim')
+            " FIXME, It's just a temp fix for nvim cscope
+            execute 'lua require("cscope_maps").setup({cscope={exec="cscope", db_file="'.g:IDE_ENV_PROJ_DATA_PATH.'/cscope.db", picker = "quickfix"}})'
+        endif
     endfunction
 else
     function! IDE_PlugInDealyLoading()

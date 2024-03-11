@@ -119,8 +119,11 @@ syntax sync maxlines=50
 
 " set formatoptions
 " set tags=./tags,tags;/     " tag path, this will be setted on auto function
-set cscopetag              " set tags=tags
-set nocscopeverbose        " set cscopeverbose
+if has('cscope')
+    " Nvim 0.9 remove cscope support
+    set cscopetag              " set tags=tags
+    set nocscopeverbose        " set cscopeverbose
+endif
 
 " Folding
 set foldmethod=syntax " can be set to syntax, indent, manual
