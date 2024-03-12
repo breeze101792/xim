@@ -30,6 +30,7 @@ Plug VAR_PLUGIN_PATH.'/bufexplorer'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('nvim')
     Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
+
     Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
 endif
 
@@ -127,10 +128,18 @@ if VAR_PLUGIN_DEBUG == 0
 
         if has('nvim')
             " FIXME, It's just a temp fix for nvim cscope
-            execute 'lua require("cscope_maps").setup({cscope={exec="cscope", db_file="'.g:IDE_ENV_PROJ_DATA_PATH.'/cscope.db", picker = "quickfix"}})'
+            " execute 'lua require("cscope_maps").setup({cscope={exec="cscope", db_file="'.g:IDE_ENV_PROJ_DATA_PATH.'/cscope.db", picker = "quickfix"}})'
+            execute 'lua require("cscope_maps").setup()'
         endif
+
+        " Tag setup
+        " -------------------------------------------
+        call TagSetup()
     endfunction
 else
     function! IDE_PlugInDealyLoading()
+        " Tag setup
+        " -------------------------------------------
+        call TagSetup()
     endfunction
 endif

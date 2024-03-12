@@ -19,6 +19,8 @@ let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
+let g:IDE_ENV_CSCOPE_EXC = get(g:, 'IDE_ENV_CSCOPE_EXC', "cscope")
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal vim var                           """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -66,11 +68,9 @@ function! IDE_EnvSetup()
     """"""""""""""""""""""""""""""""""""""""""""""""""""""
     if has('nvim')
         let g:IDE_ENV_IDE_TITLE = "NVIM"
-    endif
 
-    " Tag setup
-    " -------------------------------------------
-    call TagSetup()
+        let g:IDE_ENV_CSCOPE_EXC = "Cscope"
+    endif
 endfunction
 function! IDE_UpdateEnv_CursorHold()
     " if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')

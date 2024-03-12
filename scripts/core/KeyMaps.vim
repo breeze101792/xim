@@ -154,7 +154,6 @@ nmap <Leader>h :HexToggle<CR>
 " s: Find this C symbol
 " t: Find this text string
 if has('nvim')
-
     nnoremap <silent>ca :exec "Cscope find a ".expand('<cword>')<CR>
     nnoremap <silent>cc :exec "Cscope find c ".expand('<cword>')<CR>
     nnoremap <silent>cd :exec "Cscope find d ".expand('<cword>')<CR>

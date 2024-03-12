@@ -51,7 +51,6 @@ augroup init_gp
     endif
 augroup END
 
-autocmd FileType c,cpp,h,py,vim,sh,mk autocmd BufWritePre <buffer> %s/\s\+$//e
 """"    Advance Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " remove the trailing space

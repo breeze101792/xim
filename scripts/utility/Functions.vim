@@ -349,11 +349,11 @@ command! TagUpdate call TagUpdate()
 
 function! TagUpdate()
     try
-        execute 'cscope reset'
+        execute g:IDE_ENV_CSCOPE_EXC.' reset'
     catch
         if g:IDE_ENV_CSCOPE_DB != ''
             " echo "Open "g:IDE_ENV_CSCOPE_DB
-            execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+            execute g:IDE_ENV_CSCOPE_EXC." add ".g:IDE_ENV_CSCOPE_DB
         endif
         if g:IDE_ENV_CCTREE_DB != ''
             " echo "Open "g:IDE_ENV_CCTREE_DB
@@ -385,7 +385,7 @@ function! TagSetup()
             let l:cscope_db_list=system('ls -1 '.g:IDE_ENV_PROJ_DATA_PATH.'/cscope*.db')
             for each_db in split(l:cscope_db_list, '\n')
                 " echom each_db
-                silent! execute "cscope add ".each_db
+                silent! execute g:IDE_ENV_CSCOPE_EXC." add ".each_db
             endfor
         endif
         " Add tags
@@ -402,7 +402,7 @@ function! TagSetup()
         "     endif
         "     if g:IDE_ENV_CSCOPE_DB != ''
         "         " echo "Open "g:IDE_ENV_CSCOPE_DB
-        "         execute "cscope add ".g:IDE_ENV_CSCOPE_DB
+        "         execute g:IDE_ENV_CSCOPE_EXC."  add ".g:IDE_ENV_CSCOPE_DB
         "     endif
         "     }
 
