@@ -57,6 +57,7 @@ set undolevels=999                                " More undo (default=100)
 set linebreak                                     " Avoid wrapping a line in the middle of a word.
 " set wrap                                          " Enable line wrapping.
 " set virtualedit=block                           " in visal mode can select empty space
+set splitkeep=screen                              " keeps the same screen screen lines in all split windows
 
 
 " Number
