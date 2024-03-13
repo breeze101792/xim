@@ -410,6 +410,17 @@ let g:tcomment_maps=0
 let g:EasyGrepRoot = "search:vimproj,.repo"
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    QFEnter
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let g:qfenter_prevtabwin_policy = 'qf'
+let g:qfenter_autoclose = 1
+let g:qfenter_keymap = {}
+let g:qfenter_keymap.open = ['<CR>']
+" let g:qfenter_keymap.vopen = ['<Leader><CR>']
+" let g:qfenter_keymap.hopen = ['<Leader><Space>']
+" let g:qfenter_keymap.topen = ['<Leader><Tab>']
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load pathogen
