@@ -415,10 +415,10 @@ let g:EasyGrepRoot = "search:vimproj,.repo"
 " let g:qfenter_prevtabwin_policy = 'qf'
 let g:qfenter_autoclose = 1
 let g:qfenter_keymap = {}
-let g:qfenter_keymap.open = ['<CR>']
-" let g:qfenter_keymap.vopen = ['<Leader><CR>']
-" let g:qfenter_keymap.hopen = ['<Leader><Space>']
-" let g:qfenter_keymap.topen = ['<Leader><Tab>']
+let g:qfenter_keymap.open = ['<CR>', 'o']
+let g:qfenter_keymap.vopen = ['v']
+let g:qfenter_keymap.hopen = ['h']
+let g:qfenter_keymap.topen = ['t']
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
