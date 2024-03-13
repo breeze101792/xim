@@ -293,9 +293,9 @@ let g:mwIgnoreCase = 0
 """"    vim-multiple-cursors
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " If set to 0, insert mappings won't be supported in _Insert_ mode anymore.
-let g:multi_cursor_support_imap=1
-let g:multi_cursor_exit_from_visual_mode=1
-let g:multi_cursor_exit_from_insert_mode=1
+" let g:multi_cursor_support_imap=1
+" let g:multi_cursor_exit_from_visual_mode=1
+" let g:multi_cursor_exit_from_insert_mode=1
 
 """"    Src Expl
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

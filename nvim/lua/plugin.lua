@@ -37,6 +37,7 @@ require("cscope_maps").setup({
 ----------------------------------------------------------------
 ----    Lsp configs
 ----------------------------------------------------------------
+--[[
 local lspconfig = require 'lspconfig'
 
 lspconfig.clangd.setup({
@@ -57,3 +58,4 @@ lspconfig.clangd.setup({
       end,
 
 })
+--]]

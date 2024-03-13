@@ -31,7 +31,7 @@ Plug VAR_PLUGIN_PATH.'/bufexplorer'
 if has('nvim')
     Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
 
-    Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
+    " Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -92,7 +92,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/tagbar', { 'on':  ['TagbarToggle'] }
 
     Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
-    Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors', { 'on':  [] }
+    Plug VAR_PLUGIN_PATH.'/vim-visual-multi', { 'on':  [] }
     Plug VAR_PLUGIN_PATH.'/vim-surround', { 'on':  [] }
     Plug VAR_PLUGIN_PATH.'/QFEnter', { 'on':  [] }
 else
@@ -100,7 +100,7 @@ else
     Plug VAR_PLUGIN_PATH.'/tagbar'
 
     Plug VAR_PLUGIN_PATH.'/supertab'
-    Plug VAR_PLUGIN_PATH.'/vim-multiple-cursors'
+    Plug VAR_PLUGIN_PATH.'/vim-visual-multi'
     Plug VAR_PLUGIN_PATH.'/vim-surround'
     Plug VAR_PLUGIN_PATH.'/QFEnter'
 endif
@@ -115,7 +115,7 @@ if VAR_PLUGIN_DEBUG == 0
     function! IDE_PlugInDealyLoading()
         " load redraw plugins first, to prevent status restore
         call plug#load('supertab') " this will restore line number
-        call plug#load('vim-multiple-cursors')
+        call plug#load('vim-visual-multi')
         call plug#load('QFEnter')
 
         :GitGutterEnable

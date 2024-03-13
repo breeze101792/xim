@@ -101,3 +101,7 @@
 	path = plugins/cscope_maps.nvim
 	url = https://github.com/breeze101792/cscope_maps.nvim.git
 	branch = xcscope
+[submodule "plugins/vim-visual-multi"]
+	path = plugins/vim-visual-multi
+	url = https://github.com/mg979/vim-visual-multi.git
+	branch = master

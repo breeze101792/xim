@@ -383,6 +383,7 @@ function! TagSetup()
         " Setup cscope db
         if g:IDE_ENV_PROJ_DATA_PATH != ""
             let l:cscope_db_list=system('ls -1 '.g:IDE_ENV_PROJ_DATA_PATH.'/cscope*.db')
+            silent! execute g:IDE_ENV_CSCOPE_EXC." reset "
             for each_db in split(l:cscope_db_list, '\n')
                 " echom each_db
                 silent! execute g:IDE_ENV_CSCOPE_EXC." add ".each_db

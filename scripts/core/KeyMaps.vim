@@ -180,7 +180,7 @@ endif
 
 " Commentary settings
 noremap <C-_> :CommentCode<CR>
-noremap <Leader>/ :CommentCode<CR>
+" noremap! <Leader>/ :CommentCode<CR>
 
 " GitGutter settings
 " map <C-g> :GitGutterToggle<CR>
