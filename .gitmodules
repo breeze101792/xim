@@ -6,10 +6,6 @@
 	path = plugins/supertab
 	url = https://github.com/ervandew/supertab.git
 	branch = master
-[submodule "plugins/vim-multiple-cursors"]
-	path = plugins/vim-multiple-cursors
-	url = https://github.com/terryma/vim-multiple-cursors.git
-	branch = master
 [submodule "plugins/tagbar"]
 	path = plugins/tagbar
 	url = https://github.com/majutsushi/tagbar.git
@@ -91,7 +87,7 @@
 	branch = master
 [submodule "plugins/QFEnter"]
 	path = plugins/QFEnter
-	url = https://github.com/yssl/QFEnter.git
+	url = https://github.com/breeze101792/QFEnter.git
 	branch = master
 [submodule "plugins/nvim-lspconfig"]
 	path = plugins/nvim-lspconfig
