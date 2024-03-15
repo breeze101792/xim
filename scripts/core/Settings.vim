@@ -20,7 +20,7 @@ set showtabline=2
 set hidden                       " can put buffer to the background without writing
                                  " to disk, will remember history/marks.
 set lazyredraw                   " don't update the display while executing macros
-set updatetime=500
+set updatetime=500               " how long wil vim wait after your interaction to start plugins/other event
 set ttyfast                      " Send more characters at a given time.
 " set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 set redrawtime=1000
@@ -39,8 +39,6 @@ set regexpengine=1                 " use old reg eng, this may disable some reg 
 
 ""    Others
 set report=0                     " Show all changes.
-set title                        " Show the filename in the window title bar.
-set splitbelow splitright        " how to split new windows.
 " :e ++ff=unix " Show ^M windows
 
 ""    Old/Compatiable options
@@ -57,7 +55,10 @@ set undolevels=999                                " More undo (default=100)
 set linebreak                                     " Avoid wrapping a line in the middle of a word.
 " set wrap                                          " Enable line wrapping.
 " set virtualedit=block                           " in visal mode can select empty space
-set splitkeep=topline                             " keeps the same screen screen lines in all split windows
+set title                        " Show the filename in the window title bar.
+set splitbelow splitright        " how to split new windows.
+" FIXME. this will affect Quickfix, so disable it for now.
+" set splitkeep=topline                             " keeps the same screen screen lines in all split windows
 
 
 " Number

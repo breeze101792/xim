@@ -8,17 +8,19 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 try
     " use generated color scheme to accerate start up speed
-    colorscheme autogen
-catch /^Vim\%((\a\+)\)\=:E185/
-    try
-        colorscheme afterglow_lab
-        if empty(glob("~/.vim/colors/autogen.vim")) && g:IDE_CFG_CACHED_COLORSCHEME == "y"
-            " silent source ~/.vim/tools/save_colorscheme.vim
+    if g:IDE_CFG_CACHED_COLORSCHEME == "y"
+        if ! empty(glob("~/.vim/colors/autogen.vim"))
+            colorscheme autogen
+        else
+            execute "colorscheme " . g:IDE_CFG_COLORSCHEME_NAME
             source ~/.vim/tools/save_colorscheme.vim
         endif
-    catch /^Vim\%((\a\+)\)\=:E185/
-        colorscheme vimdefault
-    endtry
+    else
+        execute "colorscheme " . g:IDE_CFG_COLORSCHEME_NAME
+    endif
+catch /^Vim\%((\a\+)\)\=:E185/
+    execute "colorscheme vimdefault"
+    echoe "Fallback theme to vimdefault."
 endtry
 
 """""    lightline
@@ -297,6 +299,11 @@ let g:mwIgnoreCase = 0
 " let g:multi_cursor_exit_from_visual_mode=1
 " let g:multi_cursor_exit_from_insert_mode=1
 
+""""    vim-visual-multi
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:VM_default_mappings = 0
+" let g:VM_mouse_mappings = 1
+
 """"    Src Expl
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:SrcExpl_winHeight = 10
@@ -351,20 +358,20 @@ let g:bufExplorerSortBy='name'
 
 """"    Syntastic
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 1
-let g:syntastic_aggregate_errors = 1
-
-" Python
-let g:syntastic_python_checkers = ['pylint']
-
-" C
-let g:syntastic_c_remove_include_errors = 1
-" let g:syntastic_c_compiler = ['clang','gcc', 'make']
-let g:syntastic_c_compiler = 'cppcheck'
-" let g:syntastic_c_compiler_options ='-Wpedantic -g'
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
+" let g:syntastic_check_on_open = 1
+" let g:syntastic_check_on_wq = 1
+" let g:syntastic_aggregate_errors = 1
+"
+" " Python
+" let g:syntastic_python_checkers = ['pylint']
+"
+" " C
+" let g:syntastic_c_remove_include_errors = 1
+" " let g:syntastic_c_compiler = ['clang','gcc', 'make']
+" let g:syntastic_c_compiler = 'cppcheck'
+" " let g:syntastic_c_compiler_options ='-Wpedantic -g'
 
 """""    Ale
 """""""""""""""""""""""""""""""""""""""""""""""""""""""

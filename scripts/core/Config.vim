@@ -3,10 +3,15 @@
 """"    Config vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")
 let g:IDE_CFG_GIT_ENV            = get(g:, 'IDE_CFG_GIT_ENV', "y")
 let g:IDE_CFG_PLUGIN_ENABLE      = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 let g:IDE_CFG_SPECIAL_CHARS      = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
+
+
+" color theme
+let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")
+" let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "slate")
+let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "afterglow_lab")
 
 "" Backgorund worker
 let g:IDE_CFG_BACKGROUND_WORKER  = get(g:, 'IDE_CFG_BACKGROUND_WORKER', "n")

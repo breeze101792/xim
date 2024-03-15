@@ -26,12 +26,16 @@ Plug VAR_PLUGIN_PATH.'/vim-ide'
 " FIXME, contain vimenter for init, this will not trigger it.
 Plug VAR_PLUGIN_PATH.'/bufexplorer'
 
+""""    Color
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Plug VAR_PLUGIN_PATH.'/everforest'
+
+
 """"    Nvim Entry
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('nvim')
     Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
-
-    " Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
+    Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -128,7 +132,6 @@ if VAR_PLUGIN_DEBUG == 0
 
         if has('nvim')
             " FIXME, It's just a temp fix for nvim cscope
-            " execute 'lua require("cscope_maps").setup({cscope={exec="cscope", db_file="'.g:IDE_ENV_PROJ_DATA_PATH.'/cscope.db", picker = "quickfix"}})'
             execute 'lua require("cscope_maps").setup()'
         endif
 
