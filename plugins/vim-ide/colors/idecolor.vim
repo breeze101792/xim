@@ -21,13 +21,8 @@ if version > 580
 endif
 
 let g:colors_name = "idecolor"
-" set None as background
-let g:flag_inherit_background=1
-
-" Option g:flag_no_terminal_background
-if !exists("g:flag_inherit_background")
-    let g:flag_inherit_background = 0
-endif
+" set None as background & options
+let g:flag_inherit_background = get(g:, 'flag_inherit_background', 1)
 
 " Background behavior inference here
 if g:flag_inherit_background && has("gui_running")
@@ -61,6 +56,7 @@ endif
 let s:foreground = "d6d6d6"
 let s:line = "393939"
 let s:comment = "797979"
+let s:command = s:wine
 let s:fg_selection = "5a647e"
 let s:bg_selection = "555500"
 """"""""""""""""""""""""""""""""""""""""""
@@ -89,23 +85,19 @@ let s:todo = s:red
 
 "" content
 let s:code_identifier = s:orange
-let s:code_function = s:orange
-let s:code_class = s:orange
-let s:code_constant = s:purple
-let s:code_operator = s:purple
-let s:code_include = s:wine
-let s:code_tag = s:orange
-let s:code_type = s:blue
-let s:code_string = s:yellow
-let s:code_preproc = s:green
-let s:code_statment = s:wine
+let s:code_function   = s:orange
+let s:code_structure  = s:orange
+let s:code_constant   = s:purple
+let s:code_operator   = s:purple
+let s:code_include    = s:wine
+let s:code_tag        = s:orange
+let s:code_type       = s:blue
+let s:code_string     = s:yellow
+let s:code_preproc    = s:green
+let s:code_statment   = s:wine
 
 
 "" Plugins
-" let s:diff_del = s:blue
-" let s:diff_add = "4c4e39"
-" let s:diff_change = "2B5B77"
-" let s:diff_content = s:blue"
 let s:diff_del = s:red
 let s:diff_add = s:green
 let s:diff_change = s:wine
@@ -396,7 +388,7 @@ call <SID>X_HI("Identifier", s:code_identifier, "", "")
 call <SID>X_HI("Statement", s:code_statment, "", "")
 call <SID>X_HI("Conditional", s:code_statment, "", "")
 call <SID>X_HI("Repeat", s:code_statment, "", "")
-call <SID>X_HI("Structure", s:code_statment, "", "")
+call <SID>X_HI("Structure", s:code_structure, "", "")
 call <SID>X_HI("Function", s:code_function, "", "")
 call <SID>X_HI("Constant", s:code_constant, "", "")
 call <SID>X_HI("Keyword", s:code_identifier, "", "bold")
@@ -414,13 +406,21 @@ syntax match commonOperator "\(+\|=\|-\|*\|\^\|\/\||\)"
 hi! link commonOperator Operator
 
 " Vim Highlighting
-call <SID>X_HI("vimCommand", s:wine, "", "NONE")
+call <SID>X_HI("vimCommand", s:command, "", "NONE")
 
 " C Highlighting
 call <SID>X_HI("cType", s:code_type, "", "")
-call <SID>X_HI("cStorageClass", s:code_class, "", "")
+call <SID>X_HI("cStorageClass", s:code_structure, "", "")
 call <SID>X_HI("cConditional", s:wine, "", "")
 call <SID>X_HI("cRepeat", s:wine, "", "")
+
+" Lua Highlighting
+call <SID>X_HI("luaStatement", s:code_statment, "", "")
+call <SID>X_HI("luaRepeat", s:code_identifier, "", "")
+call <SID>X_HI("luaCondStart", s:code_identifier, "", "")
+call <SID>X_HI("luaCondElseif", s:code_identifier, "", "")
+call <SID>X_HI("luaCond", s:code_identifier, "", "")
+call <SID>X_HI("luaCondEnd", s:code_identifier, "", "")
 
 " Python Highlighting
 call <SID>X_HI("pythonInclude", s:green, "", italic)
@@ -447,27 +447,27 @@ call <SID>X_HI("pythonImportedModule", s:orange, "", "")
 call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 
 " PHP Highlighting
-call <SID>X_HI("phpVarSelector", s:wine, "", "")
-call <SID>X_HI("phpKeyword", s:wine, "", "")
-call <SID>X_HI("phpRepeat", s:wine, "", "")
-call <SID>X_HI("phpConditional", s:wine, "", "")
-call <SID>X_HI("phpStatement", s:wine, "", "")
-call <SID>X_HI("phpMemberSelector", s:foreground, "", "")
+" call <SID>X_HI("phpVarSelector", s:wine, "", "")
+" call <SID>X_HI("phpKeyword", s:wine, "", "")
+" call <SID>X_HI("phpRepeat", s:wine, "", "")
+" call <SID>X_HI("phpConditional", s:wine, "", "")
+" call <SID>X_HI("phpStatement", s:wine, "", "")
+" call <SID>X_HI("phpMemberSelector", s:foreground, "", "")
 
 " Ruby Highlighting
-call <SID>X_HI("rubySymbol", s:blue, "", "")
-call <SID>X_HI("rubyConstant", s:green, "", "")
-call <SID>X_HI("rubyAccess", s:yellow, "", "")
-call <SID>X_HI("rubyAttribute", s:blue, "", "")
-call <SID>X_HI("rubyInclude", s:blue, "", "")
-call <SID>X_HI("rubyLocalVariableOrMethod", s:orange, "", "")
-call <SID>X_HI("rubyCurlyBlock", s:orange, "", "")
-call <SID>X_HI("rubyStringDelimiter", s:yellow, "", "")
-call <SID>X_HI("rubyInterpolationDelimiter", s:orange, "", "")
-call <SID>X_HI("rubyConditional", s:wine, "", "")
-call <SID>X_HI("rubyRepeat", s:wine, "", "")
-call <SID>X_HI("rubyControl", s:wine, "", "")
-call <SID>X_HI("rubyException", s:wine, "", "")
+" call <SID>X_HI("rubySymbol", s:blue, "", "")
+" call <SID>X_HI("rubyConstant", s:green, "", "")
+" call <SID>X_HI("rubyAccess", s:yellow, "", "")
+" call <SID>X_HI("rubyAttribute", s:blue, "", "")
+" call <SID>X_HI("rubyInclude", s:blue, "", "")
+" call <SID>X_HI("rubyLocalVariableOrMethod", s:orange, "", "")
+" call <SID>X_HI("rubyCurlyBlock", s:orange, "", "")
+" call <SID>X_HI("rubyStringDelimiter", s:yellow, "", "")
+" call <SID>X_HI("rubyInterpolationDelimiter", s:orange, "", "")
+" call <SID>X_HI("rubyConditional", s:wine, "", "")
+" call <SID>X_HI("rubyRepeat", s:wine, "", "")
+" call <SID>X_HI("rubyControl", s:wine, "", "")
+" call <SID>X_HI("rubyException", s:wine, "", "")
 
 " Crystal Highlighting
 " call <SID>X_HI("crystalSymbol", s:green, "", "")
@@ -559,14 +559,6 @@ call <SID>X_HI("rubyException", s:wine, "", "")
 " call <SID>X_HI("ShowMarksHLo", s:wine, s:background, "NONE")
 " call <SID>X_HI("ShowMarksHLu", s:yellow, s:background, "NONE")
 " call <SID>X_HI("ShowMarksHLm", s:wine, s:background, "NONE")
-
-" " Lua Highlighting
-" call <SID>X_HI("luaStatement", s:wine, "", "")
-" call <SID>X_HI("luaRepeat", s:wine, "", "")
-" call <SID>X_HI("luaCondStart", s:wine, "", "")
-" call <SID>X_HI("luaCondElseif", s:wine, "", "")
-" call <SID>X_HI("luaCond", s:wine, "", "")
-" call <SID>X_HI("luaCondEnd", s:wine, "", "")
 
 " " Cucumber Highlighting
 " call <SID>X_HI("cucumberGiven", s:blue, "", "")

@@ -28,8 +28,12 @@ so ~/.vim/vim-ide/utility/Template.vim
 
 if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
-    so ~/.vim/vim-ide/plugin/Plugins.vim
-    so ~/.vim/vim-ide/plugin/PluginsConfig.vim
+    try
+        so ~/.vim/vim-ide/plugin/Plugins.vim
+        so ~/.vim/vim-ide/plugin/PluginsConfig.vim
+    catch
+        echoe "Known error happen."
+    endtry
 " elseif version < 704
 " skip
 endif

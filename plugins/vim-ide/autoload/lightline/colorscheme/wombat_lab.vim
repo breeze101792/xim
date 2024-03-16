@@ -31,8 +31,8 @@ let s:white    = [ '#ffffff', 231 ]
 let s:p = {'normal': {}, 'inactive': {}, 'insert': {}, 'replace': {}, 'visual': {}, 'tabline': {}}
 
 " Formate ["Foreground", "Barckground"]
-let s:p.normal.right    = [ [ s:gray02, s:blue ], [ s:gray3, s:gray01 ] ]
-let s:p.normal.left     = [ [ s:gray02, s:blue ], [ s:gray3, s:gray01 ] ]
+let s:p.normal.right    = [ [ s:gray02, s:orange ], [ s:gray3, s:gray01 ] ]
+let s:p.normal.left     = [ [ s:gray02, s:orange ], [ s:gray3, s:gray01 ] ]
 let s:p.inactive.right  = [ [ s:gray023, s:gray01 ], [ s:gray00, s:gray02 ] ]
 let s:p.inactive.left   = [ [ s:gray1, s:gray02 ], [ s:gray00, s:gray023 ] ]
 let s:p.insert.left     = [ [ s:gray02, s:green ], [ s:gray3, s:gray01 ] ]
@@ -46,8 +46,8 @@ let s:p.normal.warning  = [ [ s:gray023, s:yellow ] ]
 "" Table line
 " Formate ["Foreground", "Barckground"]
 let s:p.tabline.left    = [ [ s:gray02, s:yellow, 'bold' ] ]
-let s:p.tabline.tabsel  = [ [ s:gray02, s:blue ] ]
+let s:p.tabline.tabsel  = [ [ s:gray02, s:orange ] ]
 let s:p.tabline.middle  = [ [ s:gray2, s:gray02 ] ]
-let s:p.tabline.right   = [ [ s:gray02, s:blue ], [ s:gray3, s:gray01 ] ]
+let s:p.tabline.right   = [ [ s:gray02, s:orange ], [ s:gray3, s:gray01 ] ]
 
 let g:lightline#colorscheme#wombat_lab#palette = lightline#colorscheme#flatten(s:p)

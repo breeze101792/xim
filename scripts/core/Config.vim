@@ -11,7 +11,8 @@ let g:IDE_CFG_SPECIAL_CHARS      = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 " color theme
 let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")
 " let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "slate")
-let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "afterglow_lab")
+let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "idecolor")
+" let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "afterglow_lab")
 
 "" Backgorund worker
 let g:IDE_CFG_BACKGROUND_WORKER  = get(g:, 'IDE_CFG_BACKGROUND_WORKER', "n")
