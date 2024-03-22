@@ -15,6 +15,7 @@ so ~/.vim/vim-ide/core/Config.vim
 so ~/.vim/vim-ide/core/Environment.vim
 so ~/.vim/vim-ide/core/Settings.vim
 so ~/.vim/vim-ide/core/Autocmd.vim
+so ~/.vim/vim-ide/core/KeyMaps.vim
 
 " Adaptation layer
 so ~/.vim/vim-ide/adaptation/Adaptation.vim
@@ -38,7 +39,6 @@ if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
 " skip
 endif
 
-so ~/.vim/vim-ide/core/KeyMaps.vim
 
 " -------------------------------------------
 "  Reload
@@ -51,6 +51,7 @@ func! Reload()
     so ~/.vim/vim-ide/core/Environment.vim
     so ~/.vim/vim-ide/core/Settings.vim
     so ~/.vim/vim-ide/core/Autocmd.vim
+    so ~/.vim/vim-ide/core/KeyMaps.vim
 
     " Adaptation layer
     so ~/.vim/vim-ide/utility/Adaptation.vim
@@ -66,8 +67,6 @@ func! Reload()
         " plugins related
         so ~/.vim/vim-ide/plugin/PluginsConfig.vim
     endif
-
-    so ~/.vim/vim-ide/core/KeyMaps.vim
 
     redraw
     echo 'Vim Setting Reloaded.'

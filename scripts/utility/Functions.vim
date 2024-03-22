@@ -40,6 +40,17 @@ function! FastMode()
     " endif
 endfunc
 " -------------------------------------------
+"  Get Syntax name
+" -------------------------------------------
+" a little more informative version of the above
+command! SynStack call SynStack()
+function! SynStack()
+	if !exists("*synstack")
+		return
+	endif
+	echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
+" -------------------------------------------
 "  Pure mode
 " -------------------------------------------
 command! PureToggle call PureToggle()
@@ -345,40 +356,46 @@ endfunc
 " -------------------------------------------
 "  Tags/cscope
 " -------------------------------------------
-command! TagUpdate call TagUpdate()
-
-function! TagUpdate()
+command! TreeSetup call TreeSetup()
+function! TreeSetup()
     try
-        execute g:IDE_ENV_CSCOPE_EXC.' reset'
-    catch
-        if g:IDE_ENV_CSCOPE_DB != ''
-            " echo "Open "g:IDE_ENV_CSCOPE_DB
-            execute g:IDE_ENV_CSCOPE_EXC." add ".g:IDE_ENV_CSCOPE_DB
-        endif
         if g:IDE_ENV_CCTREE_DB != ''
-            " echo "Open "g:IDE_ENV_CCTREE_DB
+            echo "Update cctree db from " . g:IDE_ENV_CCTREE_DB
             execute "CCTreeLoadXRefDB ".g:IDE_ENV_CCTREE_DB
+        elseif g:IDE_ENV_CSCOPE_DB != ''
+            echo "Update cctree db from " . g:IDE_ENV_CSCOPE_DB
+            execute "CCTreeLoadDB ".g:IDE_ENV_CSCOPE_DB
+        else
+            echo "Update cctree db from buffer"
+            execute "CCTreeLoadBufferUsingTag "
         endif
+    catch
+        echoe "Fail to setup CCTree"
     endtry
 endfunc
 
-command! CTreeUpdate call CTreeUpdate()
-function! CTreeUpdate()
-    try
-        execute "CCTreeLoadXRefDB ".g:IDE_ENV_CCTREE_DB
-    endtry
-endfunc
-
-command! -nargs=? TagFind :call <SID>TagFind(<q-args>)
-function! s:TagFind(tag_name)
-    execute 'cs find g ' . a:tag_name
-endfunc
-
+" command! TagUpdate call TagUpdate()
+" function! TagUpdate()
+"     try
+"         execute g:IDE_ENV_CSCOPE_EXC.' reset'
+"     catch
+"         if g:IDE_ENV_CSCOPE_DB != ''
+"             " echo "Open "g:IDE_ENV_CSCOPE_DB
+"             execute g:IDE_ENV_CSCOPE_EXC." add ".g:IDE_ENV_CSCOPE_DB
+"         endif
+"         if g:IDE_ENV_CCTREE_DB != ''
+"             " echo "Open "g:IDE_ENV_CCTREE_DB
+"             execute "CCTreeLoadXRefDB ".g:IDE_ENV_CCTREE_DB
+"         endif
+"     endtry
+" endfunc
+"
 command! TagSetup call TagSetup()
-
 function! TagSetup()
     " May need to setup by search for db file in vim
     try
+        " Reset tags
+        silent! execute g:IDE_ENV_CSCOPE_EXC." reset "
         "" Add Tag by project
         " Setup cscope db
         if g:IDE_ENV_PROJ_DATA_PATH != ""
@@ -431,23 +448,19 @@ command! PvUpdate call PvUpdate()
 
 function! PvUpdate()
     function! Pvhandler(ch, msg)
-        " echom 'Pvhandler '.a:ch.' '.a:msg
-        call TagUpdate()
+        " call TagUpdate()
+        call TagSetup()
 
         " This is for auto update system
         let g:IDE_ENV_REQ_TAG_UPDATE = 0
+        echom 'Tag update complete. '.a:ch.' '.a:msg
     endfunc
     let g:IDE_ENV_REQ_TAG_UPDATE = 2
     try
-        " if has('nvim')
-        "     " FIXME, don't do nvim in common layer
-        "     let l:job = jobstart('hsexc pvupdate', { 'callback': 'Pvhandler' })
-        " else
-        "     let l:job = job_start('hsexc pvupdate', { 'callback': 'Pvhandler' })
-        " endif
         call AdpJobStart('hsexc pvupdate', 'Pvhandler')
     catch
         echom "PvUpdate Failed, Please check if hsexc exist."
+        let g:IDE_ENV_REQ_TAG_UPDATE = 0
     endtry
 endfunc
 

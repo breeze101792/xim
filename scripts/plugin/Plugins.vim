@@ -44,7 +44,7 @@ endif
 "NOTE. if autocommand contain vimenter for init, this will not trigger it.
 if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/Colorizer', { 'on':  ['ColorToggle'] }
-    Plug VAR_PLUGIN_PATH.'/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadXRefDB'] }
+    Plug VAR_PLUGIN_PATH.'/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadDB', 'CCTreeLoadXRefDB', 'CCTreeLoadBufferUsingTag', 'CCTreeTraceForward', 'CCTreeTraceReverse'] }
     Plug VAR_PLUGIN_PATH.'/ctrlp', { 'on':  ['CtrlP'] }
     Plug VAR_PLUGIN_PATH.'/gitgutter', { 'on':  ['GitGutterEnable'] }
     Plug VAR_PLUGIN_PATH.'/nerdtree', { 'on':  'NERDTreeToggle' }

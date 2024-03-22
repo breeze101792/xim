@@ -12,12 +12,13 @@
 """"    Preset
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 set background=dark
+let s:flag_syntax_on=0
 if version > 580
+    if exists("syntax_on")
+        " syntax reset
+        let s:flag_syntax_on=1
+    endif
     hi clear
-    " already done by hi clear
-    " if exists("syntax_on")
-    "     syntax reset
-    " endif
 endif
 
 let g:colors_name = "idecolor"
@@ -29,6 +30,8 @@ if g:flag_inherit_background && has("gui_running")
     echohl WarningMsg | echom "Inherit background is ignored in GUI." | echohl NONE
     let g:flag_inherit_background = 0
 endif
+let g:flag_use_italics = 1
+let g:flag_italic_comments = 0
 
 """"    Default GUI Colours
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -39,9 +42,10 @@ let s:orange = "e87d3e"
 let s:yellow = "e5b567"
 let s:green = "b4c973"
 let s:blue = "6c99bb"
-let s:wine = "b05279"
 let s:purple = "9e86c8"
 let s:black = "000000"
+let s:main = "b05279"
+let s:white = "d6d6d6"
 """"""""""""""""""""""""""""""""""""""""""
 " Different Background
 let s:background = "1a1a1a"
@@ -53,10 +57,10 @@ else
     let s:chosen_background = s:background
 endif
 
-let s:foreground = "d6d6d6"
+let s:foreground = s:white
 let s:line = "393939"
 let s:comment = "797979"
-let s:command = s:wine
+let s:command = s:main
 let s:fg_selection = "5a647e"
 let s:bg_selection = "555500"
 """"""""""""""""""""""""""""""""""""""""""
@@ -66,7 +70,7 @@ let s:fg_status = "4d5057"
 let s:bg_status = s:foreground
 
 let s:fg_menu = s:foreground
-let s:bg_menu = "797979"
+let s:bg_menu = "393939"
 let s:fg_menu_sel = s:foreground
 let s:bg_menu_sel = s:fg_selection
 
@@ -84,23 +88,26 @@ let s:message = s:green
 let s:todo = s:red
 
 "" content
-let s:code_identifier = s:orange
 let s:code_function   = s:orange
 let s:code_structure  = s:orange
-let s:code_constant   = s:purple
-let s:code_operator   = s:purple
-let s:code_include    = s:wine
 let s:code_tag        = s:orange
+
+let s:code_constant   = s:purple
+
+let s:code_include    = s:main
+let s:code_statment   = s:main
+let s:code_identifier = s:white
+let s:code_operator   = s:white
+
 let s:code_type       = s:blue
 let s:code_string     = s:yellow
 let s:code_preproc    = s:green
-let s:code_statment   = s:wine
 
 
 "" Plugins
 let s:diff_del = s:red
 let s:diff_add = s:green
-let s:diff_change = s:wine
+let s:diff_change = s:main
 let s:diff_content = s:blue
 
 """"    Function Preset
@@ -318,16 +325,16 @@ fun <SID>X_HI(group, fg, bg, attr)
     endif
     if a:attr != ""
         exec "hi " . a:group . " gui=" . a:attr . " cterm=" . a:attr
+    else
+        exec "hi " . a:group . " gui=NONE cterm=NONE"
     endif
 endfun
 
 " by default: toggled on (backcompatibility with g:flag_italic_comments)
-" option g:flag_use_italics
 if exists("g:flag_use_italics") && !g:flag_use_italics
     let italic = ""
 else
     " make the global variable available to command mode
-    let g:flag_use_italics = 1
     let italic = "italic"
 endif
 
@@ -336,7 +343,6 @@ if exists("g:flag_italic_comments") && g:flag_italic_comments
     call <SID>X_HI("Comment", s:comment, "", italic)
 else
     " make the global variable available to command mode
-    let g:flag_italic_comments = 0
     call <SID>X_HI("Comment", s:comment, "", "")
 endif
 
@@ -383,24 +389,30 @@ if version >= 703
 end
 
 " Standard Highlighting
-call <SID>X_HI("Title", s:comment, "", "bold")
-call <SID>X_HI("Identifier", s:code_identifier, "", "")
-call <SID>X_HI("Statement", s:code_statment, "", "")
+call <SID>X_HI("Title",       s:comment, "", "bold")
+call <SID>X_HI("Identifier",  s:code_identifier, "", "NONE")
+call <SID>X_HI("Keyword",     s:code_identifier, "", "bold")
+
+call <SID>X_HI("Statement",   s:code_statment, "", "")
 call <SID>X_HI("Conditional", s:code_statment, "", "")
-call <SID>X_HI("Repeat", s:code_statment, "", "")
-call <SID>X_HI("Structure", s:code_structure, "", "")
-call <SID>X_HI("Function", s:code_function, "", "")
-call <SID>X_HI("Constant", s:code_constant, "", "")
-call <SID>X_HI("Keyword", s:code_identifier, "", "bold")
-call <SID>X_HI("String", s:code_string, "", "")
-call <SID>X_HI("Special", s:code_type, "", "")
-call <SID>X_HI("PreProc", s:code_preproc, "", "")
-call <SID>X_HI("Operator", s:code_operator, "", "")
-call <SID>X_HI("Type", s:code_type, "", "")
-call <SID>X_HI("Define", s:code_statment, "", "")
-call <SID>X_HI("Include", s:code_include, "", "")
-call <SID>X_HI("Tag", s:code_tag, "", "bold")
-call <SID>X_HI("Underlined", s:code_tag, "", "underline")
+call <SID>X_HI("Repeat",      s:code_statment, "", "")
+call <SID>X_HI("Define",      s:code_statment, "", "")
+
+call <SID>X_HI("Special",     s:code_type, "", "")
+call <SID>X_HI("Type",        s:code_type, "", "")
+
+call <SID>X_HI("Tag",         s:code_tag, "", "bold")
+call <SID>X_HI("Underlined",  s:code_tag, "", "underline")
+
+call <SID>X_HI("Structure",   s:code_structure, "", "")
+call <SID>X_HI("Function",    s:code_function, "", "")
+
+call <SID>X_HI("PreProc",     s:code_preproc, "", "")
+call <SID>X_HI("Include",     s:code_include, "", "")
+
+call <SID>X_HI("String",      s:code_string, "", "")
+call <SID>X_HI("Constant",    s:code_constant, "", "")
+call <SID>X_HI("Operator",    s:code_operator, "", "")
 
 syntax match commonOperator "\(+\|=\|-\|*\|\^\|\/\||\)"
 hi! link commonOperator Operator
@@ -411,8 +423,8 @@ call <SID>X_HI("vimCommand", s:command, "", "NONE")
 " C Highlighting
 call <SID>X_HI("cType", s:code_type, "", "")
 call <SID>X_HI("cStorageClass", s:code_structure, "", "")
-call <SID>X_HI("cConditional", s:wine, "", "")
-call <SID>X_HI("cRepeat", s:wine, "", "")
+call <SID>X_HI("cConditional", s:main, "", "")
+call <SID>X_HI("cRepeat", s:main, "", "")
 
 " Lua Highlighting
 call <SID>X_HI("luaStatement", s:code_statment, "", "")
@@ -425,18 +437,18 @@ call <SID>X_HI("luaCondEnd", s:code_identifier, "", "")
 " Python Highlighting
 call <SID>X_HI("pythonInclude", s:green, "", italic)
 call <SID>X_HI("pythonStatement", s:blue, "", "")
-call <SID>X_HI("pythonConditional", s:wine, "", "")
-call <SID>X_HI("pythonRepeat", s:wine, "", "")
+call <SID>X_HI("pythonConditional", s:main, "", "")
+call <SID>X_HI("pythonRepeat", s:main, "", "")
 call <SID>X_HI("pythonException", s:orange, "", "")
 call <SID>X_HI("pythonFunction", s:green, "", italic)
-call <SID>X_HI("pythonPreCondit", s:wine, "", "")
+call <SID>X_HI("pythonPreCondit", s:main, "", "")
 call <SID>X_HI("pythonExClass", s:orange, "", "")
 call <SID>X_HI("pythonBuiltin", s:blue, "", "")
-call <SID>X_HI("pythonOperator", s:wine, "", "")
+call <SID>X_HI("pythonOperator", s:main, "", "")
 call <SID>X_HI("pythonNumber", s:purple, "", "")
 call <SID>X_HI("pythonString", s:yellow, "", "")
 call <SID>X_HI("pythonRawString", s:yellow, "", "")
-call <SID>X_HI("pythonDecorator", s:wine, "", "")
+call <SID>X_HI("pythonDecorator", s:main, "", "")
 call <SID>X_HI("pythonDoctest", s:yellow, "", "")
 call <SID>X_HI("pythonImportFunction", s:orange, "", "")
 call <SID>X_HI("pythonImportModule", s:orange, "", "")
@@ -447,11 +459,11 @@ call <SID>X_HI("pythonImportedModule", s:orange, "", "")
 call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 
 " PHP Highlighting
-" call <SID>X_HI("phpVarSelector", s:wine, "", "")
-" call <SID>X_HI("phpKeyword", s:wine, "", "")
-" call <SID>X_HI("phpRepeat", s:wine, "", "")
-" call <SID>X_HI("phpConditional", s:wine, "", "")
-" call <SID>X_HI("phpStatement", s:wine, "", "")
+" call <SID>X_HI("phpVarSelector", s:main, "", "")
+" call <SID>X_HI("phpKeyword", s:main, "", "")
+" call <SID>X_HI("phpRepeat", s:main, "", "")
+" call <SID>X_HI("phpConditional", s:main, "", "")
+" call <SID>X_HI("phpStatement", s:main, "", "")
 " call <SID>X_HI("phpMemberSelector", s:foreground, "", "")
 
 " Ruby Highlighting
@@ -464,10 +476,10 @@ call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 " call <SID>X_HI("rubyCurlyBlock", s:orange, "", "")
 " call <SID>X_HI("rubyStringDelimiter", s:yellow, "", "")
 " call <SID>X_HI("rubyInterpolationDelimiter", s:orange, "", "")
-" call <SID>X_HI("rubyConditional", s:wine, "", "")
-" call <SID>X_HI("rubyRepeat", s:wine, "", "")
-" call <SID>X_HI("rubyControl", s:wine, "", "")
-" call <SID>X_HI("rubyException", s:wine, "", "")
+" call <SID>X_HI("rubyConditional", s:main, "", "")
+" call <SID>X_HI("rubyRepeat", s:main, "", "")
+" call <SID>X_HI("rubyControl", s:main, "", "")
+" call <SID>X_HI("rubyException", s:main, "", "")
 
 " Crystal Highlighting
 " call <SID>X_HI("crystalSymbol", s:green, "", "")
@@ -479,10 +491,10 @@ call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 " call <SID>X_HI("crystalCurlyBlock", s:orange, "", "")
 " call <SID>X_HI("crystalStringDelimiter", s:green, "", "")
 " call <SID>X_HI("crystalInterpolationDelimiter", s:orange, "", "")
-" call <SID>X_HI("crystalConditional", s:wine, "", "")
-" call <SID>X_HI("crystalRepeat", s:wine, "", "")
-" call <SID>X_HI("crystalControl", s:wine, "", "")
-" call <SID>X_HI("crystalException", s:wine, "", "")
+" call <SID>X_HI("crystalConditional", s:main, "", "")
+" call <SID>X_HI("crystalRepeat", s:main, "", "")
+" call <SID>X_HI("crystalControl", s:main, "", "")
+" call <SID>X_HI("crystalException", s:main, "", "")
 
 " JavaScript Highlighting
 " call <SID>X_HI("javaScriptEndColons", s:foreground, "", "")
@@ -522,43 +534,43 @@ call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 " HTML Highlighting
 " call <SID>X_HI("htmlTag", s:blue, "", "")
 " call <SID>X_HI("htmlEndTag", s:blue, "", "")
-" call <SID>X_HI("htmlTagName", s:wine, "", "bold")
+" call <SID>X_HI("htmlTagName", s:main, "", "bold")
 " call <SID>X_HI("htmlArg", s:green, "", italic)
-" call <SID>X_HI("htmlScriptTag", s:wine, "", "")
+" call <SID>X_HI("htmlScriptTag", s:main, "", "")
 
 " Go Highlighting
-" call <SID>X_HI("goDirective", s:wine, "", "")
-" call <SID>X_HI("goDeclaration", s:wine, "", "")
-" call <SID>X_HI("goStatement", s:wine, "", "")
-" call <SID>X_HI("goConditional", s:wine, "", "")
+" call <SID>X_HI("goDirective", s:main, "", "")
+" call <SID>X_HI("goDeclaration", s:main, "", "")
+" call <SID>X_HI("goStatement", s:main, "", "")
+" call <SID>X_HI("goConditional", s:main, "", "")
 " call <SID>X_HI("goConstants", s:orange, "", "")
 " call <SID>X_HI("goTodo", s:red, "", "")
 " call <SID>X_HI("goDeclType", s:blue, "", "")
-" call <SID>X_HI("goBuiltins", s:wine, "", "")
-" call <SID>X_HI("goRepeat", s:wine, "", "")
-" call <SID>X_HI("goLabel", s:wine, "", "")
+" call <SID>X_HI("goBuiltins", s:main, "", "")
+" call <SID>X_HI("goRepeat", s:main, "", "")
+" call <SID>X_HI("goLabel", s:main, "", "")
 
 " LaTeX
 " call <SID>X_HI("texStatement",s:blue, "", "")
-" call <SID>X_HI("texMath", s:wine, "", "NONE")
+" call <SID>X_HI("texMath", s:main, "", "NONE")
 " call <SID>X_HI("texMathMacher", s:yellow, "", "NONE")
-" call <SID>X_HI("texRefLabel", s:wine, "", "NONE")
+" call <SID>X_HI("texRefLabel", s:main, "", "NONE")
 " call <SID>X_HI("texRefZone", s:blue, "", "NONE")
 " call <SID>X_HI("texComment", s:comment, "", "NONE")
 " call <SID>X_HI("texDelimiter", s:purple, "", "NONE")
 " call <SID>X_HI("texMathZoneX", s:purple, "", "NONE")
 
 " " CoffeeScript Highlighting
-" call <SID>X_HI("coffeeRepeat", s:wine, "", "")
-" call <SID>X_HI("coffeeConditional", s:wine, "", "")
-" call <SID>X_HI("coffeeKeyword", s:wine, "", "")
+" call <SID>X_HI("coffeeRepeat", s:main, "", "")
+" call <SID>X_HI("coffeeConditional", s:main, "", "")
+" call <SID>X_HI("coffeeKeyword", s:main, "", "")
 " call <SID>X_HI("coffeeObject", s:yellow, "", "")
 
 " " ShowMarks Highlighting
 " call <SID>X_HI("ShowMarksHLl", s:orange, s:background, "NONE")
-" call <SID>X_HI("ShowMarksHLo", s:wine, s:background, "NONE")
+" call <SID>X_HI("ShowMarksHLo", s:main, s:background, "NONE")
 " call <SID>X_HI("ShowMarksHLu", s:yellow, s:background, "NONE")
-" call <SID>X_HI("ShowMarksHLm", s:wine, s:background, "NONE")
+" call <SID>X_HI("ShowMarksHLm", s:main, s:background, "NONE")
 
 " " Cucumber Highlighting
 " call <SID>X_HI("cucumberGiven", s:blue, "", "")
@@ -573,15 +585,15 @@ call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 " call <SID>X_HI("clojureNumber", s:orange, "", "")
 " call <SID>X_HI("clojureString", s:green, "", "")
 " call <SID>X_HI("clojureRegexp", s:green, "", "")
-" call <SID>X_HI("clojureParen", s:wine, "", "")
+" call <SID>X_HI("clojureParen", s:main, "", "")
 " call <SID>X_HI("clojureVariable", s:yellow, "", "")
 " call <SID>X_HI("clojureCond", s:blue, "", "")
-" call <SID>X_HI("clojureDefine", s:wine, "", "")
+" call <SID>X_HI("clojureDefine", s:main, "", "")
 " call <SID>X_HI("clojureException", s:red, "", "")
 " call <SID>X_HI("clojureFunc", s:blue, "", "")
 " call <SID>X_HI("clojureMacro", s:blue, "", "")
 " call <SID>X_HI("clojureRepeat", s:blue, "", "")
-" call <SID>X_HI("clojureSpecial", s:wine, "", "")
+" call <SID>X_HI("clojureSpecial", s:main, "", "")
 " call <SID>X_HI("clojureQuote", s:blue, "", "")
 " call <SID>X_HI("clojureUnquote", s:blue, "", "")
 " call <SID>X_HI("clojureMeta", s:blue, "", "")
@@ -591,20 +603,20 @@ call <SID>X_HI("pythonImportedObject", s:orange, "", "")
 " call <SID>X_HI("clojureDispatch", s:blue, "", "")
 
 " " Scala Highlighting
-" call <SID>X_HI("scalaKeyword", s:wine, "", "")
-" call <SID>X_HI("scalaKeywordModifier", s:wine, "", "")
+" call <SID>X_HI("scalaKeyword", s:main, "", "")
+" call <SID>X_HI("scalaKeywordModifier", s:main, "", "")
 " call <SID>X_HI("scalaOperator", s:blue, "", "")
-" call <SID>X_HI("scalaPackage", s:wine, "", "")
+" call <SID>X_HI("scalaPackage", s:main, "", "")
 " call <SID>X_HI("scalaFqn", s:foreground, "", "")
 " call <SID>X_HI("scalaFqnSet", s:foreground, "", "")
-" call <SID>X_HI("scalaImport", s:wine, "", "")
+" call <SID>X_HI("scalaImport", s:main, "", "")
 " call <SID>X_HI("scalaBoolean", s:orange, "", "")
-" call <SID>X_HI("scalaDef", s:wine, "", "")
-" call <SID>X_HI("scalaVal", s:wine, "", "")
-" call <SID>X_HI("scalaVar", s:wine, "", "")
-" call <SID>X_HI("scalaClass", s:wine, "", "")
-" call <SID>X_HI("scalaObject", s:wine, "", "")
-" call <SID>X_HI("scalaTrait", s:wine, "", "")
+" call <SID>X_HI("scalaDef", s:main, "", "")
+" call <SID>X_HI("scalaVal", s:main, "", "")
+" call <SID>X_HI("scalaVar", s:main, "", "")
+" call <SID>X_HI("scalaClass", s:main, "", "")
+" call <SID>X_HI("scalaObject", s:main, "", "")
+" call <SID>X_HI("scalaTrait", s:main, "", "")
 " call <SID>X_HI("scalaDefName", s:blue, "", "")
 " call <SID>X_HI("scalaValName", s:foreground, "", "")
 " call <SID>X_HI("scalaVarName", s:foreground, "", "")
@@ -710,3 +722,7 @@ delf <SID>rgb_number
 delf <SID>grey_colour
 delf <SID>grey_level
 delf <SID>grey_number
+
+if s:flag_syntax_on == 1
+    syntax on
+endif

@@ -174,6 +174,9 @@ else
     nnoremap <silent>cs :cscope find s <cword><CR>
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
+" CCTree 
+nnoremap <silent>tf :CCTreeTraceForward<CR>
+nnoremap <silent>tr :CCTreeTraceReverse<CR>
 
 " LSP
 nnoremap <silent>gD :lua vim.lsp.buf.declaration()<CR>

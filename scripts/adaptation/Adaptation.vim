@@ -12,7 +12,7 @@ function! AdpJobStart(commands, callback)
     let l:job = 0
     try
         if has('nvim')
-            let l:job = jobstart(a:commands, { 'callback': a:callback })
+            let l:job = jobstart(a:commands)
         else
             let l:job = job_start(a:commands, { 'callback': a:callback })
         endif

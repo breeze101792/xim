@@ -6,9 +6,14 @@ if exists('g:save_all_highlights')
 else
     let s:save_all_highlights = 1
 endif
-let s:scheme_name='autogen'
-" let s:scheme_name='debug'
+let s:scheme_name=get(g:, 'IDE_ENV_CACHED_COLORSCHEME', 'cached_color')
+" let s:scheme_name='cached_color'
 let s:file_path='~/.vim/colors/'.s:scheme_name.'.vim'
+
+if !empty(glob(s:file_path))
+    echoerr s:file_path.' file exists, stop generating file.'
+    throw l:output
+endif
 
 " List of hightlights from
 " https://github.com/ggalindezb/vim_colorscheme_template/blob/master/template.vim
