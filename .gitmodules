@@ -28,7 +28,7 @@
 	branch = master
 [submodule "plugins/cctree"]
 	path = plugins/cctree
-	url = https://github.com/hari-rangarajan/CCTree.git
+	url = https://github.com/breeze101792/CCTree.git
 	branch = master
 [submodule "plugins/gitgutter"]
 	path = plugins/gitgutter
