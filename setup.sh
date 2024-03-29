@@ -126,21 +126,24 @@ function setup_nvim()
     local var_nvim_root="${IDE_ROOT}/nvim"
     local var_nvim_config_root="${HOME}/.config/nvim"
     test -d "${var_nvim_config_root}" || mkdir "${var_nvim_config_root}"
+    local var_init_file="init.lua"
 
-    if test -f "${var_nvim_config_root}/init.vim"
+    if test -f "${var_nvim_config_root}/init.vim" || test -f "${var_nvim_config_root}/init.lua"
     then
-        echo "${var_nvim_config_root}/init.vim exist, do you want to override it?(y/N)"
+        cat $(realpath ${var_nvim_config_root}/init.*) |head -n 10
+        printf "$(realpath ${var_nvim_config_root}/init.*) exist, do you want to override it?(y/N) "
         read user_input
         if [ ${user_input} = 'y' ] || [ ${user_input} = 'Y' ]
         then
-            ln -sf ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+            rm ${var_nvim_config_root}/init.*
+            ln -sf ${var_nvim_root}/${var_init_file} ${var_nvim_config_root}/
             ln -sf ${var_nvim_root}/lua ${var_nvim_config_root}/
         else
             return 0
         fi
     else
         echo "Link nvim init file to ${var_nvim_config_root}/"
-        ln -s ${var_nvim_root}/init.vim ${var_nvim_config_root}/
+        ln -s ${var_nvim_root}/${var_init_file} ${var_nvim_config_root}/
         ln -s ${var_nvim_root}/lua ${var_nvim_config_root}/
     fi
 }

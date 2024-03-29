@@ -101,3 +101,11 @@
 	path = plugins/vim-visual-multi
 	url = https://github.com/mg979/vim-visual-multi.git
 	branch = master
+[submodule "plugins/lazy.nvim"]
+	path = plugins/lazy.nvim
+	url = https://github.com/folke/lazy.nvim.git
+	branch = main
+[submodule "plugins/plenary.nvim"]
+	path = plugins/plenary.nvim
+	url = https://github.com/nvim-lua/plenary.nvim.git
+	branch = master

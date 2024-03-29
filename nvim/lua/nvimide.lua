@@ -11,6 +11,18 @@ function has_value(array, pattern)
     end
     return false 
 end
+--[[
+function dump_value(array)
+    for key, value in pairs(array) do
+        print("Key:" .. key .. ", value: " .. value)
+    end
+end
+--]]
+
+----------------------------------------------------------------
+----    KeyMaps
+----------------------------------------------------------------
+-- vim.api.nvim_set_keymap("n", "<leader><CR>", ":luafile $MYVIMRC<CR>", opts)
 
 ----------------------------------------------------------------
 ----    Plugins
