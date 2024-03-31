@@ -17,6 +17,15 @@ function! MouseToggle()
     endif
     return
 endfunc
+
+" -------------------------------------------
+"  Mouse_on_off for cursor chage
+" -------------------------------------------
+command! SaveColorscheme call SaveColorscheme()
+
+function! SaveColorscheme()
+    source ~/.vim/tools/save_colorscheme.vim
+endfunc
 " -------------------------------------------
 "  Fast mode for slow device
 " -------------------------------------------

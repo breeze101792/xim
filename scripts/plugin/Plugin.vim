@@ -56,6 +56,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  ['<Plug>MarkSet'] }
     Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet'] }
+    Plug VAR_PLUGIN_PATH.'/vim-startuptime', { 'on':  ['StartupTime'] }
 else
     Plug VAR_PLUGIN_PATH.'/Colorizer'
     Plug VAR_PLUGIN_PATH.'/cctree'
@@ -70,6 +71,7 @@ else
     Plug VAR_PLUGIN_PATH.'/vim-easygrep'
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
     Plug VAR_PLUGIN_PATH.'/vim-mark'
+    Plug VAR_PLUGIN_PATH.'/vim-startuptime'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

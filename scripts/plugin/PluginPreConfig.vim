@@ -3,6 +3,23 @@
 """"    Config vim env                            """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""""    Themes
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" don't put it after lazy.nvim. it'll slow down about 20 ms.
+try
+    " use generated color scheme to accerate start up speed
+    if get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n") == "y"
+        if ! empty(glob("~/.vim/colors/". get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen") . ".vim"))
+            colorscheme autogen
+        else
+            execute "colorscheme " . get(g:, 'IDE_CFG_COLORSCHEME_NAME', "default")
+            source ~/.vim/tools/save_colorscheme.vim
+        endif
+    endif
+catch /^Vim\%((\a\+)\)\=:E185/
+    echom "Fallback theme to default."
+endtry
+
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
@@ -51,7 +68,7 @@ let g:lightline = {
     " \   'noet': 'error',
     " \ },
 
-if g:IDE_CFG_SPECIAL_CHARS == "y"
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     let g:lightline.separator = { 'left': '', 'right': '' }
     let g:lightline.subseparator = {'left': '', 'right': '' }
 else
@@ -94,7 +111,7 @@ function! LightlineNoexpandtab()
 endfunction
 
 function! LightlineTitle()
-    return winwidth(0) < 70 ? '' : g:IDE_ENV_IDE_TITLE
+    return winwidth(0) < 70 ? '' : get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 endfunction
 
 function! LightlineFuncName()
@@ -111,7 +128,7 @@ function! LightlineGitInfo()
     let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
     let proj_branch = get(b:, 'IDE_ENV_GIT_BRANCH', "")
 
-    if g:IDE_CFG_SPECIAL_CHARS == "y"
+    if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
         let l:git_chars=" "
     endif
     " FIXME, there is a bug on 70 char check, i don't count the word like
@@ -225,7 +242,7 @@ let g:cpp_concepts_highlight = 1
 " mc	:BookmarkClear
 " mx	:BookmarkClearAll
 let g:bookmark_auto_save = 0
-if g:IDE_CFG_SPECIAL_CHARS == "y"
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     let g:bookmark_sign = '⚑'
 else
     let g:bookmark_sign = '*'

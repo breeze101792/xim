@@ -109,3 +109,7 @@
 	path = plugins/plenary.nvim
 	url = https://github.com/nvim-lua/plenary.nvim.git
 	branch = master
+[submodule "plugins/vim-startuptime"]
+	path = plugins/vim-startuptime
+	url = https://github.com/dstein64/vim-startuptime.git
+	branch = master

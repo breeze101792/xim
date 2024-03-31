@@ -31,7 +31,7 @@ if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
     try
         so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
-        so ~/.vim/vim-ide/plugin/Plugins.vim
+        so ~/.vim/vim-ide/plugin/Plugin.vim
         so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
     catch
         echoe "Known error happen."
