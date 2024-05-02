@@ -24,7 +24,8 @@ endfunc
 command! SaveColorscheme call SaveColorscheme()
 
 function! SaveColorscheme()
-    source ~/.vim/tools/save_colorscheme.vim
+    " source ~/.vim/tools/save_colorscheme.vim
+    execute 'source '.g:IDE_ENV_ROOT_PATH."/tools/save_colorscheme.vim"
 endfunc
 " -------------------------------------------
 "  Fast mode for slow device
@@ -466,6 +467,8 @@ function! PvUpdate()
     endfunc
     let g:IDE_ENV_REQ_TAG_UPDATE = 2
     try
+        " FIXME, it will not call back on nvim
+        " Sleep is for avoiding write conflit with vim itself
         call AdpJobStart('hsexc pvupdate', 'Pvhandler')
     catch
         echom "PvUpdate Failed, Please check if hsexc exist."
@@ -740,22 +743,23 @@ function! IdeInfo()
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_IDE_TITLE', g:IDE_ENV_IDE_TITLE)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_ROOT_PATH', g:IDE_ENV_ROOT_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_CONFIG_PATH', g:IDE_ENV_CONFIG_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_PATH', g:IDE_ENV_SESSION_PATH)
 
     let msg=msg . sep . printf("%s", "[Vars]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_HEART_BEAT', g:IDE_ENV_HEART_BEAT)
 
     let msg=msg . sep . printf("%s", "[Configs]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_CACHED_COLORSCHEME ', g:IDE_CFG_CACHED_COLORSCHEME)
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_GIT_ENV ', g:IDE_CFG_GIT_ENV)
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_PLUGIN_ENABLE ', g:IDE_CFG_PLUGIN_ENABLE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_SPECIAL_CHARS ', g:IDE_CFG_SPECIAL_CHARS)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_CACHED_COLORSCHEME ', g:IDE_CFG_CACHED_COLORSCHEME)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_GIT_ENV ', g:IDE_CFG_GIT_ENV)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_PLUGIN_ENABLE ', g:IDE_CFG_PLUGIN_ENABLE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_SPECIAL_CHARS ', g:IDE_CFG_SPECIAL_CHARS)
 
     "" Backgorund worker
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)
-    let msg=msg . sep . printf('    %- 32s: %s', 'g:IDE_CFG_AUTO_TAG_UPDATE ', g:IDE_CFG_AUTO_TAG_UPDATE)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_AUTO_TAG_UPDATE ', g:IDE_CFG_AUTO_TAG_UPDATE)
 
 
     echo msg

@@ -29,17 +29,12 @@ so ~/.vim/vim-ide/utility/Template.vim
 
 if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
-    try
-        so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
-        so ~/.vim/vim-ide/plugin/Plugin.vim
-        so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
-    catch
-        echoe "Known error happen."
-    endtry
+    so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
+    so ~/.vim/vim-ide/plugin/Plugin.vim
+    so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
 " elseif version < 704
 " skip
 endif
-
 
 " -------------------------------------------
 "  Reload
@@ -55,7 +50,7 @@ func! Reload()
     so ~/.vim/vim-ide/core/KeyMaps.vim
 
     " Adaptation layer
-    so ~/.vim/vim-ide/utility/Adaptation.vim
+    so ~/.vim/vim-ide/adaptation/Adaptation.vim
 
     " utility function related
     so ~/.vim/vim-ide/utility/Library.vim
@@ -66,7 +61,8 @@ func! Reload()
 
     if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
         " plugins related
-        so ~/.vim/vim-ide/plugin/PluginsConfig.vim
+        so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
+        so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
     endif
 
     redraw

@@ -167,19 +167,22 @@ function M.init()
         { "lightline.vim"    , dir = vim_plugin_path .. "lightline.vim"    , lazy = false } ,
 
         -- Command plugins
-        { "nerdtree"         , dir = vim_plugin_path .. "nerdtree"         , lazy = true , cmd = "NERDTreeToggle" }    ,
-        { "Colorizer"        , dir = vim_plugin_path .. "Colorizer"        , lazy = true , cmd = {"ColorToggle"} }     ,
-        { "cctree"           , dir = vim_plugin_path .. "cctree"           , lazy = true , cmd = {"CCTreeWindowToggle" , "CCTreeLoadDB"        , "CCTreeLoadXRefDB" , "CCTreeLoadBufferUsingTag" , "CCTreeTraceForward"          , "CCTreeTraceReverse"} } ,
-        { "ctrlp"            , dir = vim_plugin_path .. "ctrlp"            , lazy = true , cmd = {"CtrlP"} }           ,
-        { "srcexpl"          , dir = vim_plugin_path .. "srcexpl"          , lazy = true , cmd = {"SrcExplRefresh"     , "SrcExplToggle"} }    ,
-        { "tabular"          , dir = vim_plugin_path .. "tabular"          , lazy = true , cmd = {"Tabularize"} }      ,
-        { "vim-bookmarks"    , dir = vim_plugin_path .. "vim-bookmarks"    , lazy = true , cmd = {"BookmarkToggle"} }  ,
-        { "tcomment"         , dir = vim_plugin_path .. "tcomment"         , lazy = true , cmd = {"TComment"           , "TCommentBlock"} }    ,
-        { "vim-easygrep"     , dir = vim_plugin_path .. "vim-easygrep"     , lazy = true , cmd = "Grep" }              ,
-        { "vim-easygrep"     , dir = vim_plugin_path .. "vim-startuptime"  , lazy = true , cmd = "StartupTime" }       ,
-        { "gitgutter"        , dir = vim_plugin_path .. "gitgutter"        , lazy = true , cmd = {"GitGutterEnable"} } ,
-        { "tagbar"           , dir = vim_plugin_path .. "tagbar"           , lazy = true , event = LazyVimStarted      , cmd = "TagbarToggle"} ,
-        { "bufexplorer"      , dir = vim_plugin_path .. "bufexplorer"        , lazy = true, cmd = { "ToggleBufExplorer" }} ,
+        { "nerdtree"      , dir = vim_plugin_path .. "nerdtree"        , lazy = true , cmd = "NERDTreeToggle" }       ,
+        { "Colorizer"     , dir = vim_plugin_path .. "Colorizer"       , lazy = true , cmd = {"ColorToggle"} }        ,
+        { "cctree"        , dir = vim_plugin_path .. "cctree"          , lazy = true , cmd = {"CCTreeWindowToggle"    , "CCTreeLoadDB"     , "CCTreeLoadXRefDB" , "CCTreeLoadBufferUsingTag" , "CCTreeTraceForward" , "CCTreeTraceReverse"} } ,
+        { "ctrlp"         , dir = vim_plugin_path .. "ctrlp"           , lazy = true , cmd = {"CtrlP"} }              ,
+        { "srcexpl"       , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
+        { "tabular"       , dir = vim_plugin_path .. "tabular"         , lazy = true , cmd = {"Tabularize"} }         ,
+        { "vim-bookmarks" , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle"} }     ,
+        { "tcomment"      , dir = vim_plugin_path .. "tcomment"        , lazy = true , cmd = {"TComment"              , "TCommentBlock"} } ,
+        { "vim-easygrep"  , dir = vim_plugin_path .. "vim-easygrep"    , lazy = true , cmd = "Grep" }                 ,
+        { "vim-easygrep"  , dir = vim_plugin_path .. "vim-startuptime" , lazy = true , cmd = "StartupTime" }          ,
+        { "gitgutter"     , dir = vim_plugin_path .. "gitgutter"       , lazy = true , cmd = {"GitGutterEnable"} }    ,
+        { "bufexplorer"   , dir = vim_plugin_path .. "bufexplorer"     , lazy = true , cmd = { "ToggleBufExplorer" }} ,
+        { "vim-fugitive"  , dir = vim_plugin_path .. "vim-fugitive"    , lazy = true , cmd = {"Git"}}                 ,
+
+        -- With Event
+        { "tagbar"           , dir = vim_plugin_path .. "tagbar"           , lazy = true , event = "BufEnter"      , cmd = {"TagbarToggle"}} ,
         -- With setup
         { "cscope_maps.nvim" , dir = vim_plugin_path .. "cscope_maps.nvim" , lazy = true , cmd = {"Cscope"             , "Cs"                  , "CCTreeLoadDB"     , "CCTreeLoadXRefDB"         , "CCTreeLoadBufferUsingTag"} , 
         config = function()
@@ -191,7 +194,10 @@ function M.init()
         { "ale"                        , dir = vim_plugin_path .. "ale"                        , lazy = true , ft = {"sh"        , "cpp"  , "c"}   , cmd = "ALEEnable" } ,
         { "vim-cpp-enhanced-highlight" , dir = vim_plugin_path .. "vim-cpp-enhanced-highlight" , lazy = true , ft = {"cpp"       , "c"} } ,
         { "vim-python-pep8-indent"     , dir = vim_plugin_path .. "vim-python-pep8-indent"     , lazy = true , ft = {"python"} } ,
-        { "nvim-lspconfig"             , dir = vim_plugin_path .. "nvim-lspconfig"             , lazy = true , ft = {"sh"        , "cpp"  , "c"} } ,
+        { "nvim-lspconfig"             , dir = vim_plugin_path .. "nvim-lspconfig"             , lazy = true , ft = {"sh"        , "cpp"  , "c"},
+        config = function()
+            lspsetup()
+        end},
 
         -- with key
         { "vim-visual-multi" , dir = vim_plugin_path .. "vim-visual-multi"   , lazy = true , 
@@ -206,8 +212,8 @@ function M.init()
         { "gitgutter"        , dir = vim_plugin_path .. "gitgutter"          , lazy = false , event = LazyVimStarted} ,
 
         -- This are not really compatiable with lazynvim
-        { "supertab"         , dir = vim_plugin_path .. "supertab"           , lazy = false , event = LazyVimStarted} ,
-        { "vim-mark"         , dir = vim_plugin_path .. "vim-mark"           , lazy = false , event = LazyVimStarted} ,
+        { "supertab"         , dir = vim_plugin_path .. "supertab"           , lazy = false , event = "VeryLazy"} ,
+        { "vim-mark"         , dir = vim_plugin_path .. "vim-mark"           , lazy = false , event = "VeryLazy"} ,
     }
 
     local lazy_opts = {
@@ -248,7 +254,6 @@ end
 function M.setup(opts)
     -- print("nvimide plugin setup")
     M.init()
-    lspsetup()
 end
 
 return M

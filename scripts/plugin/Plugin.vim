@@ -28,7 +28,7 @@ Plug VAR_PLUGIN_PATH.'/bufexplorer'
 
 """"    Nvim Entry
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('nvim')
+if g:IDE_ENV_INS == "nvim"
     Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
     " Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim', { 'on': [ 'Cscope', 'Cs', 'Ctag', 'CCTreeLoadDB', 'CCTreeLoadXRefDB', 'CCTreeLoadBufferUsingTag' ] } 
     Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
@@ -57,6 +57,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  ['<Plug>MarkSet'] }
     Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet'] }
     Plug VAR_PLUGIN_PATH.'/vim-startuptime', { 'on':  ['StartupTime'] }
+    Plug VAR_PLUGIN_PATH.'/vim-fugitive', { 'on':  ['Git'] }
 else
     Plug VAR_PLUGIN_PATH.'/Colorizer'
     Plug VAR_PLUGIN_PATH.'/cctree'
@@ -72,6 +73,7 @@ else
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
     Plug VAR_PLUGIN_PATH.'/vim-mark'
     Plug VAR_PLUGIN_PATH.'/vim-startuptime'
+    Plug VAR_PLUGIN_PATH.'/vim-fugitive'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -116,13 +118,14 @@ if VAR_PLUGIN_DEBUG == 0
         call plug#load('supertab') " this will restore line number
         call plug#load('vim-visual-multi')
         call plug#load('QFEnter')
+        call plug#load('tagbar')
 
         :GitGutterEnable
 
         " no redraw
         call plug#load('vim-surround')
 
-        if has('nvim')
+        if g:IDE_ENV_INS == "nvim"
             " FIXME, It's just a temp fix for nvim cscope
             execute 'lua require("cscope_maps").setup()'
         endif

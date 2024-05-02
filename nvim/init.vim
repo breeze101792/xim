@@ -6,7 +6,7 @@ set runtimepath^=~/.vim runtimepath+=~/.vim/after
 let &packpath=&runtimepath
 source ~/.vimrc
 
-luafile ~/.config/nvim/lua/nvimide.lua
+luafile ~/.config/nvim/lua/vimlegacy.lua
 
 " -------------------------------------------
 "Lua  Reload

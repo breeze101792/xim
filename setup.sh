@@ -96,10 +96,10 @@ function setup()
         echo "so ~/.vim/vim-ide.vim" >> ~/.vimrc
     fi
 
-    test -d ${VIM_ROOT} || mkdir ${VIM_ROOT}
-    ln -sf ${IDE_ROOT}/vim-ide.vim ${VIM_ROOT}/
-    ln -sf ${IDE_ROOT}/scripts ${VIM_ROOT}/vim-ide
-    ln -sf ${IDE_ROOT}/tools ${VIM_ROOT}/tools
+    test -d ${VIM_ROOT}             || mkdir ${VIM_ROOT}
+    test -L ${VIM_ROOT}/vim-ide.vim || ln -sf ${IDE_ROOT}/vim-ide.vim ${VIM_ROOT}/
+    test -L ${VIM_ROOT}/vim-ide     || ln -sf ${IDE_ROOT}/scripts ${VIM_ROOT}/vim-ide
+    test -L ${VIM_ROOT}/tools       || ln -sf ${IDE_ROOT}/tools ${VIM_ROOT}/tools
 
     if [ ${flag_ln_all_plugins} = true ]
     then
@@ -125,7 +125,9 @@ function setup_nvim()
 {
     local var_nvim_root="${IDE_ROOT}/nvim"
     local var_nvim_config_root="${HOME}/.config/nvim"
-    test -d "${var_nvim_config_root}" || mkdir "${var_nvim_config_root}"
+    test -d "${var_nvim_config_root}" || mkdir -p "${var_nvim_config_root}"
+
+    test -d "${var_nvim_config_root}/colors" || mkdir -p "${var_nvim_config_root}/colors"
     local var_init_file="init.lua"
 
     if test -f "${var_nvim_config_root}/init.vim" || test -f "${var_nvim_config_root}/init.lua"
@@ -138,6 +140,9 @@ function setup_nvim()
             rm ${var_nvim_config_root}/init.*
             ln -sf ${var_nvim_root}/${var_init_file} ${var_nvim_config_root}/
             ln -sf ${var_nvim_root}/lua ${var_nvim_config_root}/
+
+            # vim things
+            ln -sf ${IDE_ROOT}/tools ${var_nvim_config_root}/
         else
             return 0
         fi
@@ -145,6 +150,9 @@ function setup_nvim()
         echo "Link nvim init file to ${var_nvim_config_root}/"
         ln -s ${var_nvim_root}/${var_init_file} ${var_nvim_config_root}/
         ln -s ${var_nvim_root}/lua ${var_nvim_config_root}/
+
+        # vim things
+        ln -s ${IDE_ROOT}/tool ${var_nvim_config_root}/
     fi
 }
 function setup_lite()

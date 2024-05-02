@@ -5,16 +5,28 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 "" Note. Update golbale variable only on functions, to avoid overide on
 "" restore variable
+if has("nvim")
+    let g:IDE_ENV_INS = get(g:, 'IDE_ENV_INS', "nvim")
+else
+    let g:IDE_ENV_INS = get(g:, 'IDE_ENV_INS', "vim")
+endif
+
 let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_DATA_PATH', "./")
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
 let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
 let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
-let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 20000)
+let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")
 
 " Path config
+if g:IDE_ENV_INS == "nvim"
+    let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.config/nvim")
+else
+    let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.vim")
+endif
+
 let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 " let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', $HOME."/.vim/session")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
@@ -67,7 +79,7 @@ function! IDE_EnvSetup()
 
     ""    NVIM
     """"""""""""""""""""""""""""""""""""""""""""""""""""""
-    if has('nvim')
+    if g:IDE_ENV_INS == "nvim"
         let g:IDE_ENV_IDE_TITLE = "NVIM"
 
         let g:IDE_ENV_CSCOPE_EXC = "Cscope"
@@ -79,14 +91,20 @@ function! IDE_UpdateEnv_CursorHold()
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
         catch
-            let b:IDE_ENV_CURRENT_FUNC = ''
+            let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
         endtry
+
+        " Ignore ctrlp
+        if &filetype != 'ctrlp'
+            call lightline#update()
+        endif
     else
         let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
 
 endfunc
 
+command! UpdateBufInfo call IDE_UpdateEnv_BufOpen()
 function! IDE_UpdateEnv_BufOpen()
     if g:IDE_CFG_GIT_ENV == "y"
         " FIXME, git above git 2.22.0 support --show-current

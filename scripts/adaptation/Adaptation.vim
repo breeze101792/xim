@@ -1,6 +1,6 @@
 " Adaptation Source
 " ===========================================
-if has('nvim')
+if g:IDE_ENV_INS == "nvim"
     so ~/.vim/vim-ide/adaptation/Nvim.vim
 else
     so ~/.vim/vim-ide/adaptation/Vim.vim
@@ -11,7 +11,7 @@ endif
 function! AdpJobStart(commands, callback)
     let l:job = 0
     try
-        if has('nvim')
+        if g:IDE_ENV_INS == "nvim"
             let l:job = jobstart(a:commands)
         else
             let l:job = job_start(a:commands, { 'callback': a:callback })

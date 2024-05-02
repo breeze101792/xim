@@ -11,9 +11,9 @@ let g:IDE_CFG_SPECIAL_CHARS      = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 " color theme
 let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")
 " lazy will preload this, so set it to be ""
-let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "")
+" let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "")
 " let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "autogen")
-" let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "idecolor")
+let g:IDE_CFG_COLORSCHEME_NAME = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "idecolor")
 
 "" Backgorund worker
 let g:IDE_CFG_BACKGROUND_WORKER  = get(g:, 'IDE_CFG_BACKGROUND_WORKER', "n")

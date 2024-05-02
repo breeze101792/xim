@@ -6,19 +6,24 @@
 """"    Themes
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " don't put it after lazy.nvim. it'll slow down about 20 ms.
-try
-    " use generated color scheme to accerate start up speed
-    if get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n") == "y"
-        if ! empty(glob("~/.vim/colors/". get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen") . ".vim"))
-            colorscheme autogen
-        else
-            execute "colorscheme " . get(g:, 'IDE_CFG_COLORSCHEME_NAME', "default")
-            source ~/.vim/tools/save_colorscheme.vim
-        endif
+" try
+"     " use generated color scheme to accerate start up speed
+"     if get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n") == "y"
+"         if ! empty(glob("~/.vim/colors/". get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen") . ".vim"))
+"             colorscheme autogen
+"         else
+"             execute "colorscheme " . get(g:, 'IDE_CFG_COLORSCHEME_NAME', "default")
+"             source ~/.vim/tools/save_colorscheme.vim
+"         endif
+"     endif
+" catch /^Vim\%((\a\+)\)\=:E185/
+"     echom "Fallback theme to default."
+" endtry
+if get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n") == "y"
+    if ! empty(glob(g:IDE_ENV_ROOT_PATH."/colors/". get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen") . ".vim"))
+        colorscheme autogen
     endif
-catch /^Vim\%((\a\+)\)\=:E185/
-    echom "Fallback theme to default."
-endtry
+endif
 
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""

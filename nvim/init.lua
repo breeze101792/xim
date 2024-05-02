@@ -27,12 +27,6 @@ local init_nvimide = function()
     -- print("Experiment lazy load.")
     require("nvimide").setup({})
 
-    -- FIXME, remove this line. for neovim
-    --[[
-    vim.opt.runtimepath:append('~/.vim')
-    vim.opt.runtimepath:append('~/.vim/after')
-    --]]
-
     -- It's for compatibility
     vim.api.nvim_exec([[
     function! IDE_PlugInDealyLoading()
@@ -53,12 +47,23 @@ local init_plug = function()
         return
     end
     -- flag_lazy = false
-    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
 
     -- TODO, Default off, since it's no fast then the original one.
     if flag_lazy and jit and jit.version then
+        -- print("lazy".. jit .. jit.version)
+
+        vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
         init_nvimide()
     else
+        -- print("lagacy plugin")
+
+        require("nvimide").reload({})
+        vim.g.IDE_ENV_ROOT_PATH = "~/.vim"
+
+        vim.opt.runtimepath:append('~/.vim')
+        vim.opt.runtimepath:append('~/.vim/after')
+
+        vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
         vim.cmd("so ~/.vim/vim-ide/plugin/Plugin.vim")
         vim.cmd("luafile ~/.config/nvim/lua/vimlegacy.lua")
     end
@@ -69,20 +74,28 @@ end
 local nvimreload = function()
     print("Neovim Reloaded.")
     init_base()
+    require("nvimide").reload({})
+    --  Plugin settings
+    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
+    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPostConfig.vim")
 end
 
 ----------------------------------------------------------------
 ----    Setup function
 ----------------------------------------------------------------
 local initialize = function()
+    local flag_lagacy=false
     -- print("Neovim Init.")
     vim.opt.runtimepath:append('~/.vim')
     vim.opt.runtimepath:append('~/.vim/after')
 
-    if false then
+    if flag_lagacy then
         -- Vim script
         -- Don't use vim script for start up
         -- vim.opt.packpath = vim.g.runtimepath
+        vim.opt.runtimepath:append('~/.vim')
+        vim.opt.runtimepath:append('~/.vim/after')
+
         vim.cmd('source ~/.vimrc')
     else
         init_base()

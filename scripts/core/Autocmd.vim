@@ -13,6 +13,8 @@ function! W_TagUpdate()
         " 1: Request to update
         " 2: Doing update, will ignore all request
         call PvUpdate()
+    else
+        let g:IDE_ENV_REQ_TAG_UPDATE = 0
     endif
 endfunc
 
@@ -119,7 +121,8 @@ augroup environment_gp
     autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
     " bufread will have issue on the new file(don't need to read buffer)
     " bufenter will have issue on vimdiff, sice only one window we be entered.
-    autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
+    " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
+    autocmd BufEnter * UpdateBufInfo
 augroup END
 
 """"    Edictor Variable

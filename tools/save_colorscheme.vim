@@ -8,7 +8,7 @@ else
 endif
 let s:scheme_name=get(g:, 'IDE_ENV_CACHED_COLORSCHEME', 'cached_color')
 " let s:scheme_name='cached_color'
-let s:file_path='~/.vim/colors/'.s:scheme_name.'.vim'
+let s:file_path=g:IDE_ENV_ROOT_PATH.'/colors/'.s:scheme_name.'.vim'
 
 if !empty(glob(s:file_path))
     echoerr s:file_path.' file exists, stop generating file.'

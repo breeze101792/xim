@@ -153,7 +153,7 @@ nmap <Leader>h :HexToggle<CR>
 " i: Find files #including this file
 " s: Find this C symbol
 " t: Find this text string
-if has('nvim')
+if g:IDE_ENV_INS == "nvim"
     nnoremap <silent>ca :exec "Cscope find a ".expand('<cword>')<CR>
     nnoremap <silent>cc :exec "Cscope find c ".expand('<cword>')<CR>
     nnoremap <silent>cd :exec "Cscope find d ".expand('<cword>')<CR>
