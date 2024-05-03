@@ -247,121 +247,26 @@ function! TabCloseLeft(bang)
     endwhile
 endfunction
 
+function! TabGo(tabname)
+
+    let tabcount = tabpagenr("$")
+    let currenttabidx = 1
+    call writefile(['" Session opened tab'], g:IDE_ENV_SESSION_PATH, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], g:IDE_ENV_SESSION_PATH, "a")
+    while currenttabidx <= tabcount
+        let currtabname = expand('#' . currenttabidx)
+
+        if tabname == currtabname
+            exe 'tabclose' . a:bang . ' 1'
+            break
+        endif
+        let currenttabidx = currenttabidx + 1
+    endwhile
+endfunction
+
 command! -bang Tabcloseothers call TabCloseOthers('<bang>')
 command! -bang Tabcloseright call TabCloseRight('<bang>')
 command! -bang Tabcloseleft call TabCloseLeft('<bang>')
-" -------------------------------------------
-"  Clip/Session op
-" -------------------------------------------
-command! ClipRead call ClipRead()
-
-function! ClipRead()
-    " let @c = system('cat ' . g:IDE_ENV_CLIP_PATH)
-    " echo 'Read '.@c.'to reg c'
-    echo system('cat ' . g:IDE_ENV_CLIP_PATH . '|tail -n 1 | tr -d "\n\r"')
-endfunc
-
-command! ClipOpen call ClipOpen()
-
-function! ClipOpen()
-    let l:clip_buf = system('cat ' . g:IDE_ENV_CLIP_PATH . '|tail -n 1 | tr -d "\n\r"')
-    if !empty(glob(l:clip_buf))
-        execute 'tabnew ' . l:clip_buf
-    else
-        " echo 'File not found'
-        echo 'File not found. "' . l:clip_buf . '"'
-    endif
-endfunc
-
-command! ClipCopy call ClipCopy()
-function! ClipCopy()
-    echo system('echo ' . expand('%:p') . ' > ' . g:IDE_ENV_CLIP_PATH)
-endfunc
-
-function! SessionYank()
-    new
-    "v"                 for characterwise text
-    "V"                 for linewise text
-    "<CTRL-V>{width}"   for blockwise-visual text
-    ""                  for an empty or unknown register
-    " call setline(1,getregtype())
-    let l:setline_msg=substitute(setline(1,getregtype()), '\n\+', '', '')
-    " Put the text [from register x] after the cursor
-    let l:yank_msg=substitute(execute('put'), '\n\+', '', '')
-
-    silent! exec 'wq! ' . g:IDE_ENV_CLIP_PATH
-    silent! exec 'bdelete ' . g:IDE_ENV_CLIP_PATH
-    echo 'SessionYank, ' . l:yank_msg .", " . l:setline_msg
-endfunction
-
-function! SessionPaste(command)
-    silent exec 'sview ' . g:IDE_ENV_CLIP_PATH
-    let l:opt=getline(1)
-    " let l:paste_msg=substitute(execute('2,$yank'), '\n\+', '', '')
-    let l:paste_msg=substitute(execute('2,$yank'), '\n\+', '', '')
-    let l:paste_msg=substitute(l:paste_msg, 'yanked', 'pasted', '')
-    " 2,$yank
-    if (l:opt == 'v')
-        call setreg('"', strpart(@",0,strlen(@")-1), l:opt) " strip trailing endline ?
-    else
-        call setreg('"', @", l:opt)
-    endif
-    silent exec 'bdelete ' . g:IDE_ENV_CLIP_PATH
-    silent exec 'normal ' . a:command
-    " echo 'SessionPaste'
-    echo 'SessionPaste, ' . l:paste_msg
-endfunction
-" -------------------------------------------
-"  Session Load/Open
-" -------------------------------------------
-command! SessionStore :call SessionStore()
-function! SessionStore()
-    let bufcount = bufnr("$")
-    let currbufnr = 1
-
-    " let g:IDE_ENV_SESSION_PATH = ${HOME}.'/.vim/session'
-    call writefile(['" Vim session file'], g:IDE_ENV_SESSION_PATH, "")
-    while currbufnr <= bufcount
-        let currbufname = expand('#' . currbufnr . ':p')
-        if !empty(glob(currbufname))
-            " FIXME delete buffer will also show on the list, remove it in the
-            " future
-            " echo currbufnr . ": ". currbufname
-            " call writefile(['edit ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
-            " use buffer add to accerate speed
-            call writefile(['badd ' . currbufname], g:IDE_ENV_SESSION_PATH, "a")
-        endif
-        let currbufnr = currbufnr + 1
-    endwhile
-    echo 'Session Stored finished.'
-endfunction
-
-command! SessionLoad :call SessionLoad()
-function! SessionLoad()
-    silent! exec 'source' . g:IDE_ENV_SESSION_PATH
-    echo 'Session loaded. BufCnt:'.bufnr("$")
-endfunction
-command! SessionOpen :call SessionOpen()
-function! SessionOpen()
-    silent! exec 'source' . g:IDE_ENV_SESSION_PATH
-    silent! exec 'tab sball'
-    echo 'Session loaded & opened. BufCnt:'.bufnr("$")
-endfunction
-
-" -------------------------------------------
-"  Title
-" -------------------------------------------
-command! -nargs=? Title :call <SID>Title(<q-args>)
-function! s:Title(title_name)
-    let g:IDE_ENV_IDE_TITLE=a:title_name
-    if version >= 802
-        redrawtabline
-    else
-        " old version didn't have redrawtabline
-        " so use redraw all for it
-        redraw!
-    endif
-endfunc
 
 " -------------------------------------------
 "  Tags/cscope
@@ -741,11 +646,14 @@ function! IdeInfo()
     let msg="IDE Information"
     let msg=msg . sep . printf("%s", "[Envs]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_IDE_TITLE', g:IDE_ENV_IDE_TITLE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_ROOT_PATH', g:IDE_ENV_ROOT_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_CONFIG_PATH', g:IDE_ENV_CONFIG_PATH)
+
+    let msg=msg . sep . printf("%s", "[Proj/Sessions]")
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_PATH', g:IDE_ENV_SESSION_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_SESSION_BOOKMARK_PATH)
 
     let msg=msg . sep . printf("%s", "[Vars]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
@@ -760,7 +668,6 @@ function! IdeInfo()
     "" Backgorund worker
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_AUTO_TAG_UPDATE ', g:IDE_CFG_AUTO_TAG_UPDATE)
-
 
     echo msg
 endfunc

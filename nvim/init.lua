@@ -2,26 +2,24 @@
 ----    Initialize
 ----------------------------------------------------------------
 local init_base = function()
+    local config_path="~/.config/nvim"
     -- Lua script
+    -- FIXME, Still use vim config scripts
     if vim.fn.filereadable("~/.vim/ConfigCustomize.vim") then
-        vim.cmd("so ~/.vim/ConfigCustomize.vim")
+        vim.cmd("source ~/.vim/ConfigCustomize.vim")
     end
 
-    vim.cmd("so ~/.vim/vim-ide/core/Config.vim")
-    vim.cmd("so ~/.vim/vim-ide/core/Environment.vim")
-    vim.cmd("so ~/.vim/vim-ide/core/Settings.vim")
-    vim.cmd("so ~/.vim/vim-ide/core/Autocmd.vim")
-    vim.cmd("so ~/.vim/vim-ide/core/KeyMaps.vim")
+    vim.cmd("source " .. config_path .."/scripts/core/Config.vim")
+    vim.cmd("source " .. config_path .."/scripts/core/Environment.vim")
+    vim.cmd("source " .. config_path .."/scripts/core/Settings.vim")
+    vim.cmd("source " .. config_path .."/scripts/core/Autocmd.vim")
+    vim.cmd("source " .. config_path .."/scripts/core/KeyMaps.vim")
 
     -- Adaptation layer
-    vim.cmd("so ~/.vim/vim-ide/adaptation/Adaptation.vim")
+    vim.cmd("source " .. config_path .."/scripts/adaptation/Adaptation.vim")
 
     -- utility function related
-    vim.cmd("so ~/.vim/vim-ide/utility/Library.vim")
-    vim.cmd("so ~/.vim/vim-ide/utility/Functions.vim")
-    vim.cmd("so ~/.vim/vim-ide/utility/CodeEnhance.vim")
-    vim.cmd("so ~/.vim/vim-ide/utility/Lab.vim")
-    vim.cmd("so ~/.vim/vim-ide/utility/Template.vim")
+    vim.cmd("source " .. config_path .."/scripts//utility/Utility.vim")
 end
 local init_nvimide = function()
     -- print("Experiment lazy load.")
@@ -52,7 +50,7 @@ local init_plug = function()
     if flag_lazy and jit and jit.version then
         -- print("lazy".. jit .. jit.version)
 
-        vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
         init_nvimide()
     else
         -- print("lagacy plugin")
@@ -63,21 +61,23 @@ local init_plug = function()
         vim.opt.runtimepath:append('~/.vim')
         vim.opt.runtimepath:append('~/.vim/after')
 
-        vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
-        vim.cmd("so ~/.vim/vim-ide/plugin/Plugin.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/Plugin.vim")
+
+        -- FIXME, Need to use IDE_ENV_ROOT_PATH
         vim.cmd("luafile ~/.config/nvim/lua/vimlegacy.lua")
     end
 
     --  After source
-    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPostConfig.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
 end
 local nvimreload = function()
     print("Neovim Reloaded.")
     init_base()
     require("nvimide").reload({})
     --  Plugin settings
-    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPreConfig.vim")
-    vim.cmd("so ~/.vim/vim-ide/plugin/PluginPostConfig.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
 end
 
 ----------------------------------------------------------------
@@ -86,8 +86,6 @@ end
 local initialize = function()
     local flag_lagacy=false
     -- print("Neovim Init.")
-    vim.opt.runtimepath:append('~/.vim')
-    vim.opt.runtimepath:append('~/.vim/after')
 
     if flag_lagacy then
         -- Vim script

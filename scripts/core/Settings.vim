@@ -78,7 +78,8 @@ set incsearch                                     " increamental search
 ""    file options
 " set autowrite                                   " auto save when switch document
 " set noswapfile
-set directory=~/.vim/swp//
+" set directory=~/.vim/swp//
+exec "set directory=" . g:IDE_ENV_CONFIG_PATH . "/swp/"
 " set nobackup                                    " no backup when overright
 " set backupdir=~/.vim/backup//
 " set autoread                                    " reload files if changed externally

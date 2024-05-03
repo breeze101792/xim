@@ -28,11 +28,13 @@ else
 endif
 
 let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
-" let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', $HOME."/.vim/session")
-let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
 let g:IDE_ENV_CSCOPE_EXC = get(g:, 'IDE_ENV_CSCOPE_EXC', "cscope")
+
+" Session
+let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session.vim")
+let g:IDE_ENV_SESSION_BOOKMARK_PATH = get(g:, 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_CONFIG_PATH."/session_bookmark.vim")
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal vim var                           """"
@@ -49,12 +51,17 @@ let g:IDE_ENV_REQ_TAG_UPDATE=0
 " let b:IDE_ENV_GIT_BRANCH = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_PATH = ""
-function! IDE_EnvSetup()
-    " Project Script setup
+function! IDE_EnvSetup_Proj()
     if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"))
         execute 'source '.g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"
+        let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session.vim"
+        let g:IDE_ENV_SESSION_BOOKMARK_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session_bookmark.vim"
     endif
+endfunc
 
+function! IDE_EnvSetup()
+    ""    Proj Setup
+    """"""""""""""""""""""""""""""""""""""""""""""""""""""
     if $VIDE_SH_PROJ_DATA_PATH != ""
         let g:IDE_ENV_PROJ_DATA_PATH = $VIDE_SH_PROJ_DATA_PATH
     endif
@@ -71,6 +78,11 @@ function! IDE_EnvSetup()
         let g:IDE_ENV_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
     endif
 
+    " Project Script setup
+    call IDE_EnvSetup_Proj()
+
+    ""    Others
+    """"""""""""""""""""""""""""""""""""""""""""""""""""""
     " if $VIDE_SH_TMP != ""
     "     let g:IDE_ENV_TMP = "y"
     " else

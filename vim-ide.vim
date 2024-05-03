@@ -21,11 +21,7 @@ so ~/.vim/vim-ide/core/KeyMaps.vim
 so ~/.vim/vim-ide/adaptation/Adaptation.vim
 
 " utility function related
-so ~/.vim/vim-ide/utility/Library.vim
-so ~/.vim/vim-ide/utility/Functions.vim
-so ~/.vim/vim-ide/utility/CodeEnhance.vim
-so ~/.vim/vim-ide/utility/Lab.vim
-so ~/.vim/vim-ide/utility/Template.vim
+so ~/.vim/vim-ide/utility/Utility.vim
 
 if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
@@ -53,11 +49,7 @@ func! Reload()
     so ~/.vim/vim-ide/adaptation/Adaptation.vim
 
     " utility function related
-    so ~/.vim/vim-ide/utility/Library.vim
-    so ~/.vim/vim-ide/utility/Functions.vim
-    so ~/.vim/vim-ide/utility/CodeEnhance.vim
-    so ~/.vim/vim-ide/utility/Lab.vim
-    so ~/.vim/vim-ide/utility/Template.vim
+    so ~/.vim/vim-ide/utility/Utility.vim
 
     if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
         " plugins related

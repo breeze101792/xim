@@ -30,9 +30,7 @@ Plug VAR_PLUGIN_PATH.'/bufexplorer'
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if g:IDE_ENV_INS == "nvim"
     Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim'
-    " Plug VAR_PLUGIN_PATH.'/cscope_maps.nvim', { 'on': [ 'Cscope', 'Cs', 'Ctag', 'CCTreeLoadDB', 'CCTreeLoadXRefDB', 'CCTreeLoadBufferUsingTag' ] } 
     Plug VAR_PLUGIN_PATH.'/nvim-lspconfig'
-    " Plug VAR_PLUGIN_PATH.'/nvim-lspconfig', { 'for':  ['cpp', 'c'] }
 
     """"    Plugins load init
     " autocmd! User cscope_maps.nvim execute 'lua require("cscope_maps").setup()'
@@ -52,7 +50,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/tabular', { 'on':  ['Tabularize'] }
     Plug VAR_PLUGIN_PATH.'/tagbar', { 'on':  ['TagbarToggle'] }
     Plug VAR_PLUGIN_PATH.'/tcomment', { 'on':  ['TComment', 'TCommentBlock'] }
-    Plug VAR_PLUGIN_PATH.'/vim-bookmarks', { 'on':  ['BookmarkToggle'] }
+    Plug VAR_PLUGIN_PATH.'/vim-bookmarks', { 'on':  ['BookmarkToggle', 'BookmarkSave', 'BookmarkLoad'] }
     Plug VAR_PLUGIN_PATH.'/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
     Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  ['<Plug>MarkSet'] }
     Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet'] }
