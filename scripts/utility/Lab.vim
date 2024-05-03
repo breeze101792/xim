@@ -1,4 +1,19 @@
 " -------------------------------------------
+"  Plugins load with function.
+" -------------------------------------------
+function! AdpPlugLoad(plugin_name)
+    let l:job = 0
+    try
+        if g:IDE_ENV_INS == "vim"
+            call plug#load(plugin_name)
+        endif
+    catch
+        echom "Load plugins fail. "a:plugin_name
+    endtry
+    return l:job
+endfunc
+
+" -------------------------------------------
 "  Trace
 " -------------------------------------------
 " a little more informative version of the above

@@ -11,35 +11,42 @@ else
     let g:IDE_ENV_INS = get(g:, 'IDE_ENV_INS', "vim")
 endif
 
-let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_DATA_PATH', "./")
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
-let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
-let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
-let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
-let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
 let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")
 
-" Path config
 if g:IDE_ENV_INS == "nvim"
     let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.config/nvim")
 else
     let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.vim")
 endif
+let g:IDE_ENV_CSCOPE_EXC = get(g:, 'IDE_ENV_CSCOPE_EXC', "cscope")
 
+" Path config
+
+" Centralize path
 let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
 let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
 
-let g:IDE_ENV_CSCOPE_EXC = get(g:, 'IDE_ENV_CSCOPE_EXC', "cscope")
+" NOTE. This need to set it on runtime
+let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_DATA_PATH', "./")
+let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
+
+" Deprecated.
+let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
+let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
+let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 
 " Session
-let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session.vim")
-let g:IDE_ENV_SESSION_BOOKMARK_PATH = get(g:, 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_CONFIG_PATH."/session_bookmark.vim")
+let g:IDE_ENV_SESSION_AUTOSAVE_PATH = get(g:, 'IDE_ENV_SESSION_AUTOSAVE_PATH', g:IDE_ENV_CONFIG_PATH."/session_autosave")
+let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
+let g:IDE_ENV_SESSION_MARK_PATH = get(g:, 'IDE_ENV_SESSION_MARK_PATH', "VIMMARKS")
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal vim var                           """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_REQ_TAG_UPDATE=0
+let g:IDE_ENV_REQ_SESSION_RESTORE=""
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -54,8 +61,16 @@ let g:IDE_ENV_REQ_TAG_UPDATE=0
 function! IDE_EnvSetup_Proj()
     if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"))
         execute 'source '.g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"
-        let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session.vim"
-        let g:IDE_ENV_SESSION_BOOKMARK_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session_bookmark.vim"
+        let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session"
+        let g:IDE_ENV_SESSION_MARK_PATH = "VIMMARKS"
+
+        if g:IDE_ENV_REQ_SESSION_RESTORE != ""
+            echom "Restore: ".g:IDE_ENV_REQ_SESSION_RESTORE
+            call SessionLoad(g:IDE_ENV_REQ_SESSION_RESTORE)
+        endif
+    else
+        let g:IDE_ENV_SESSION_AUTOSAVE_PATH = g:IDE_ENV_CONFIG_PATH."/session_autosave"
+        let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_CONFIG_PATH."/session"
     endif
 endfunc
 
@@ -64,18 +79,34 @@ function! IDE_EnvSetup()
     """"""""""""""""""""""""""""""""""""""""""""""""""""""
     if $VIDE_SH_PROJ_DATA_PATH != ""
         let g:IDE_ENV_PROJ_DATA_PATH = $VIDE_SH_PROJ_DATA_PATH
+    else
+        let g:IDE_ENV_PROJ_DATA_PATH = ""
     endif
     if $VIDE_SH_TAGS_DB != ""
         let g:IDE_ENV_TAGS_DB = $VIDE_SH_TAGS_DB
+    else
+        let g:IDE_ENV_TAGS_DB = ""
     endif
     if $VIDE_SH_CSCOPE_DB != ""
         let g:IDE_ENV_CSCOPE_DB = $VIDE_SH_CSCOPE_DB
+    else
+        let g:IDE_ENV_CSCOPE_DB = ""
     endif
     if $VIDE_SH_CCTREE_DB != ""
         let g:IDE_ENV_CCTREE_DB = $VIDE_SH_CCTREE_DB
+    else
+        let g:IDE_ENV_CCTREE_DB = ""
     endif
     if $VIDE_SH_PROJ_SCRIPT != ""
         let g:IDE_ENV_PROJ_SCRIPT = $VIDE_SH_PROJ_SCRIPT
+    else
+        let g:IDE_ENV_PROJ_SCRIPT = ""
+    endif
+
+    if $VIDE_SH_SESSION_RESTORE != ""
+        let g:IDE_ENV_REQ_SESSION_RESTORE = $VIDE_SH_SESSION_RESTORE
+    else
+        let g:IDE_ENV_REQ_SESSION_RESTORE = ""
     endif
 
     " Project Script setup

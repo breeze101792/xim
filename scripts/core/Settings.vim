@@ -202,7 +202,7 @@ let g:matchparen_insert_timeout = 60
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " save debug msg to /tmp/vim-debug
-" let g:vim_debug_enable = 1
+let g:vim_debug_enable = 1
 " Check syntax time
 " syntime on
 " syntime report

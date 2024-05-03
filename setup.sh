@@ -23,8 +23,9 @@ export OPTION_VERBOSE=false
 ###########################################################
 export PATH_ROOT="$(realpath $(dirname ${BASH_SOURCE[0]}))"
 export PATH_IDE_ROOT="${PATH_ROOT}"
-export PATH_LOCAL_VIM_ROOT=${HOME}"/.vim"
-export PATH_VIM_BACKUP=${PATH_LOCAL_VIM_ROOT}"/backup/backup_"$(date +%Y%m%d_%H%M%S)
+export PATH_LOCAL_VIM_ROOT=""
+# export PATH_VIM_BACKUP=${PATH_LOCAL_VIM_ROOT}"/backup/backup_"$(date +%Y%m%d_%H%M%S)
+export PATH_VIM_BACKUP=""
 
 export PATH_CENTRAL_VIM_CACHE=${HOME}"/.vim"
 
@@ -367,9 +368,21 @@ function fSetup_lite()
 function fSetup()
 {
     fPrintHeader ${FUNCNAME[0]}
-    local path_target_ins="${PATH_LOCAL_VIM_ROOT}"
+    local path_target_ins=""
     local path_central_cache="${PATH_CENTRAL_VIM_CACHE}"
     local var_instance=$1
+
+    # Update config
+    if [ "${var_instance}" = "vim" ]
+    then
+        export PATH_LOCAL_VIM_ROOT=${HOME}"/.vim"
+    elif [ "${var_instance}" = "nvim" ]
+    then
+        export PATH_LOCAL_VIM_ROOT=${HOME}"/.config/nvim"
+    fi
+    export PATH_VIM_BACKUP=${PATH_LOCAL_VIM_ROOT}"/backup/backup_"$(date +%Y%m%d_%H%M%S)
+    path_target_ins=$PATH_LOCAL_VIM_ROOT
+    echo "#. Pre-config, ${path_target_ins}"
 
     # link ide path
     echo "#. Create/Link IDE scripts"
@@ -395,12 +408,15 @@ function fSetup()
     # FIXME, we are useing the same config/swp
     test -d ${path_central_cache}/swp || mkdir -p ${path_central_cache}/swp
 
-    fSetupCusConfig 
-
     if [[ $(ls $PATH_IDE_ROOT/plugins/ | wc -l) -lt 5 ]]
     then
         echo -e "${DEF_COLOR_RED} Don't forget to init submodule.${DEF_COLOR_NORMAL}"
     fi
+}
+function fInstallScript()
+{
+    fPrintHeader ${FUNCNAME[0]}
+    fSoftLink ${PATH_IDE_ROOT}/xim.sh ~/.usr/bin/xim
 }
 
 ## Main Functions
@@ -411,6 +427,7 @@ function fMain()
     local flag_verbose=false
     local flag_setup=false
     local flag_setup_lite=false
+    local flag_setup_config=false
     local var_ins="vim"
 
     while [[ $# != 0 ]]
@@ -419,6 +436,9 @@ function fMain()
             # Options
             -s|--setup)
                 flag_setup=true
+                ;;
+            -c|--config)
+                flag_setup_config=true
                 ;;
             -l|--lite)
                 flag_setup_lite=true
@@ -466,25 +486,27 @@ function fMain()
         if [ "${var_ins}" = "vim" ]
         then
             fSetup "${var_ins}"; fErrControl ${FUNCNAME[0]} ${LINENO}
-            export PATH_LOCAL_VIM_ROOT=${HOME}"/.vim"
         elif [ "${var_ins}" = "nvim" ]
         then
             fSetup "${var_ins}"; fErrControl ${FUNCNAME[0]} ${LINENO}
-            export PATH_LOCAL_VIM_ROOT=${HOME}"/.config/nvim"
         elif [ "${var_ins}" = "all" ]
         then
-            export PATH_LOCAL_VIM_ROOT=${HOME}"/.vim"
             fSetup "vim"; fErrControl ${FUNCNAME[0]} ${LINENO}
 
-            export PATH_LOCAL_VIM_ROOT=${HOME}"/.config/nvim"
             fSetup "nvim"; fErrControl ${FUNCNAME[0]} ${LINENO}
         else
             # echo "Known instance ${var_ins}"
             # Test
-            export PATH_LOCAL_VIM_ROOT=${HOME}"/.config/testvim"
             fSetup "nvim"; fErrControl ${FUNCNAME[0]} ${LINENO}
         fi
+        flag_setup_config=true
     fi
+    if [ ${flag_setup_config} = true ]
+    then
+        fSetupCusConfig; fErrControl ${FUNCNAME[0]} ${LINENO}
+        fInstallScript; fErrControl ${FUNCNAME[0]} ${LINENO}
+    fi
+
     if [ ${flag_setup_lite} = true ]
     then
         fSetup_lite; fErrControl ${FUNCNAME[0]} ${LINENO}

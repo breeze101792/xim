@@ -7,6 +7,8 @@ let g:IDE_CFG_GIT_ENV            = get(g:, 'IDE_CFG_GIT_ENV', "y")
 let g:IDE_CFG_PLUGIN_ENABLE      = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 let g:IDE_CFG_SPECIAL_CHARS      = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 
+" Session
+let g:IDE_CFG_SESSION_AUTOSAVE      = get(g:, 'IDE_CFG_SESSION_AUTOSAVE', "n")
 
 " color theme
 let g:IDE_CFG_CACHED_COLORSCHEME = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")

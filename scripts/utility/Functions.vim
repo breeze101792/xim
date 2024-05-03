@@ -150,6 +150,7 @@ function! DebugToggle()
     if !&verbose
         set verbosefile=~/.vim/verbose.log
         set verbose=15
+        echom "Save debug file in ". &verbosefile
     else
         set verbose=0
         set verbosefile=
@@ -359,10 +360,10 @@ function! TagSetup()
     endtry
 endfunc
 
-command! PvUpdate call PvUpdate()
+command! TagUpdate call TagUpdate()
 
-function! PvUpdate()
-    function! Pvhandler(ch, msg)
+function! TagUpdate()
+    function! TagUpdateHandler(ch, msg)
         " call TagUpdate()
         call TagSetup()
 
@@ -374,9 +375,14 @@ function! PvUpdate()
     try
         " FIXME, it will not call back on nvim
         " Sleep is for avoiding write conflit with vim itself
-        call AdpJobStart('hsexc pvupdate', 'Pvhandler')
+        if executable("xim")
+            call AdpJobStart('xim update', 'TagUpdateHandler')
+        else
+            echom "Xim not found, use legacy mode."
+            call AdpJobStart('hsexc pvupdate', 'TagUpdateHandler')
+        endif
     catch
-        echom "PvUpdate Failed, Please check if hsexc exist."
+        echom "TagUpdate Failed, Please check if hsexc exist."
         let g:IDE_ENV_REQ_TAG_UPDATE = 0
     endtry
 endfunc
@@ -644,26 +650,30 @@ command! IdeInfo call IdeInfo()
 function! IdeInfo()
     let sep="\n"
     let msg="IDE Information"
-    let msg=msg . sep . printf("%s", "[Envs]")
+    let msg=msg . sep . printf("%s", "[Envs/Configs]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_IDE_TITLE', g:IDE_ENV_IDE_TITLE)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_ROOT_PATH', g:IDE_ENV_ROOT_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_CONFIG_PATH', g:IDE_ENV_CONFIG_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_HEART_BEAT', g:IDE_ENV_HEART_BEAT)
 
     let msg=msg . sep . printf("%s", "[Proj/Sessions]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_PATH', g:IDE_ENV_SESSION_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_SESSION_BOOKMARK_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_AUTOSAVE_PATH', g:IDE_ENV_SESSION_AUTOSAVE_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_MARK_PATH', g:IDE_ENV_SESSION_MARK_PATH)
+    " let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_SESSION_BOOKMARK_PATH)
 
-    let msg=msg . sep . printf("%s", "[Vars]")
+    let msg=msg . sep . printf("%s", "[Args/Vars]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_HEART_BEAT', g:IDE_ENV_HEART_BEAT)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_SESSION_RESTORE', g:IDE_ENV_REQ_SESSION_RESTORE)
 
     let msg=msg . sep . printf("%s", "[Configs]")
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_CACHED_COLORSCHEME ', g:IDE_CFG_CACHED_COLORSCHEME)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_GIT_ENV ', g:IDE_CFG_GIT_ENV)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_PLUGIN_ENABLE ', g:IDE_CFG_PLUGIN_ENABLE)
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_SPECIAL_CHARS ', g:IDE_CFG_SPECIAL_CHARS)
+    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_SESSION_AUTOSAVE', g:IDE_CFG_SESSION_AUTOSAVE)
 
     "" Backgorund worker
     let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)

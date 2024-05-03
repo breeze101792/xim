@@ -12,7 +12,7 @@ function! W_TagUpdate()
         " 0: Can be request to update
         " 1: Request to update
         " 2: Doing update, will ignore all request
-        call PvUpdate()
+        call TagUpdate()
     else
         let g:IDE_ENV_REQ_TAG_UPDATE = 0
     endif
@@ -51,6 +51,17 @@ augroup init_gp
     else
         autocmd VIMEnter * call IDE_PostInit(0)
     endif
+augroup END
+
+function! IDE_Leave()
+    if g:IDE_CFG_SESSION_AUTOSAVE == 'y'
+        silent! exe "SessionStore autosave"
+    endif
+endfunction
+
+augroup leave_gp
+    autocmd!
+    autocmd VimLeavePre * call IDE_Leave()
 augroup END
 
 """"    Advance Settings

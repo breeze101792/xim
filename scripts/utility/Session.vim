@@ -4,10 +4,44 @@
 " -------------------------------------------
 "  Session Load/Open
 " -------------------------------------------
-command! SessionStore :call SessionStore()
-function! SessionStore()
-    let session_file=g:IDE_ENV_SESSION_PATH
+function! SessionGetPath(...)
+    let session_path=""
+    if a:0 == 1
+        if a:1 == 'autosave' || a:1 == 'as'
+            let session_path=g:IDE_ENV_SESSION_AUTOSAVE_PATH
+        elseif a:1 == 'default' || a:1 == 'def'
+            let session_path=g:IDE_ENV_SESSION_PATH
+        else
+            let session_path=a:1
+        endif
+    else
+        let session_path=g:IDE_ENV_SESSION_PATH
+    endif
+    return session_path
+endfunction
+
+command! -nargs=*  SessionStore call SessionStore(<f-args>)
+function! SessionStore(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    if empty(glob(session_path))
+        call system('mkdir ' . session_path)
+    endif
+
+    " Session path
+    let session_file=session_path."/session.vim"
+    let session_bookmark_file=session_path."/bookmark.vim"
+
+    " Vars
     let current_buffer_name=expand('%:p')
+    let buf_cnt=0
+    let tab_cnt=0
 
     let bufcount = bufnr("$")
     let currbufidx = 1
@@ -21,13 +55,10 @@ function! SessionStore()
     call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
     while currbufidx <= bufcount
         let currbufname = expand('#' . currbufidx . ':p')
-        if !empty(glob(currbufname))
-            " FIXME delete buffer will also show on the list, remove it in the
-            " future
-            " echo currbufidx . ": ". currbufname
-            " call writefile(['edit ' . currbufname], session_file, "a")
-            " use buffer add to accerate speed
+        " echom 'Buffer:'.currbufname.'-'.bufloaded(currbufname).'-'.bufexists(currbufname).'-'.buflisted(currbufname)
+        if !empty(glob(currbufname)) && buflisted(currbufname) == 1
             call writefile(['badd ' . currbufname], session_file, "a")
+            let buf_cnt = buf_cnt + 1
         endif
         let currbufidx = currbufidx + 1
     endwhile
@@ -42,8 +73,10 @@ function! SessionStore()
         let tmp_buf_idx = tabpagebuflist(currenttabidx)[0]
         let currtabname = expand('#' . tmp_buf_idx . ':p')
 
-        if !empty(glob(currtabname))
+        " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
+        if !empty(glob(currtabname)) && buflisted(currtabname) == 1
             call writefile(['tabnew ' . currtabname], session_file, "a")
+            let tab_cnt = tab_cnt + 1
             if currtabname == current_buffer_name
                 call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
             endif
@@ -60,13 +93,29 @@ function! SessionStore()
     endif
 
     " Save bookmark
-    silent! exe "BookmarkSave " . g:IDE_ENV_SESSION_BOOKMARK_PATH
-    echo 'Session Stored finished.'
+    silent! exe "BookmarkSave " . session_bookmark_file
+    echo 'Session Stored finished., Tab:' . tab_cnt . ', Buf:' . buf_cnt. ", File: ". session_path
 endfunction
 
-command! SessionLoad :call SessionLoad()
-function! SessionLoad()
-    let session_file=g:IDE_ENV_SESSION_PATH
+command! -nargs=*  SessionLoad call SessionLoad(<f-args>)
+function! SessionLoad(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    " Session path
+    let session_file=session_path."/session.vim"
+    let session_bookmark_file=session_path."/bookmark.vim"
+
+    if empty(glob(session_path)) || !isdirectory(session_path)
+        echom "Folder not found. Session: ". session_path
+        return
+    endif
+
     let current_buffer_name=expand('%:p')
     let bufcount = bufnr("$")
 
@@ -78,25 +127,73 @@ function! SessionLoad()
         tabc 1
     endif
 
-    if !empty(glob(g:IDE_ENV_SESSION_BOOKMARK_PATH))
-        silent! exec 'BookmarkLoad ' . g:IDE_ENV_SESSION_BOOKMARK_PATH
+    if !empty(glob(session_bookmark_file))
+        silent! exec 'BookmarkLoad ' . session_bookmark_file
     endif
-    echo 'Session loaded. BufCnt:'.bufnr("$"). " Session:" . session_file
+    echo 'Session loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$"). " Session:" . session_file
 endfunction
 
-command! SessionSaveBookmark :call SessionSaveBookmark()
-function! SessionSaveBookmark()
-    silent! exe "BookmarkSave " . g:IDE_ENV_SESSION_BOOKMARK_PATH
-    echo "Session bookmark saved. Session Bookmark:" . g:IDE_ENV_SESSION_BOOKMARK_PATH
+"  Bookmark
+" -------------------------------------------
+command! -nargs=*  SessionStoreBookmark call SessionStoreBookmark(<f-args>)
+function! SessionStoreBookmark(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    let session_file=session_path."/session.vim"
+    let session_bookmark_file=session_path."/bookmark.vim"
+
+    if empty(glob(session_path))
+        call system('mkdir ' . session_path)
+    endif
+
+    silent! exe "BookmarkSave " . session_bookmark_file
+    echo "Session bookmark stored. Session Bookmark:" . session_bookmark_file
 endfunction
 
-command! SessionLoadBookmark :call SessionLoadBookmark()
-function! SessionLoadBookmark()
-    if !empty(glob(g:IDE_ENV_SESSION_BOOKMARK_PATH))
-        silent! exec 'BookmarkLoad ' . g:IDE_ENV_SESSION_BOOKMARK_PATH
+command! -nargs=*  SessionLoadBookmark call SessionLoadBookmark(<f-args>)
+function! SessionLoadBookmark(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
     endif
-    echo "Session bookmark loaded. Session Bookmark:" . g:IDE_ENV_SESSION_BOOKMARK_PATH
+
+    let session_file=session_path."/session.vim"
+    let session_bookmark_file=session_path."/bookmark.vim"
+
+    if !empty(glob(session_bookmark_file))
+        silent! exec 'BookmarkLoad ' . session_bookmark_file
+    endif
+    echo "Session bookmark loaded. Session Bookmark:" . session_bookmark_file
 endfunction
+
+"  Marks
+" -------------------------------------------
+"  TODO, nedd to save it to file.
+"  MarkSave save marks to viminfo., maybe we can save viminfo to vimproj
+command! SessionStoreMark :call SessionStoreMark()
+function! SessionStoreMark()
+    silent! exe "MarkSave " . g:IDE_ENV_SESSION_MARK_PATH
+    echo "Session mark stored. Session Mark:" . g:IDE_ENV_SESSION_MARK_PATH
+endfunction
+
+command! SessionLoadMark :call SessionLoadMark()
+function! SessionLoadMark()
+    silent! exec 'MarkLoad ' . g:IDE_ENV_SESSION_MARK_PATH
+    " if !empty(glob(g:IDE_ENV_SESSION_MARK_PATH))
+    "     silent! exec 'MarkLoad ' . g:IDE_ENV_SESSION_MARK_PATH
+    " endif
+    echo "Session bookmark loaded. Session Mmark:" . g:IDE_ENV_SESSION_MARK_PATH
+endfunction
+
 " -------------------------------------------
 "  Session copy/paste op
 " -------------------------------------------

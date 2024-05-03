@@ -402,10 +402,11 @@ let g:ale_c_cppcheck_options='-f -q --std=c99'
 
 """"    TComment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:tcomment#replacements_c = {
-            \     '/*': {'guard_rx': '^\s*/\?\*', 'subst': '//|*'},
-            \     '*/': {'guard_rx': '^\s*/\?\*', 'subst': '*|'},
-            \ }
+" We could use TCommentBlock
+" let g:tcomment#replacements_c = {
+"             \     '/*': {'guard_rx': '^\s*/\?\*', 'subst': '//|*'},
+"             \     '*/': {'guard_rx': '^\s*/\?\*', 'subst': '*|'},
+"             \ }
 let g:tcomment_maps=0
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
