@@ -173,7 +173,7 @@ function M.init()
         { "ctrlp"         , dir = vim_plugin_path .. "ctrlp"           , lazy = true , cmd = {"CtrlP"} }              ,
         { "srcexpl"       , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
         { "tabular"       , dir = vim_plugin_path .. "tabular"         , lazy = true , cmd = {"Tabularize"} }         ,
-        { "vim-bookmarks" , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle"} }     ,
+        { "vim-bookmarks" , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle", "BookmarkLoad", "BookmarkSave"} }     ,
         { "tcomment"      , dir = vim_plugin_path .. "tcomment"        , lazy = true , cmd = {"TComment"              , "TCommentBlock"} } ,
         { "vim-easygrep"  , dir = vim_plugin_path .. "vim-easygrep"    , lazy = true , cmd = "Grep" }                 ,
         { "vim-easygrep"  , dir = vim_plugin_path .. "vim-startuptime" , lazy = true , cmd = "StartupTime" }          ,
