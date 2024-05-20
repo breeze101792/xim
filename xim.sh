@@ -172,7 +172,7 @@ function fEnvSantiyCheck()
     #     echo "Containation ENV found."
     # fi
 
-    if command -v "nvim" > /dev/null 2>&1
+    if ! command -v "nvim" > /dev/null 2>&1
     then
         export VAR_VIM_INSTANCE="vim"
     fi
