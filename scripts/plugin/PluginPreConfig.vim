@@ -255,44 +255,61 @@ endif
 let g:bookmark_highlight_lines = 1
 " autocmd VimEnter * highlight BookmarkLine ctermfg=0 ctermbg=11
 
+""""    Vim Highlighter
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let HiSet   = 'f<CR>'
+let HiErase = 'f<BS>'
+let HiClear = 'f<C-L>'
+let HiFind  = 'f<Tab>'
+let HiSetSL = 't<CR>'
+  " \ ['nn', 'HiSet',   'f<CR>',  '+'    ],
+  " \ ['xn', 'HiSet',   'f<CR>',  '+x'   ],
+  " \ ['nn', 'HiErase', 'f<BS>',  '-'    ],
+  " \ ['xn', 'HiErase', 'f<BS>',  '-x'   ],
+  " \ ['nn', 'HiClear', 'f<C-L>', 'clear'],
+  " \ ['nn', 'HiFind',  'f<Tab>', '/'    ],
+  " \ ['xn', 'HiFind',  'f<Tab>', '/x'   ],
+  " \ ['nn', 'HiSetSL', 't<CR>',  '+%'   ],
+  " \ ['xn', 'HiSetSL', 't<CR>',  '+x%'  ],
+
 """"    Vim Mark
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:mwPalettes = {
-                    \ 'mypalette': [
-                    \ { 'ctermbg':'White',        'ctermfg' :'Black', 'guibg':'#E3E3D2', 'guifg':'#999999' },
-                    \ { 'ctermbg':'LightGreen',   'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightYellow',  'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#000000' },
-                    \ { 'ctermbg':'LightMagenta', 'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightCyan',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'DarkGreen',    'ctermfg' :'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
-                    \ { 'ctermbg':'DarkYellow',   'ctermfg' :'Black', 'guibg':'#FFFF00', 'guifg':'#6F6F4C' },
-                    \ { 'ctermbg':'DarkMagenta',  'ctermfg' :'White', 'guibg':'#A29CCF', 'guifg':'#120080' },
-                    \ { 'ctermbg':'DarkCyan',     'ctermfg' :'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
-                    \ { 'ctermbg':'DarkRed',      'ctermfg' :'White', 'guibg':'#F5A1FF', 'guifg':'#720080' },
-                    \ { 'ctermbg':'Gray',         'ctermfg' :'Black', 'guibg':'#A3A396', 'guifg':'#222222' },
-                    \ { 'ctermbg':'Green',        'ctermfg' :'Black', 'guibg':'#ACFFA1', 'guifg':'#0F8000' },
-                    \ { 'ctermbg':'Magenta',      'ctermfg' :'White', 'guibg':'#FFA1C6', 'guifg':'#80005D' },
-                    \ { 'ctermbg':'Red',          'ctermfg' :'Black', 'guibg':'#F3FFA1', 'guifg':'#6F8000' },
-                    \ { 'ctermbg':'Yellow',       'ctermfg' :'Black', 'guibg':'#FFE8A1', 'guifg':'#806000' },
-                    \ { 'ctermbg':'Brown',        'ctermfg' :'White', 'guibg':'#FFC4A1', 'guifg':'#803000' },
-                    \ { 'ctermbg':'Cyan',         'ctermfg' :'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
-                    \ { 'ctermbg':'DarkBlue',     'ctermfg' :'White', 'guibg':'#A1DBFF', 'guifg':'#004E80' },
-                    \ { 'ctermbg':'LightRed',     'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'LightGray',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
-                    \ { 'ctermbg':'Blue',         'ctermfg' :'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
-                    \ ],
-                    \ }
-
-" Make it the default:
-" extended can be used up to 18 color
-" maximum can be used up to 27, 58, or even 77 colors
-" let g:mwDefaultHighlightingPalette = 'maximum'
-let g:mwDefaultHighlightingPalette = 'mypalette'
-let g:mwDefaultHighlightingNum = 21
-
-let g:mwAutoSaveMarks = 0
-let g:mwAutoLoadMarks = 0
-let g:mwIgnoreCase = 0
+" let g:mwPalettes = {
+"                     \ 'mypalette': [
+"                     \ { 'ctermbg':'White',        'ctermfg' :'Black', 'guibg':'#E3E3D2', 'guifg':'#999999' },
+"                     \ { 'ctermbg':'LightGreen',   'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+"                     \ { 'ctermbg':'LightYellow',  'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#000000' },
+"                     \ { 'ctermbg':'LightMagenta', 'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+"                     \ { 'ctermbg':'LightCyan',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+"                     \ { 'ctermbg':'DarkGreen',    'ctermfg' :'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
+"                     \ { 'ctermbg':'DarkYellow',   'ctermfg' :'Black', 'guibg':'#FFFF00', 'guifg':'#6F6F4C' },
+"                     \ { 'ctermbg':'DarkMagenta',  'ctermfg' :'White', 'guibg':'#A29CCF', 'guifg':'#120080' },
+"                     \ { 'ctermbg':'DarkCyan',     'ctermfg' :'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
+"                     \ { 'ctermbg':'DarkRed',      'ctermfg' :'White', 'guibg':'#F5A1FF', 'guifg':'#720080' },
+"                     \ { 'ctermbg':'Gray',         'ctermfg' :'Black', 'guibg':'#A3A396', 'guifg':'#222222' },
+"                     \ { 'ctermbg':'Green',        'ctermfg' :'Black', 'guibg':'#ACFFA1', 'guifg':'#0F8000' },
+"                     \ { 'ctermbg':'Magenta',      'ctermfg' :'White', 'guibg':'#FFA1C6', 'guifg':'#80005D' },
+"                     \ { 'ctermbg':'Red',          'ctermfg' :'Black', 'guibg':'#F3FFA1', 'guifg':'#6F8000' },
+"                     \ { 'ctermbg':'Yellow',       'ctermfg' :'Black', 'guibg':'#FFE8A1', 'guifg':'#806000' },
+"                     \ { 'ctermbg':'Brown',        'ctermfg' :'White', 'guibg':'#FFC4A1', 'guifg':'#803000' },
+"                     \ { 'ctermbg':'Cyan',         'ctermfg' :'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
+"                     \ { 'ctermbg':'DarkBlue',     'ctermfg' :'White', 'guibg':'#A1DBFF', 'guifg':'#004E80' },
+"                     \ { 'ctermbg':'LightRed',     'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+"                     \ { 'ctermbg':'LightGray',    'ctermfg' :'Black', 'guibg':'#FFFFFF', 'guifg':'#FFFFFF' },
+"                     \ { 'ctermbg':'Blue',         'ctermfg' :'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
+"                     \ ],
+"                     \ }
+"
+" " Make it the default:
+" " extended can be used up to 18 color
+" " maximum can be used up to 27, 58, or even 77 colors
+" " let g:mwDefaultHighlightingPalette = 'maximum'
+" let g:mwDefaultHighlightingPalette = 'mypalette'
+" let g:mwDefaultHighlightingNum = 21
+"
+" let g:mwAutoSaveMarks = 0
+" let g:mwAutoLoadMarks = 0
+" let g:mwIgnoreCase = 0
 
 """"    vim-multiple-cursors
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -403,11 +420,8 @@ let g:ale_c_cppcheck_options='-f -q --std=c99'
 """"    TComment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " We could use TCommentBlock
-" let g:tcomment#replacements_c = {
-"             \     '/*': {'guard_rx': '^\s*/\?\*', 'subst': '//|*'},
-"             \     '*/': {'guard_rx': '^\s*/\?\*', 'subst': '*|'},
-"             \ }
 let g:tcomment_maps=0
+let g:tcomment#commentstring_c = '// %s'
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    EasyGrep

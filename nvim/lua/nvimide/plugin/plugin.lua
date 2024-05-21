@@ -167,19 +167,20 @@ function M.init()
         { "lightline.vim"    , dir = vim_plugin_path .. "lightline.vim"    , lazy = false } ,
 
         -- Command plugins
-        { "nerdtree"      , dir = vim_plugin_path .. "nerdtree"        , lazy = true , cmd = "NERDTreeToggle" }       ,
-        { "Colorizer"     , dir = vim_plugin_path .. "Colorizer"       , lazy = true , cmd = {"ColorToggle"} }        ,
-        { "cctree"        , dir = vim_plugin_path .. "cctree"          , lazy = true , cmd = {"CCTreeWindowToggle"    , "CCTreeLoadDB"     , "CCTreeLoadXRefDB" , "CCTreeLoadBufferUsingTag" , "CCTreeTraceForward" , "CCTreeTraceReverse"} } ,
-        { "ctrlp"         , dir = vim_plugin_path .. "ctrlp"           , lazy = true , cmd = {"CtrlP"} }              ,
-        { "srcexpl"       , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
-        { "tabular"       , dir = vim_plugin_path .. "tabular"         , lazy = true , cmd = {"Tabularize"} }         ,
-        { "vim-bookmarks" , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle", "BookmarkLoad", "BookmarkSave"} }     ,
-        { "tcomment"      , dir = vim_plugin_path .. "tcomment"        , lazy = true , cmd = {"TComment"              , "TCommentBlock"} } ,
-        { "vim-easygrep"  , dir = vim_plugin_path .. "vim-easygrep"    , lazy = true , cmd = "Grep" }                 ,
-        { "vim-easygrep"  , dir = vim_plugin_path .. "vim-startuptime" , lazy = true , cmd = "StartupTime" }          ,
-        { "gitgutter"     , dir = vim_plugin_path .. "gitgutter"       , lazy = true , cmd = {"GitGutterEnable"} }    ,
-        { "bufexplorer"   , dir = vim_plugin_path .. "bufexplorer"     , lazy = true , cmd = { "ToggleBufExplorer" }} ,
-        { "vim-fugitive"  , dir = vim_plugin_path .. "vim-fugitive"    , lazy = true , cmd = {"Git"}}                 ,
+        { "nerdtree"        , dir = vim_plugin_path .. "nerdtree"        , lazy = true , cmd = "NERDTreeToggle" }       ,
+        { "Colorizer"       , dir = vim_plugin_path .. "Colorizer"       , lazy = true , cmd = {"ColorToggle"} }        ,
+        { "cctree"          , dir = vim_plugin_path .. "cctree"          , lazy = true , cmd = {"CCTreeWindowToggle"    , "CCTreeLoadDB"     , "CCTreeLoadXRefDB" , "CCTreeLoadBufferUsingTag" , "CCTreeTraceForward" , "CCTreeTraceReverse"} } ,
+        { "ctrlp"           , dir = vim_plugin_path .. "ctrlp"           , lazy = true , cmd = {"CtrlP"} }              ,
+        { "srcexpl"         , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
+        { "tabular"         , dir = vim_plugin_path .. "tabular"         , lazy = true , cmd = {"Tabularize"} }         ,
+        { "vim-bookmarks"   , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle"        , "BookmarkLoad"     , "BookmarkSave"} }  ,
+        { "tcomment"        , dir = vim_plugin_path .. "tcomment"        , lazy = true , cmd = {"TComment"              , "TCommentBlock"} } ,
+        { "vim-easygrep"    , dir = vim_plugin_path .. "vim-easygrep"    , lazy = true , cmd = "Grep" }                 ,
+        { "vim-easygrep"    , dir = vim_plugin_path .. "vim-startuptime" , lazy = true , cmd = "StartupTime" }          ,
+        { "gitgutter"       , dir = vim_plugin_path .. "gitgutter"       , lazy = true , cmd = {"GitGutterEnable"} }    ,
+        { "bufexplorer"     , dir = vim_plugin_path .. "bufexplorer"     , lazy = true , cmd = { "ToggleBufExplorer" }} ,
+        { "vim-fugitive"    , dir = vim_plugin_path .. "vim-fugitive"    , lazy = true , cmd = {"Git"}}                 ,
+        { "vim-highlighter" , dir = vim_plugin_path .. "vim-highlighter" , lazy = true , cmd = {"HI"}}                  ,
 
         -- With Event
         { "tagbar"           , dir = vim_plugin_path .. "tagbar"           , lazy = true , event = "BufEnter"      , cmd = {"TagbarToggle"}} ,
@@ -206,14 +207,14 @@ function M.init()
         },},
 
         -- direct load
-        { "vim-ingo-library" , dir = vim_plugin_path .. "vim-ingo-library" } ,
+        -- { "vim-ingo-library" , dir = vim_plugin_path .. "vim-ingo-library" } ,
         { "vim-surround"     , dir = vim_plugin_path .. "vim-surround"       , lazy = false , event = LazyVimStarted} ,
         { "QFEnter"          , dir = vim_plugin_path .. "QFEnter"            , lazy = false , event = LazyVimStarted} ,
         { "gitgutter"        , dir = vim_plugin_path .. "gitgutter"          , lazy = false , event = LazyVimStarted} ,
 
         -- This are not really compatiable with lazynvim
         { "supertab"         , dir = vim_plugin_path .. "supertab"           , lazy = false , event = "VeryLazy"} ,
-        { "vim-mark"         , dir = vim_plugin_path .. "vim-mark"           , lazy = false , event = "VeryLazy"} ,
+        -- { "vim-mark"         , dir = vim_plugin_path .. "vim-mark"           , lazy = false , event = "VeryLazy"} ,
     }
 
     local lazy_opts = {

@@ -107,3 +107,16 @@ function! ConditionalPairMap(open, close) abort
         return a:open . a:close . repeat("\<left>", len(a:close))
     endif
 endfunction
+" -------------------------------------------
+"  String Ops
+" -------------------------------------------
+fu! StartsWith(longer, shorter) abort
+    return a:longer[0:len(a:shorter)-1] ==# a:shorter
+endfunction
+
+fu! EndsWith(longer, shorter) abort
+    return a:longer[len(a:longer)-len(a:shorter):] ==# a:shorter
+endfunction
+fu! Contains(longer, shorter) abort
+    return stridx(a:longer, a:short) >= 0
+endfunction

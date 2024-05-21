@@ -37,6 +37,7 @@ function! SessionStore(...)
     " Session path
     let session_file=session_path."/session.vim"
     let session_bookmark_file=session_path."/bookmark.vim"
+    let session_highlight=session_path."/highlight.hl"
 
     " Vars
     let current_buffer_name=expand('%:p')
@@ -94,6 +95,7 @@ function! SessionStore(...)
 
     " Save bookmark
     silent! exe "BookmarkSave " . session_bookmark_file
+    silent! exe "HI save " . session_highlight
     echo 'Session Stored finished., Tab:' . tab_cnt . ', Buf:' . buf_cnt. ", File: ". session_path
 endfunction
 
@@ -110,6 +112,7 @@ function! SessionLoad(...)
     " Session path
     let session_file=session_path."/session.vim"
     let session_bookmark_file=session_path."/bookmark.vim"
+    let session_highlight=session_path."/highlight.hl"
 
     if empty(glob(session_path)) || !isdirectory(session_path)
         echom "Folder not found. Session: ". session_path
@@ -129,6 +132,9 @@ function! SessionLoad(...)
 
     if !empty(glob(session_bookmark_file))
         silent! exec 'BookmarkLoad ' . session_bookmark_file
+    endif
+    if !empty(glob(session_highlight))
+        silent! exec 'HI load ' . session_highlight
     endif
     echo 'Session loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$"). " Session:" . session_file
 endfunction
@@ -175,6 +181,47 @@ function! SessionLoadBookmark(...)
     echo "Session bookmark loaded. Session Bookmark:" . session_bookmark_file
 endfunction
 
+"  Highight
+" -------------------------------------------
+command! -nargs=*  SessionStoreHighlight call SessionStoreHighlight(<f-args>)
+function! SessionStoreHighlight(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    let session_file=session_path."/session.vim"
+    let session_highlight=session_path."/highlight.hl"
+
+    if empty(glob(session_path))
+        call system('mkdir ' . session_path)
+    endif
+
+    silent! exe "HI save " . session_highlight
+    echo "Session highlight stored. Session highlight:" . session_highlight
+endfunction
+
+command! -nargs=*  SessionLoadHighlight call SessionLoadHighlight(<f-args>)
+function! SessionLoadHighlight(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    let session_file=session_path."/session.vim"
+    let session_highlight=session_path."/highlight.hl"
+
+    if !empty(glob(session_highlight))
+        silent! exec 'HI load ' . session_highlight
+    endif
+    echo "Session highlight loaded. Session highlight:" . session_highlight
+endfunction
 "  Marks
 " -------------------------------------------
 "  TODO, nedd to save it to file.

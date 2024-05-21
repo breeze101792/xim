@@ -195,7 +195,8 @@ nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
 
 " Commentary settings
 noremap <C-_> :CommentCode<CR>
-" noremap! <Leader>/ :CommentCode<CR>
+" noremap! <Leader>/ :CommentCodeBlock<CR>
+" noremap <C-?> :CommentCode<CR>
 
 " GitGutter settings
 " map <C-g> :GitGutterToggle<CR>
@@ -216,7 +217,7 @@ noremap <leader>b :ToggleBufExplorer<CR>
 
 " mark
 " nmap <unique> <Leader>m <Plug>MarkSet
-nmap <Leader>m <Plug>MarkSet
+nmap <Leader>m :HighlighterToggle<CR>
 
 "  cctree trace
 noremap <leader>] :CCTreeTraceForward<CR>

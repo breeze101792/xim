@@ -130,7 +130,7 @@ fFileRoot()
     local tmp_path=$(realpath .)
     local grep_args=""
     local target="$@"
-    local target_path=""
+    local target_path=${tmp_path}
     local flag_verbose="n"
 
     while ! ls -a "${tmp_path}" | grep -q ${grep_args} ${target};

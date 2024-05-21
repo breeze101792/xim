@@ -39,7 +39,7 @@ function! FastMode()
         set nocursorline
     else
         echo 'Disable fast mode'
-        :DoMatchParen
+        exe "DoMatchParen"
         set cursorline
     endif
     " if exists(":NoMatchParen")
@@ -75,8 +75,8 @@ function! PureToggle()
         setlocal number
         setlocal list
 
-        :DoMatchParen
-        :GitGutterDisable
+        exe "GitGutterEnable"
+        exe "DoMatchParen"
 
     else
         echo 'Enable Pure mode'
@@ -85,8 +85,8 @@ function! PureToggle()
         setlocal nonumber
         setlocal nolist
 
-        :NoMatchParen
-        :GitGutterEnable
+        exe "GitGutterDisable"
+        exe "NoMatchParen"
 
     endif
 endfunc
@@ -441,6 +441,7 @@ function! FormatCode() range
     silent! execute a:firstline.','.a:lastline.'s/}/}\r/g'
 endfun
 
+command! -range CommentCodeBlock <line1>,<line2>TCommentBlock
 command! -range CommentCode <line1>,<line2>call CommentCode()
 function! CommentCode() range
     " echo 'comment'.a:firstline.','.a:lastline
@@ -458,7 +459,7 @@ function! CommentCode() range
         "     endif
         " endif
         " echo 'block'
-        silent! execute a:firstline.','.a:lastline.' TCommentBlock'
+        silent! execute a:firstline.','.a:lastline.' TCommentInline'
     endif
 endfun
 

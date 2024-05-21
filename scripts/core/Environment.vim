@@ -63,11 +63,6 @@ function! IDE_EnvSetup_Proj()
         execute 'source '.g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"
         let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session"
         let g:IDE_ENV_SESSION_MARK_PATH = "VIMMARKS"
-
-        if g:IDE_ENV_REQ_SESSION_RESTORE != ""
-            echom "Restore: ".g:IDE_ENV_REQ_SESSION_RESTORE
-            call SessionLoad(g:IDE_ENV_REQ_SESSION_RESTORE)
-        endif
     else
         let g:IDE_ENV_SESSION_AUTOSAVE_PATH = g:IDE_ENV_CONFIG_PATH."/session_autosave"
         let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_CONFIG_PATH."/session"
@@ -75,6 +70,8 @@ function! IDE_EnvSetup_Proj()
 endfunc
 
 function! IDE_EnvSetup()
+    "" NOTE. Don't start any function here.
+
     ""    Proj Setup
     """"""""""""""""""""""""""""""""""""""""""""""""""""""
     if $VIDE_SH_PROJ_DATA_PATH != ""

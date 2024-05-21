@@ -26,6 +26,11 @@ function! IDE_PostInit(timer) abort
     if g:IDE_CFG_PLUGIN_ENABLE == "y"
         call IDE_PlugInDealyLoading()
     endif
+
+    if g:IDE_ENV_REQ_SESSION_RESTORE != ""
+        echom "Restore: ".g:IDE_ENV_REQ_SESSION_RESTORE
+        call SessionLoad(g:IDE_ENV_REQ_SESSION_RESTORE)
+    endif
     " echo 'Post Init finished'
 endfunction
 
