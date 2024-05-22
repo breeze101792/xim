@@ -527,11 +527,6 @@ function fEdit()
             # -l|--lite)
             #     cmd_args+=("-u $HS_PATH_IDE/tools/vimlite.vim")
             #     ;;
-            -t|--time)
-                flag_time=y
-                cmd_args+=("-X --startuptime startup_${var_timestamp}.log")
-                hs_varconfig -s "${HS_VAR_LOGFILE}" "startup_${var_timestamp}.log"
-                ;;
             -c|--clip)
                 shift 1
                 local buf_tmp="$@"
@@ -542,9 +537,14 @@ function fEdit()
                 printf "V\n%s\n" "${buf_tmp}" > ${HOME}/.vim/clip
                 return 0
                 ;;
+            -t|--time)
+                flag_time=y
+                cmd_args+=("-X --startuptime startup_${var_timestamp}.log")
+                hsexc hs_varconfig -s "${HS_VAR_LOGFILE}" "startup_${var_timestamp}.log"
+                ;;
             --buffer-file|buffer|buf)
                 # This is work with HS
-                vim_args+="$(hs_varconfig -g ${HS_VAR_LOGFILE})"
+                vim_args+="$(hsexc hs_varconfig -g ${HS_VAR_LOGFILE})"
                 ;;
             # ENV
             p|plugin)

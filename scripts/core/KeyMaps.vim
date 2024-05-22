@@ -218,6 +218,9 @@ noremap <leader>b :ToggleBufExplorer<CR>
 " mark
 " nmap <unique> <Leader>m <Plug>MarkSet
 nmap <Leader>m :HighlighterToggle<CR>
+" hlsearch work only when /[search] noh
+nnoremap <silent>* *:nohlsearch<CR>
+nnoremap <silent># #:nohlsearch<CR>
 
 "  cctree trace
 noremap <leader>] :CCTreeTraceForward<CR>

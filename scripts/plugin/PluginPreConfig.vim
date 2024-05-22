@@ -257,6 +257,7 @@ let g:bookmark_highlight_lines = 1
 
 """"    Vim Highlighter
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+let HiSyncMode = 2
 let HiSet   = 'f<CR>'
 let HiErase = 'f<BS>'
 let HiClear = 'f<C-L>'

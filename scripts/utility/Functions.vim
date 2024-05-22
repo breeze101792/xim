@@ -222,6 +222,14 @@ function! DuplicateFile(new_name)
         redraw!
     endif
 endfunction
+
+command! -range LogOpen call LogOpen('')
+function! LogOpen(filename)
+    " ~/.bashrc
+    let l:file_name = system('hsexc hs_varconfig -g ${HS_VAR_LOGFILE}')
+    " echo file_name
+    exec 'tabnew '.l:file_name
+endfunc
 " -------------------------------------------
 "  Tab op
 " -------------------------------------------
@@ -450,16 +458,19 @@ function! CommentCode() range
         silent! TComment
     else
         " echo &filetype
-        " if &filetype ==# 'c' || &filetype ==# 'cpp'
-        "     let l:pattern_cnt=execute(a:firstline.','.a:lastline.'CountPattern *')
-        "     echom 'Pattern'.l:pattern_cnt
-        "     if a:lastline - a:firstline + 1 == l:pattern_cnt
-        "         silent! execute a:firstline.','.a:lastline.' TComment'
-        "         return
-        "     endif
-        " endif
-        " echo 'block'
-        silent! execute a:firstline.','.a:lastline.' TCommentInline'
+        if &filetype ==# 'c' || &filetype ==# 'cpp'
+            echom "FileType: C/Cpp"
+            silent! execute a:firstline.','.a:lastline.' TCommentInline'
+            " let l:pattern_cnt=execute(a:firstline.','.a:lastline.'CountPattern *')
+            " echom 'Pattern'.l:pattern_cnt
+            " if a:lastline - a:firstline + 1 == l:pattern_cnt
+            "     silent! execute a:firstline.','.a:lastline.' TComment'
+            "     return
+            " endif
+        else
+            " echo 'block'
+            silent! execute a:firstline.','.a:lastline.' TCommentBlock'
+        endif
     endif
 endfun
 
@@ -652,33 +663,32 @@ function! IdeInfo()
     let sep="\n"
     let msg="IDE Information"
     let msg=msg . sep . printf("%s", "[Envs/Configs]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_IDE_TITLE', g:IDE_ENV_IDE_TITLE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_ROOT_PATH', g:IDE_ENV_ROOT_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_CONFIG_PATH', g:IDE_ENV_CONFIG_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_HEART_BEAT', g:IDE_ENV_HEART_BEAT)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_IDE_TITLE'             , g:IDE_ENV_IDE_TITLE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_ROOT_PATH'             , g:IDE_ENV_ROOT_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_CONFIG_PATH'           , g:IDE_ENV_CONFIG_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_HEART_BEAT'            , g:IDE_ENV_HEART_BEAT)
 
-    let msg=msg . sep . printf("%s", "[Proj/Sessions]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_DATA_PATH', g:IDE_ENV_PROJ_DATA_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_PROJ_SCRIPT', g:IDE_ENV_PROJ_SCRIPT)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_PATH', g:IDE_ENV_SESSION_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_AUTOSAVE_PATH', g:IDE_ENV_SESSION_AUTOSAVE_PATH)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_MARK_PATH', g:IDE_ENV_SESSION_MARK_PATH)
-    " let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_SESSION_BOOKMARK_PATH', g:IDE_ENV_SESSION_BOOKMARK_PATH)
+    let msg=msg . sep . printf("%s"               , "[Proj/Sessions]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_PROJ_DATA_PATH'        , g:IDE_ENV_PROJ_DATA_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_PROJ_SCRIPT'           , g:IDE_ENV_PROJ_SCRIPT)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_SESSION_AUTOSAVE_PATH' , g:IDE_ENV_SESSION_AUTOSAVE_PATH)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_SESSION_PATH'          , g:IDE_ENV_SESSION_PATH)
+    " let msg=msg . sep . printf('    %- 32s: %s' , 'IDE_ENV_SESSION_BOOKMARK_PATH' , g:IDE_ENV_SESSION_BOOKMARK_PATH)
 
-    let msg=msg . sep . printf("%s", "[Args/Vars]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_TAG_UPDATE ', g:IDE_ENV_REQ_TAG_UPDATE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_ENV_REQ_SESSION_RESTORE', g:IDE_ENV_REQ_SESSION_RESTORE)
+    let msg=msg . sep . printf("%s"               , "[Args/Vars]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_REQ_TAG_UPDATE '       , g:IDE_ENV_REQ_TAG_UPDATE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_REQ_SESSION_RESTORE'   , g:IDE_ENV_REQ_SESSION_RESTORE)
 
-    let msg=msg . sep . printf("%s", "[Configs]")
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_CACHED_COLORSCHEME ', g:IDE_CFG_CACHED_COLORSCHEME)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_GIT_ENV ', g:IDE_CFG_GIT_ENV)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_PLUGIN_ENABLE ', g:IDE_CFG_PLUGIN_ENABLE)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_SPECIAL_CHARS ', g:IDE_CFG_SPECIAL_CHARS)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_SESSION_AUTOSAVE', g:IDE_CFG_SESSION_AUTOSAVE)
+    let msg=msg . sep . printf("%s"               , "[Configs]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_CACHED_COLORSCHEME '   , g:IDE_CFG_CACHED_COLORSCHEME)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_GIT_ENV '              , g:IDE_CFG_GIT_ENV)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_PLUGIN_ENABLE '        , g:IDE_CFG_PLUGIN_ENABLE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_SPECIAL_CHARS '        , g:IDE_CFG_SPECIAL_CHARS)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_SESSION_AUTOSAVE'      , g:IDE_CFG_SESSION_AUTOSAVE)
 
     "" Backgorund worker
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_BACKGROUND_WORKER ', g:IDE_CFG_BACKGROUND_WORKER)
-    let msg=msg . sep . printf('    %- 32s: %s', 'IDE_CFG_AUTO_TAG_UPDATE ', g:IDE_CFG_AUTO_TAG_UPDATE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_BACKGROUND_WORKER '    , g:IDE_CFG_BACKGROUND_WORKER)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_AUTO_TAG_UPDATE '      , g:IDE_CFG_AUTO_TAG_UPDATE)
 
     echo msg
 endfunc

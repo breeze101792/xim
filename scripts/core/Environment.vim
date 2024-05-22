@@ -40,7 +40,6 @@ let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
 " Session
 let g:IDE_ENV_SESSION_AUTOSAVE_PATH = get(g:, 'IDE_ENV_SESSION_AUTOSAVE_PATH', g:IDE_ENV_CONFIG_PATH."/session_autosave")
 let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
-let g:IDE_ENV_SESSION_MARK_PATH = get(g:, 'IDE_ENV_SESSION_MARK_PATH', "VIMMARKS")
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal vim var                           """"
@@ -53,16 +52,22 @@ let g:IDE_ENV_REQ_SESSION_RESTORE=""
 """"    Functions of env                          """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Buffer Env
-" let b:IDE_ENV_CURRENT_FUNC = ""
-" let b:IDE_ENV_GIT_BRANCH = ""
+
+"" Buffer Env
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" This is for local buffer env.
+" let b:IDE_ENV_CURRENT_FUNC     = ""
+" let b:IDE_ENV_GIT_BRANCH       = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_PATH = ""
+
+"" Buffer Functions
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! IDE_EnvSetup_Proj()
     if !empty(glob(g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"))
         execute 'source '.g:IDE_ENV_PROJ_DATA_PATH."/proj.vim"
         let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session"
-        let g:IDE_ENV_SESSION_MARK_PATH = "VIMMARKS"
+        let g:IDE_ENV_SESSION_AUTOSAVE_PATH = g:IDE_ENV_PROJ_DATA_PATH."/session_autosave"
     else
         let g:IDE_ENV_SESSION_AUTOSAVE_PATH = g:IDE_ENV_CONFIG_PATH."/session_autosave"
         let g:IDE_ENV_SESSION_PATH = g:IDE_ENV_CONFIG_PATH."/session"

@@ -66,7 +66,7 @@ function! SessionStore(...)
 
     " opened tab
     " FIXME, No win support.
-    let tabcount = tabpagenr("$")[0]
+    let tabcount = tabpagenr("$")
     let currenttabidx = 1
     call writefile(['" Session opened tab'], session_file, "a")
     call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
@@ -77,7 +77,7 @@ function! SessionStore(...)
         " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
         if !empty(glob(currtabname)) && buflisted(currtabname) == 1
             call writefile(['tabnew ' . currtabname], session_file, "a")
-            let tab_cnt = tab_cnt + 1
+            " FIXME, do it on acturally tab.
             if currtabname == current_buffer_name
                 call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
             endif
@@ -221,24 +221,6 @@ function! SessionLoadHighlight(...)
         silent! exec 'HI load ' . session_highlight
     endif
     echo "Session highlight loaded. Session highlight:" . session_highlight
-endfunction
-"  Marks
-" -------------------------------------------
-"  TODO, nedd to save it to file.
-"  MarkSave save marks to viminfo., maybe we can save viminfo to vimproj
-command! SessionStoreMark :call SessionStoreMark()
-function! SessionStoreMark()
-    silent! exe "MarkSave " . g:IDE_ENV_SESSION_MARK_PATH
-    echo "Session mark stored. Session Mark:" . g:IDE_ENV_SESSION_MARK_PATH
-endfunction
-
-command! SessionLoadMark :call SessionLoadMark()
-function! SessionLoadMark()
-    silent! exec 'MarkLoad ' . g:IDE_ENV_SESSION_MARK_PATH
-    " if !empty(glob(g:IDE_ENV_SESSION_MARK_PATH))
-    "     silent! exec 'MarkLoad ' . g:IDE_ENV_SESSION_MARK_PATH
-    " endif
-    echo "Session bookmark loaded. Session Mmark:" . g:IDE_ENV_SESSION_MARK_PATH
 endfunction
 
 " -------------------------------------------
