@@ -11,7 +11,6 @@ export DEF_COLOR_NORMAL='\033[0m'
 ## Vars
 ###########################################################
 export VAR_SCRIPT_NAME="$(basename ${BASH_SOURCE[0]%=.})"
-export VAR_CPU_CNT=$(nproc --all)
 export VAR_VIM_INSTANCE="nvim"
 
 ###########################################################
