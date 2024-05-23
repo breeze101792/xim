@@ -20,6 +20,26 @@ function! SessionGetPath(...)
     return session_path
 endfunction
 
+command! -nargs=*  SessionFile call SessionFile(<f-args>)
+function! SessionFile(...)
+    if a:0 == 1
+        let session_path=SessionGetPath(a:1)
+    elseif a:0 == 2
+        let session_path=SessionGetPath(a:1, a:2)
+    else
+        let session_path=SessionGetPath()
+    endif
+
+    if empty(glob(session_path))
+        call system('mkdir ' . session_path)
+    endif
+
+    " Session path
+    let session_file=session_path."/session.vim"
+
+    exec "tabnew ". session_file
+endfunction
+
 command! -nargs=*  SessionStore call SessionStore(<f-args>)
 function! SessionStore(...)
     if a:0 == 1
@@ -44,8 +64,8 @@ function! SessionStore(...)
     let buf_cnt=0
     let tab_cnt=0
 
+    " Buf variable
     let bufcount = bufnr("$")
-    let currbufidx = 1
     if bufcount == 1
         echoe "Preventing writing only 1 page to session."
         return
@@ -54,44 +74,78 @@ function! SessionStore(...)
     call writefile(['" Vim session file'], session_file, "")
     call writefile(['" Session open buffer'], session_file, "a")
     call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-    while currbufidx <= bufcount
-        let currbufname = expand('#' . currbufidx . ':p')
-        " echom 'Buffer:'.currbufname.'-'.bufloaded(currbufname).'-'.bufexists(currbufname).'-'.buflisted(currbufname)
-        if !empty(glob(currbufname)) && buflisted(currbufname) == 1
-            call writefile(['badd ' . currbufname], session_file, "a")
+
+    for each_buf in getbufinfo()
+        " echom each_buf.name . '-' . each_buf.lnum
+        if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
+            call writefile(['badd +'. each_buf.lnum . " " . each_buf.name], session_file, "a")
             let buf_cnt = buf_cnt + 1
         endif
-        let currbufidx = currbufidx + 1
-    endwhile
+    endfor
 
     " opened tab
     " FIXME, No win support.
     let tabcount = tabpagenr("$")
-    let currenttabidx = 1
+    let current_tab_idx = tabpagenr()
+
+    let tabidx = 1
     call writefile(['" Session opened tab'], session_file, "a")
     call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-    while currenttabidx <= tabcount
-        let tmp_buf_idx = tabpagebuflist(currenttabidx)[0]
+    while tabidx <= tabcount
+        let tmp_buf_idx = tabpagebuflist(tabidx)[0]
         let currtabname = expand('#' . tmp_buf_idx . ':p')
 
         " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
         if !empty(glob(currtabname)) && buflisted(currtabname) == 1
-            call writefile(['tabnew ' . currtabname], session_file, "a")
             " FIXME, do it on acturally tab.
-            if currtabname == current_buffer_name
+            exec 'tabn '.tabidx
+            " echo 'tabn '.tabidx
+            call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
+            if current_tab_idx == tabidx
                 call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
             endif
-        endif
-        let currenttabidx = currenttabidx + 1
-    endwhile
 
-    let currtabname=bufname("%")
-    if !empty(glob(currtabname))
-        call writefile(['" Restore settings'], session_file, "a")
-        call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-        call writefile(['"Open buffer:'. current_buffer_name], session_file, "a")
-        call writefile(["exe 'tabn ' . session_previous_tabnr" ], session_file, "a")
-    endif
+            let tab_cnt = tab_cnt + 1
+        endif
+        let tabidx = tabidx + 1
+    endwhile
+    exec 'tabn '.current_tab_idx
+
+    " " opened tab
+    " " FIXME, No win support.
+    " let tabcount = tabpagenr("$")
+    " " FIXME, i dn't know how to get current tab id.
+    " exec 'tabn '.tabpagenr("#")
+    " let current_tab_idx = tabpagenr("#")
+    "
+    " let tabidx = 1
+    " call writefile(['" Session opened tab'], session_file, "a")
+    " call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    " while tabidx <= tabcount
+    "     let tmp_buf_idx = tabpagebuflist(tabidx)[0]
+    "     let currtabname = expand('#' . tmp_buf_idx . ':p')
+    "
+    "     " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
+    "     if !empty(glob(currtabname)) && buflisted(currtabname) == 1
+    "         " FIXME, do it on acturally tab.
+    "         exec 'tabn '.tabidx
+    "         " echo 'tabn '.tabidx
+    "         call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
+    "         " if currtabname == current_buffer_name && current_tab_idx == tabidx
+    "         if current_tab_idx == tabidx
+    "             call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
+    "         endif
+    "
+    "         let tab_cnt = tab_cnt + 1
+    "     endif
+    "     let tabidx = tabidx + 1
+    " endwhile
+    " exec 'tabn '.current_tab_idx
+
+    call writefile(['" Restore settings'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    call writefile(['"Open buffer:'. bufname("%")], session_file, "a")
+    call writefile(["exe 'tabn ' . session_previous_tabnr" ], session_file, "a")
 
     " Save bookmark
     silent! exe "BookmarkSave " . session_bookmark_file

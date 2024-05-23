@@ -120,3 +120,38 @@ endfunction
 fu! Contains(longer, shorter) abort
     return stridx(a:longer, a:short) >= 0
 endfunction
+
+" -------------------------------------------
+"  String Path compare
+" -------------------------------------------
+function! PathCompare(path_a,path_b) abort
+    let list_a = split(a:path_a,'/')
+    let list_b = split(a:path_b,'/')
+    let len_a=len(list_a)
+    let len_b=len(list_b)
+
+    if len_a > len_b
+        for each_idx in range(len_b)
+
+            if list_b[len_b - each_idx - 1] != list_a[len_a - each_idx - 1]
+                return list_a[len_a - each_idx - 1]
+            endif
+        endfor
+        return list_a[len_a - len_b - 1]
+    elseif len_a < len_b
+        for each_idx in range(len_a)
+            if list_a[len_a - each_idx - 1] != list_b[len_b - each_idx - 1]
+                return list_a[len_a - each_idx - 1]
+            endif
+        endfor
+        " return list_b[len_b - len_a - 1]
+    else
+        for each_idx in range(len_b)
+            let tmp_idx = len_b - each_idx - 1
+            if list_b[tmp_idx] != list_a[tmp_idx]
+                return list_a[tmp_idx]
+            endif
+        endfor
+    endif
+    return ""
+endfunc

@@ -48,6 +48,15 @@ let g:lightline = {
             \ 'info'               : 'LightlineFileInfo',
             \ 'position'           : 'LightlinePosition',
             \ },
+            \ 'component_type': {
+            \ },
+            \   'tab_component_function': {
+            \     'nfilename': 'LightlineTabFile',
+            \   },
+            \   'tab': {
+            \     'active': ['tabnum', 'nfilename', 'modified'],
+            \     'inactive': ['tabnum', 'nfilename', 'modified']
+            \   },
             \ 'tabline'            : {
             \ 'left'               : [['title'], ['tabs']],
             \ 'right'              : [['bufnum'], ['gitinfo'] ]
@@ -79,6 +88,34 @@ if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
 else
     let g:lightline.subseparator = {'left': '|', 'right': '|' }
 endif
+
+function! LightlineTabFile(n) abort
+    let buflist = tabpagebuflist(a:n)
+    let winnr = tabpagewinnr(a:n)
+    let full_path = expand('#'.buflist[winnr - 1].':p:h')
+    let current_filename = expand('#'.buflist[winnr - 1].':t')
+    let target_filename = current_filename
+
+    for each_buf in getbufinfo()
+        " echom each_buf
+        let buf_filename = expand('#'. each_buf.bufnr .':t')
+        let buf_full_path = expand('#'.each_buf.bufnr.':p:h')
+
+        " echo current_filename . ','. buf_filename  . ','.  buf_full_path. ','. full_path
+        " NOTE. I only deal with the 2 different path. if path different more
+        " then 3, it will not work as expected.
+        if current_filename == buf_filename && buf_full_path != full_path
+            " echo "Different path detected."
+            " let target_filename = substitute(full_path, '^.*/', '', '').'/'.current_filename
+            let target_filename = PathCompare(full_path, buf_full_path).':'.current_filename
+
+            break
+        endif
+    endfor
+    " echo current_filename . ','. buf_filename  . ','.  buf_full_path. ','. full_path
+
+    return target_filename !=# '' ? target_filename : '[No Name]'
+endfunction
 
 function! LightlineFileInfo()
     let msg = &filetype

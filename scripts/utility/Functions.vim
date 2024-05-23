@@ -692,3 +692,15 @@ function! IdeInfo()
 
     echo msg
 endfunc
+
+command! -nargs=*  IdeConfig call IdeConfig(<f-args>)
+function! IdeConfig(...)
+    let config_file=g:IDE_ENV_CONFIG_PATH."/ConfigCustomize.vim"
+
+    if !empty(glob(config_file))
+        echom "tabnew ". config_file
+        exec "tabnew ". config_file
+    else
+        echom "File not found ". config_file
+    endif
+endfunction
