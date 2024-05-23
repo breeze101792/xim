@@ -132,7 +132,9 @@ fFileRoot()
     local target_path=${tmp_path}
     local flag_verbose="n"
 
-    while ! ls -a "${tmp_path}" | grep -q ${grep_args} ${target};
+    # while ! ls -a "${tmp_path}" | grep -q ${grep_args} ${target};
+    # Full match, only test if the file exist or not.
+    while ! test -e "${tmp_path}/${target}";
     do
         tmp_path="${tmp_path}/.."
         pushd "${tmp_path}" > /dev/null
@@ -627,6 +629,7 @@ function fEdit()
     else
         var_proj_folder="$(realpath .)"
     fi
+
     cd ${var_proj_folder}
 
     if test -f "./proj.vim"
@@ -700,8 +703,6 @@ function fMain()
                 ;;
             vim|nvim|edit)
                 shift 1
-                fEdit $@
-                return 0
                 ;;
             # Options
             -v|--verbose)
