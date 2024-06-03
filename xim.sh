@@ -636,7 +636,6 @@ function fEdit()
     then
         export VIDE_SH_PROJ_DATA_PATH=$(realpath ${var_proj_folder})
     fi
-    printf "Project %s: %s\n" "Path" "${VIDE_SH_PROJ_DATA_PATH}"
 
     # NOTE. currently this will be set with VIDE_SH_PROJ_DATA_PATH
     if false
@@ -673,7 +672,7 @@ function fEdit()
 
     cd $cpath
     eval ${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}
-    echo "Launching: ${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}"
+    printf "Launching %s: ${DEF_COLOR_GREEN}%s${DEF_COLOR_NORMAL}\n" "${VIDE_SH_PROJ_DATA_PATH}" "${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}"
 
     if [ "${flag_time}" = "y" ]
     then

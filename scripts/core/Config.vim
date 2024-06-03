@@ -7,6 +7,8 @@ let g:IDE_CFG_GIT_ENV            = get(g:, 'IDE_CFG_GIT_ENV', "y")
 let g:IDE_CFG_PLUGIN_ENABLE      = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 let g:IDE_CFG_SPECIAL_CHARS      = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 
+let g:IDE_CFG_HIGH_PERFORMANCE_HOST      = get(g:, 'IDE_CFG_HIGH_PERFORMANCE_HOST', "n")
+
 " Session
 let g:IDE_CFG_SESSION_AUTOSAVE      = get(g:, 'IDE_CFG_SESSION_AUTOSAVE', "n")
 

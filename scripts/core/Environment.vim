@@ -149,8 +149,20 @@ function! IDE_UpdateEnv_CursorHold()
 
 endfunc
 
-command! UpdateBufInfo call IDE_UpdateEnv_BufOpen()
-function! IDE_UpdateEnv_BufOpen()
+command! UpdateBufInfo call IDE_UpdateEnv_BufOpen(1)
+function! IDE_UpdateEnv_BufOpen(...)
+    let l:file_name = expand("%:p")
+    if a:0 == 1
+        echom "Force update buffer info. ".b:IDE_ENV_BUF_UPDATED
+        let b:IDE_ENV_BUF_UPDATED = a:1
+    else
+        let b:IDE_ENV_BUF_UPDATED = get(b:, 'IDE_ENV_BUF_UPDATED', "0")
+    endif
+
+    if b:IDE_ENV_BUF_UPDATED == 1 || file_name == "" || empty(glob(file_name))
+        return
+    endif
+
     if g:IDE_CFG_GIT_ENV == "y"
         " FIXME, git above git 2.22.0 support --show-current
         " let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
@@ -164,6 +176,7 @@ function! IDE_UpdateEnv_BufOpen()
         let b:IDE_ENV_GIT_PROJECT_NAME = ""
         let b:IDE_ENV_GIT_PROJECT_PATH = ""
     endif
+
     if g:IDE_CFG_PLUGIN_ENABLE == "y"
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
@@ -173,4 +186,7 @@ function! IDE_UpdateEnv_BufOpen()
     else
         let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
+
+    " NOTE. We only run this onces.
+    let b:IDE_ENV_BUF_UPDATED = 1
 endfunc

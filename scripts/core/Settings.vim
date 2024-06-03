@@ -129,15 +129,17 @@ if has('cscope')
 endif
 
 " Folding
-set foldmethod=syntax " can be set to syntax, indent, manual
+" set foldmethod=syntax " can be set to syntax, indent, manual
 set foldnestmax=10    " Only fold up to three nested levels.
 set foldlevel=99
 " set foldminlines=3    " show the min line of folded code
 set nofoldenable
 
 " OmniCppComplete
-" let OmniCpp_NamespaceSearch = 1
-" let OmniCpp_GlobalScopeSearch = 1
+" let OmniCpp_GlobalScopeSearch = 0
+" let OmniCpp_DisplayMode = 0
+" let OmniCpp_ShowScopeInAbbr = 1
+" let OmniCpp_NamespaceSearch = 2
 " let OmniCpp_ShowAccess = 1
 " let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
 " let OmniCpp_MayCompleteDot = 1 " autocomplete after .
@@ -178,7 +180,9 @@ set mouse=c
 " set paste
 
 " setup column cursor line, this will slow down vim speed
-" set cursorcolumn
+if g:IDE_CFG_HIGH_PERFORMANCE_HOST == 'y'
+    set cursorcolumn
+endif
 " This is for linux, we should not let our code length beyound 80 chars
 set colorcolumn=81
 
@@ -202,7 +206,9 @@ let g:matchparen_insert_timeout = 60
 """"    Other Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " save debug msg to /tmp/vim-debug
-let g:vim_debug_enable = 1
-" Check syntax time
-" syntime on
-" syntime report
+if 0
+    let g:vim_debug_enable = 1
+    Check syntax time
+    syntime on
+    syntime report
+endif

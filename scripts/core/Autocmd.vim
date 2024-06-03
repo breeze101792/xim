@@ -143,7 +143,7 @@ augroup environment_gp
     " bufread will have issue on the new file(don't need to read buffer)
     " bufenter will have issue on vimdiff, sice only one window we be entered.
     " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
-    autocmd BufEnter * UpdateBufInfo
+    autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
 augroup END
 
 """"    Edictor Variable

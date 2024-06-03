@@ -181,7 +181,7 @@ set mouse=c
 " set paste
 
 " setup column cursor line, this will slow down vim speed
-" set cursorcolumn
+set cursorcolumn
 " This is for linux, we should not let our code length beyound 80 chars
 set colorcolumn=81
 

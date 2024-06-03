@@ -1,7 +1,3 @@
-" Commands Settings
-" ===========================================
-" command! -nargs=1 Count :%s/<args>//n
-
 " Function Settings
 " ===========================================
 " -------------------------------------------
@@ -14,6 +10,17 @@ function! MouseToggle()
         set mouse=a
     else
         set mouse=c
+    endif
+    return
+endfunc
+
+command! LineNumToggle call LineNumToggle()
+
+function! LineNumToggle()
+    if &relativenumber
+        set norelativenumber
+    else
+        set relativenumber
     endif
     return
 endfunc
@@ -230,53 +237,6 @@ function! LogOpen(filename)
     " echo file_name
     exec 'tabnew '.l:file_name
 endfunc
-" -------------------------------------------
-"  Tab op
-" -------------------------------------------
-function! TabCloseOthers(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
-function! TabCloseRight(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-endfunction
-
-function! TabCloseLeft(bang)
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
-function! TabGo(tabname)
-
-    let tabcount = tabpagenr("$")
-    let currenttabidx = 1
-    call writefile(['" Session opened tab'], g:IDE_ENV_SESSION_PATH, "a")
-    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], g:IDE_ENV_SESSION_PATH, "a")
-    while currenttabidx <= tabcount
-        let currtabname = expand('#' . currenttabidx)
-
-        if tabname == currtabname
-            exe 'tabclose' . a:bang . ' 1'
-            break
-        endif
-        let currenttabidx = currenttabidx + 1
-    endwhile
-endfunction
-
-command! -bang Tabcloseothers call TabCloseOthers('<bang>')
-command! -bang Tabcloseright call TabCloseRight('<bang>')
-command! -bang Tabcloseleft call TabCloseLeft('<bang>')
-
 " -------------------------------------------
 "  Tags/cscope
 " -------------------------------------------
@@ -525,7 +485,6 @@ function! CountPattern(pattern) range
         return 0
     endtry
 endfunc
-
 
 " -------------------------------------------
 "  Generate num seq

@@ -1,9 +1,11 @@
 " Adaptation Source
 " ===========================================
 if g:IDE_ENV_INS == "nvim"
-    so ~/.vim/vim-ide/adaptation/Nvim.vim
+    " so ~/.vim/vim-ide/adaptation/Nvim.vim
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/adaptation/AdpNvim.vim "
 else
-    so ~/.vim/vim-ide/adaptation/Vim.vim
+    " so ~/.vim/vim-ide/adaptation/Vim.vim
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/adaptation/AdpVim.vim "
 endif
 
 " Adaptation Function

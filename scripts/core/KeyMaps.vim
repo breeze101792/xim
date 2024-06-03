@@ -51,18 +51,18 @@ nmap <F6> :TagbarToggle<CR>
 nmap <F7> :NERDTreeToggle<CR>
 
 " SrcExpl
-nmap <F8> :SrcExplToggle<CR>
+" nmap <F8> :SrcExplToggle<CR>
 
 " cctree
 " will be needed first CCTreeTraceForward
-nmap <F9> :CCTreeWindowToggle<CR>
+nmap <F8> :CCTreeWindowToggle<CR>
 
 "" function
 nmap <leader>5 :redraw!<CR>
 nmap <leader>6 :TagbarToggle<CR>
 nmap <leader>7 :NERDTreeToggle<CR>
-nmap <leader>8 :SrcExplToggle<CR>
-nmap <leader>9 :CCTreeWindowToggle<CR>
+" nmap <leader>8 :SrcExplToggle<CR>
+nmap <leader>8 :CCTreeWindowToggle<CR>
 
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

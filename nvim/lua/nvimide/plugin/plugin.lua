@@ -171,7 +171,7 @@ function M.init()
         { "Colorizer"       , dir = vim_plugin_path .. "Colorizer"       , lazy = true , cmd = {"ColorToggle"} }        ,
         { "cctree"          , dir = vim_plugin_path .. "cctree"          , lazy = true , cmd = {"CCTreeWindowToggle"    , "CCTreeLoadDB"     , "CCTreeLoadXRefDB" , "CCTreeLoadBufferUsingTag" , "CCTreeTraceForward" , "CCTreeTraceReverse"} } ,
         { "ctrlp"           , dir = vim_plugin_path .. "ctrlp"           , lazy = true , cmd = {"CtrlP"} }              ,
-        { "srcexpl"         , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
+        -- { "srcexpl"         , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
         { "tabular"         , dir = vim_plugin_path .. "tabular"         , lazy = true , cmd = {"Tabularize"} }         ,
         { "vim-bookmarks"   , dir = vim_plugin_path .. "vim-bookmarks"   , lazy = true , cmd = {"BookmarkToggle"        , "BookmarkLoad"     , "BookmarkSave"} }  ,
         { "tcomment"        , dir = vim_plugin_path .. "tcomment"        , lazy = true , cmd = {"TComment"              , "TCommentBlock"} } ,
@@ -203,7 +203,8 @@ function M.init()
         -- with key
         { "vim-visual-multi" , dir = vim_plugin_path .. "vim-visual-multi"   , lazy = true , 
         keys = {
-            { "<C-n>", "<Plug>(VM-Find-Under)", desc = "VM-Find-Under" },
+            { "<C-n>", "<Plug>(VM-Find-Under)", desc = "VM-Find-Under", mode = {"n"} },
+            { "<C-n>", "<Plug>(VM-Find-Subword-Under)", desc = "VM-Find-Subword-Under", mode = {"v"} },
         },},
 
         -- direct load
@@ -221,7 +222,7 @@ function M.init()
         defaults = {
             -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
             -- If you know what you're doing, you can set this to `true` to have all your custom plugins lazy-loaded by default.
-            lazy = false,
+            lazy = true,
             -- It's recommended to leave version=false for now, since a lot the plugin that support versioning,
             -- have outdated releases, which may break your Neovim install.
             version = false, -- always use the latest git commit
@@ -230,19 +231,26 @@ function M.init()
         -- install = { colorscheme = { "tokyonight", "habamax" } },
         checker = { enabled = true }, -- automatically check for plugin updates
         performance = {
-            rtp = {
-                -- disable some rtp plugins
-                disabled_plugins = {
-                    "gzip",
-                    -- "matchit",
-                    -- "matchparen",
-                    -- "netrwPlugin",
-                    "tarPlugin",
-                    "tohtml",
-                    "tutor",
-                    "zipPlugin",
-                },
+            cache = {
+                enabled = true,
             },
+            reset_packpath = true, -- reset the package path to improve startup time
+			rtp = {
+				reset = true, -- reset the runtime path to $VIMRUNTIME and your config directory
+				---@type string[]
+				paths = {}, -- add any custom paths here that you want to includes in the rtp
+				---@type string[] list any plugins you want to disable here
+				disabled_plugins = {
+					"gzip",
+					-- "matchit",
+					-- "matchparen",
+					-- "netrwPlugin",
+					"tarPlugin",
+					"tohtml",
+					"tutor",
+					"zipPlugin",
+				},
+			},
         },
     }
 

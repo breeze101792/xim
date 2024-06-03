@@ -46,7 +46,7 @@ if VAR_PLUGIN_DEBUG == 0
     Plug VAR_PLUGIN_PATH.'/ctrlp', { 'on':  ['CtrlP'] }
     Plug VAR_PLUGIN_PATH.'/gitgutter', { 'on':  ['GitGutterEnable'] }
     Plug VAR_PLUGIN_PATH.'/nerdtree', { 'on':  'NERDTreeToggle' }
-    Plug VAR_PLUGIN_PATH.'/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
+    " Plug VAR_PLUGIN_PATH.'/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug VAR_PLUGIN_PATH.'/tabular', { 'on':  ['Tabularize'] }
     Plug VAR_PLUGIN_PATH.'/tagbar', { 'on':  ['TagbarToggle'] }
     Plug VAR_PLUGIN_PATH.'/tcomment', { 'on':  ['TComment', 'TCommentBlock'] }
@@ -63,7 +63,7 @@ else
     Plug VAR_PLUGIN_PATH.'/ctrlp'
     Plug VAR_PLUGIN_PATH.'/gitgutter'
     Plug VAR_PLUGIN_PATH.'/nerdtree'
-    Plug VAR_PLUGIN_PATH.'/srcexpl'
+    " Plug VAR_PLUGIN_PATH.'/srcexpl'
     Plug VAR_PLUGIN_PATH.'/tabular'
     Plug VAR_PLUGIN_PATH.'/tagbar'
     Plug VAR_PLUGIN_PATH.'/tcomment'

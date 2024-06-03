@@ -336,9 +336,16 @@ function! ClipOpen()
     endif
 endfunc
 
-command! ClipCopy call ClipCopy()
-function! ClipCopy()
+command! ClipStore call ClipStore()
+function! ClipStore()
     echo system('echo ' . expand('%:p') . ' > ' . g:IDE_ENV_CLIP_PATH)
+endfunc
+
+command! ClipFile call ClipFile()
+function! ClipFile()
+    if !empty(glob(g:IDE_ENV_CLIP_PATH))
+        execute 'tabnew ' . g:IDE_ENV_CLIP_PATH
+    endif
 endfunc
 
 " -------------------------------------------
@@ -355,3 +362,64 @@ function! s:Title(title_name)
         redraw!
     endif
 endfunc
+
+" -------------------------------------------
+"  Buffer
+" -------------------------------------------
+command! BufReload call BufReload()
+function! BufReload()
+    for each_buf in getbufinfo()
+        " echom each_buf.name . '-' . each_buf.lnum
+        if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
+            :edit!
+        endif
+    endfor
+
+endfunc
+
+" -------------------------------------------
+"  Tab op
+" -------------------------------------------
+function! TabCloseOthers(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+function! TabCloseRight(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+endfunction
+
+function! TabCloseLeft(bang)
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+function! TabGo(tabname)
+
+    let tabcount = tabpagenr("$")
+    let currenttabidx = 1
+    call writefile(['" Session opened tab'], g:IDE_ENV_SESSION_PATH, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], g:IDE_ENV_SESSION_PATH, "a")
+    while currenttabidx <= tabcount
+        let currtabname = expand('#' . currenttabidx)
+
+        if tabname == currtabname
+            exe 'tabclose' . a:bang . ' 1'
+            break
+        endif
+        let currenttabidx = currenttabidx + 1
+    endwhile
+endfunction
+
+command! -bang Tabcloseothers call TabCloseOthers('<bang>')
+command! -bang Tabcloseright call TabCloseRight('<bang>')
+command! -bang Tabcloseleft call TabCloseLeft('<bang>')
