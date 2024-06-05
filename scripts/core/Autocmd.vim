@@ -142,7 +142,6 @@ augroup environment_gp
     autocmd CursorHold * :call IDE_UpdateEnv_CursorHold()
     " bufread will have issue on the new file(don't need to read buffer)
     " bufenter will have issue on vimdiff, sice only one window we be entered.
-    " autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
     autocmd BufEnter * :call IDE_UpdateEnv_BufOpen()
 augroup END
 

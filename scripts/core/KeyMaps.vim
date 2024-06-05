@@ -181,14 +181,17 @@ nnoremap <silent>tr :CCTreeTraceReverse<CR>
 " LSP
 nnoremap <silent>gD :lua vim.lsp.buf.declaration()<CR>
 nnoremap <silent>gd :lua vim.lsp.buf.definition()<CR>
-nnoremap <silent>ga :lua vim.lsp.buf.code_action()<CR>
 nnoremap <silent>gh :lua vim.lsp.buf.hover()<CR>
 nnoremap <silent>gi :lua vim.lsp.buf.implementation()<CR>
-nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
-nnoremap <silent>gr :lua vim.lsp.buf.references()<CR>
-nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
+nnoremap <silent>gR :lua vim.lsp.buf.references()<CR>
+nnoremap <silent>gr :lua vim.lsp.buf.incoming_calls()<CR>
+nnoremap <silent>go :lua vim.lsp.buf.outgoing_calls()<CR>
 nnoremap <silent>gN :lua vim.lsp.diagnostic.goto_prev()<CR>
 nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
+
+" nnoremap <silent>ga :lua vim.lsp.buf.code_action()<CR>
+" nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
+" nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
 
 " " srcexpl
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>

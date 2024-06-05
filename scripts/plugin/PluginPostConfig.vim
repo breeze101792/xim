@@ -42,18 +42,21 @@ endif
 " -------------------------------------------
 "  Highlighter Toggle #Plugins
 " -------------------------------------------
+command! HighlighterList echo HiList()
+
 command! HighlighterClear call HighlighterClear()
 function! HighlighterClear()
     exe "HI clear"
 endfunction
-command! HighlighterToggle call HighlighterToggle()
 
+command! HighlighterToggle call HighlighterToggle()
 function! HighlighterToggle()
-    let pattern = expand("<cword>")
     let target_pattern=""
+    let menual_mark=0
+
+    let l:pattern = expand("<cword>")
     let pattern_prefix='\V\<'
     let pattern_postfix='\>'
-    let menual_mark=0
 
     " Block need to within \V\<pattern\>
     silent! exe "HI"

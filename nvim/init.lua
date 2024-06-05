@@ -42,6 +42,7 @@ local init_plug = function()
     -- flag_lazy=false
 
     if vim.g.IDE_CFG_PLUGIN_ENABLE ~= "y" then
+        -- If it's not plugin enable, do early return.
         return
     end
     -- flag_lazy = false
@@ -71,13 +72,16 @@ local init_plug = function()
     --  After source
     vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
 end
+
 local nvimreload = function()
-    print("Neovim Reloaded.")
     init_base()
     require("nvimide").reload({})
-    --  Plugin settings
-    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
-    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
+    if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
+        --  Plugin settings
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
+    end
+    print("Neovim Reloaded.")
 end
 
 ----------------------------------------------------------------

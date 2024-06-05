@@ -1,7 +1,7 @@
 " File: idecolor.vim
-" Author: Danilo Augusto
-" Date: 2017-02-27
-" Vim color file - idecolor (monokai version)
+" Author: Shaowu Tseng
+" Date: 2024-06-04
+" Vim color file - idecolor
 "
 " Hex color conversion functions borrowed from the theme 'Desert256'
 

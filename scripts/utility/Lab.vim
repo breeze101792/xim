@@ -1,3 +1,10 @@
+function! s:spell_check_current()
+    setlocal spell
+    normal z=
+    setlocal nospell
+endfunction
+nnoremap <F4> :call <SID>spell_check_current()<CR>
+
 " -------------------------------------------
 "  Plugins load with function.
 " -------------------------------------------
