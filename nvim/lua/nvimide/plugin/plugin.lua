@@ -219,7 +219,7 @@ function M.init()
         keys = {
             { "<tab>", "<Plug>SuperTabForward", desc = "SuperTabForward", mode = {"i"} },
         },},
-        { "vim-surround" , dir = vim_plugin_path .. "vim-surround"
+        { "vim-surround" , dir = vim_plugin_path .. "vim-surround",
         keys = {
             { "cs", "<Plug>Csurround", desc = "Csurround", mode = {"n"} },
             { "cS", "<Plug>CSurround", desc = "Csurround", mode = {"n"} },
