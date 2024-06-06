@@ -62,10 +62,11 @@ fHelp()
     printf "    %s\n" "run test: .sh -a"
     echo "[Options]"
     printf "    %- 16s\t%s\n" "-s|--setup" "Setup vim. default vim."
+    printf "    %- 16s\t%s\n" "-n|--nvim" "Specify instance. nvim"
+    printf "    %- 16s\t%s\n" "-c|--config" "Generate config file"
     printf "    %- 16s\t%s\n" "-l|--lite" "Setup litevim."
     printf "    %- 16s\t%s\n" "-i|--instance" "Specify instance. vim/nvim/all"
     printf "    %- 16s\t%s\n" "-a|--all" "Specify instance. all"
-    printf "    %- 16s\t%s\n" "-n|--nvim" "Specify instance. nvim"
     printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
 }
 fInfo()
@@ -165,16 +166,33 @@ function fycm()
 function fPlugins_check()
 {
     local var_check="pass"
+    local var_plugin_file="${PATH_IDE_ROOT}/scripts/plugin/Plugin.vim"
+    # check vim
     for each_plugin in $(ls ${PATH_IDE_ROOT}/plugins)
     do
         # echo ${each_plugin}
-        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${PATH_IDE_ROOT}/scripts/plugin/Plugins.vim | grep ${each_plugin} > /dev/null
+        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${var_plugin_file} | grep "${each_plugin}"> /dev/null \
+            && ! echo "${each_plugin}" |grep nvim > /dev/null
         then
-            echo Plugin ${each_plugin} not found in Plugins.vim
+            echo Plugin ${each_plugin} not found in ${var_plugin_file}
             var_check="fail"
         fi
     done
-    echo "Check plugins: ${var_check}"
+    echo "Check vim plugins: ${var_check}"
+
+    local var_check="pass"
+    local var_plugin_file="${PATH_IDE_ROOT}/nvim/lua/nvimide/plugin/plugin.lua"
+    # check nvim
+    for each_plugin in $(ls ${PATH_IDE_ROOT}/plugins)
+    do
+        # echo ${each_plugin}
+        if [ "${each_plugin}" != "vim-plug" ] && ! cat ${var_plugin_file} | grep "${each_plugin}"> /dev/null
+        then
+            echo Plugin ${each_plugin} not found in ${var_plugin_file}
+            var_check="fail"
+        fi
+    done
+    echo "Check nvim plugins: ${var_check}"
 }
 function fCompre_colorscheme()
 {
@@ -428,6 +446,7 @@ function fMain()
     local flag_setup=false
     local flag_setup_lite=false
     local flag_setup_config=false
+    local flag_plugin_check=false
     local var_ins="vim"
 
     while [[ $# != 0 ]]
@@ -450,6 +469,9 @@ function fMain()
             -n|--nvim)
                 flag_setup=true
                 var_ins="nvim"
+                ;;
+            -p|--plugin-check)
+                flag_plugin_check=true
                 ;;
             -i|--instance)
                 flag_setup=true
@@ -510,6 +532,11 @@ function fMain()
     if [ ${flag_setup_lite} = true ]
     then
         fSetup_lite; fErrControl ${FUNCNAME[0]} ${LINENO}
+    fi
+
+    if [ ${flag_plugin_check} = true ]
+    then
+        fPlugins_check; fErrControl ${FUNCNAME[0]} ${LINENO}
     fi
 }
 

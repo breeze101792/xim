@@ -41,39 +41,39 @@ endif
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 "NOTE. if autocommand contain vimenter for init, this will not trigger it.
 if VAR_PLUGIN_DEBUG == 0
+    " Plug VAR_PLUGIN_PATH.'/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
+    " Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  ['<Plug>MarkSet', '<Plug>MarkSave', '<Plug>MarkLoad'] }
+    " Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet', '<Plug>MarkSave', '<Plug>MarkLoad'] }
     Plug VAR_PLUGIN_PATH.'/Colorizer', { 'on':  ['ColorToggle'] }
     Plug VAR_PLUGIN_PATH.'/cctree', { 'on':  ['CCTreeWindowToggle', 'CCTreeLoadDB', 'CCTreeLoadXRefDB', 'CCTreeLoadBufferUsingTag', 'CCTreeTraceForward', 'CCTreeTraceReverse'] }
     Plug VAR_PLUGIN_PATH.'/ctrlp', { 'on':  ['CtrlP'] }
     Plug VAR_PLUGIN_PATH.'/gitgutter', { 'on':  ['GitGutterEnable'] }
     Plug VAR_PLUGIN_PATH.'/nerdtree', { 'on':  'NERDTreeToggle' }
-    " Plug VAR_PLUGIN_PATH.'/srcexpl', { 'on':  ['SrcExplRefresh', 'SrcExplToggle'] }
     Plug VAR_PLUGIN_PATH.'/tabular', { 'on':  ['Tabularize'] }
     Plug VAR_PLUGIN_PATH.'/tagbar', { 'on':  ['TagbarToggle'] }
     Plug VAR_PLUGIN_PATH.'/tcomment', { 'on':  ['TComment', 'TCommentBlock'] }
     Plug VAR_PLUGIN_PATH.'/vim-bookmarks', { 'on':  ['BookmarkToggle', 'BookmarkSave', 'BookmarkLoad'] }
     Plug VAR_PLUGIN_PATH.'/vim-easygrep', { 'on':  ['Grep','<Plug>EgMapGrepCurrentWord_a', '<Plug>EgMapGrepCurrentWord_A', '<Plug>EgMapGrepCurrentWord_v', '<Plug>EgMapGrepCurrentWord_V'] }
-    " Plug VAR_PLUGIN_PATH.'/vim-ingo-library', { 'on':  ['<Plug>MarkSet', '<Plug>MarkSave', '<Plug>MarkLoad'] }
-    " Plug VAR_PLUGIN_PATH.'/vim-mark', { 'on':  ['<Plug>MarkSet', '<Plug>MarkSave', '<Plug>MarkLoad'] }
-    Plug VAR_PLUGIN_PATH.'/vim-startuptime', { 'on':  ['StartupTime'] }
     Plug VAR_PLUGIN_PATH.'/vim-fugitive', { 'on':  ['Git'] }
     Plug VAR_PLUGIN_PATH.'/vim-highlighter', { 'on':  ['HI'] }
+    Plug VAR_PLUGIN_PATH.'/vim-startuptime', { 'on':  ['StartupTime'] }
 else
+    " Plug VAR_PLUGIN_PATH.'/srcexpl'
+    " Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
+    " Plug VAR_PLUGIN_PATH.'/vim-mark'
     Plug VAR_PLUGIN_PATH.'/Colorizer'
     Plug VAR_PLUGIN_PATH.'/cctree'
     Plug VAR_PLUGIN_PATH.'/ctrlp'
     Plug VAR_PLUGIN_PATH.'/gitgutter'
     Plug VAR_PLUGIN_PATH.'/nerdtree'
-    " Plug VAR_PLUGIN_PATH.'/srcexpl'
     Plug VAR_PLUGIN_PATH.'/tabular'
     Plug VAR_PLUGIN_PATH.'/tagbar'
     Plug VAR_PLUGIN_PATH.'/tcomment'
     Plug VAR_PLUGIN_PATH.'/vim-bookmarks'
     Plug VAR_PLUGIN_PATH.'/vim-easygrep'
-    " Plug VAR_PLUGIN_PATH.'/vim-ingo-library'
-    " Plug VAR_PLUGIN_PATH.'/vim-mark'
-    Plug VAR_PLUGIN_PATH.'/vim-startuptime'
     Plug VAR_PLUGIN_PATH.'/vim-fugitive'
     Plug VAR_PLUGIN_PATH.'/vim-highlighter'
+    Plug VAR_PLUGIN_PATH.'/vim-startuptime'
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

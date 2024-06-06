@@ -34,25 +34,13 @@
 	path = plugins/gitgutter
 	url = https://github.com/airblade/vim-gitgutter.git
 	branch = main
-[submodule "plugins/srcexpl"]
-	path = plugins/srcexpl
-	url = https://github.com/breeze101792/SrcExpl.git
-	branch = master
 [submodule "plugins/vim-plug"]
 	path = plugins/vim-plug
 	url = https://github.com/junegunn/vim-plug.git
 	branch = master
-[submodule "plugins/vim-mark"]
-	path = plugins/vim-mark
-	url = https://github.com/inkarkat/vim-mark.git
-	branch = master
 [submodule "plugins/vim-surround"]
 	path = plugins/vim-surround
 	url = https://github.com/tpope/vim-surround.git
-	branch = master
-[submodule "plugins/vim-ingo-library"]
-	path = plugins/vim-ingo-library
-	url = https://github.com/inkarkat/vim-ingo-library.git
 	branch = master
 [submodule "plugins/lightline.vim"]
 	path = plugins/lightline.vim
@@ -121,3 +109,16 @@
 	path = plugins/vim-highlighter
 	url = https://github.com/azabiong/vim-highlighter.git
 	branch = main
+## Other modules
+# [submodule "plugins/srcexpl"]
+# 	path = plugins/srcexpl
+# 	url = https://github.com/breeze101792/SrcExpl.git
+# 	branch = master
+# [submodule "plugins/vim-ingo-library"]
+# 	path = plugins/vim-ingo-library
+# 	url = https://github.com/inkarkat/vim-ingo-library.git
+# 	branch = master
+# [submodule "plugins/vim-mark"]
+# 	path = plugins/vim-mark
+# 	url = https://github.com/inkarkat/vim-mark.git
+# 	branch = master

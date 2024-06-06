@@ -161,7 +161,7 @@ if g:IDE_ENV_INS == "nvim"
     nnoremap <silent>cf :exec "Cscope find f ".expand('<cword>')<CR>
     nnoremap <silent>cg :exec "Cscope find g ".expand('<cword>')<CR>
     nnoremap <silent>ci :exec "Cscope find i ".expand('<cword>')<CR>
-    nnoremap <silent>cs :exec "Cscope find s ".expand('<cword>')<CR>
+    " nnoremap <silent>cs :exec "Cscope find s ".expand('<cword>')<CR>
     nnoremap <silent>ct :exec "Cscope find t ".expand('<cword>')<CR>
 else
     nnoremap <silent>ca :cscope find a <cword><CR>
@@ -174,9 +174,6 @@ else
     nnoremap <silent>cs :cscope find s <cword><CR>
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
-" CCTree 
-nnoremap <silent>tf :CCTreeTraceForward<CR>
-nnoremap <silent>tr :CCTreeTraceReverse<CR>
 
 " LSP
 nnoremap <silent>gD :lua vim.lsp.buf.declaration()<CR>
@@ -192,6 +189,10 @@ nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
 " nnoremap <silent>ga :lua vim.lsp.buf.code_action()<CR>
 " nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
 " nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
+
+" CCTree 
+nnoremap <silent>tf :CCTreeTraceForward<CR>
+nnoremap <silent>tr :CCTreeTraceReverse<CR>
 
 " " srcexpl
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>
