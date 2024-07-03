@@ -46,6 +46,7 @@ let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PA
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_REQ_TAG_UPDATE=0
 let g:IDE_ENV_REQ_SESSION_RESTORE=""
+let g:IDE_ENV_DEF_PAGE_WIDTH=100
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -159,18 +160,26 @@ function! IDE_UpdateEnv_BufOpen(...)
         let b:IDE_ENV_BUF_UPDATED = get(b:, 'IDE_ENV_BUF_UPDATED', "0")
     endif
 
-    if b:IDE_ENV_BUF_UPDATED == 1 || file_name == "" || empty(glob(file_name))
+    if b:IDE_ENV_BUF_UPDATED == 1 || file_name == "" || empty(glob(escape(file_name, '?*[]')))
+        " Mark this is updated. so we dont check it every time.
+        let b:IDE_ENV_BUF_UPDATED = 1
         return
     endif
 
     if g:IDE_CFG_GIT_ENV == "y"
         " FIXME, git above git 2.22.0 support --show-current
-        " let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
-        let l:current_path = expand("%:p:h")
-        let b:IDE_ENV_GIT_BRANCH = system('cd '.l:current_path.'; git rev-parse --abbrev-ref HEAD 2> /dev/null | sed "s/^HEAD$//g" | tr -d "\n"')
-        let b:IDE_ENV_GIT_PROJECT_NAME = system('cd '.l:current_path.'; git remote -v 2> /dev/null |grep fetch | sed "s/\/ / /g" | rev | cut -d "/" -f 1 | rev | cut -d " " -f 1 | tr -d "\n"')
-        " FIXME file on git path will should return ./
-        let b:IDE_ENV_GIT_PROJECT_PATH = system('cd '.l:current_path.'; git rev-parse --show-prefix 2> /dev/null | cut -d " " -f 1 | tr -d "\n"')
+        try
+            " let b:IDE_ENV_GIT_BRANCH = system('git branch --show-current 2> /dev/null | tr -d "\n"')
+            let l:current_path = expand("%:p:h")
+            let b:IDE_ENV_GIT_BRANCH = system('cd "'.l:current_path.'"; git rev-parse --abbrev-ref HEAD 2> /dev/null | sed "s/^HEAD$//g" | tr -d "\n"')
+            let b:IDE_ENV_GIT_PROJECT_NAME = system('cd "'.l:current_path.'"; git remote -v 2> /dev/null |grep fetch | sed "s/\/ / /g" | rev | cut -d "/" -f 1 | rev | cut -d " " -f 1 | tr -d "\n"')
+            " FIXME file on git path will should return ./
+            let b:IDE_ENV_GIT_PROJECT_PATH = system('cd "'.l:current_path.'"; git rev-parse --show-prefix 2> /dev/null | cut -d " " -f 1 | tr -d "\n"')
+        catch
+            let b:IDE_ENV_GIT_BRANCH = ""
+            let b:IDE_ENV_GIT_PROJECT_NAME = ""
+            let b:IDE_ENV_GIT_PROJECT_PATH = ""
+        endtry
     else
         let b:IDE_ENV_GIT_BRANCH = ""
         let b:IDE_ENV_GIT_PROJECT_NAME = ""

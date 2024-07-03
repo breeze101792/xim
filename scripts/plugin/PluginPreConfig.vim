@@ -89,12 +89,27 @@ else
     let g:lightline.subseparator = {'left': '|', 'right': '|' }
 endif
 
+function! FileNameShort(name)
+    let len_limit=32
+    let half_limit=(l:len_limit - 2)/2
+
+    if len(a:name) > len_limit
+        return a:name[:l:half_limit-1].'..'.a:name[len(a:name)-l:half_limit:]
+    else
+        return a:name
+    endif
+endfunction
+
 function! LightlineTabFile(n) abort
     let buflist = tabpagebuflist(a:n)
     let winnr = tabpagewinnr(a:n)
     let full_path = expand('#'.buflist[winnr - 1].':p:h')
     let current_filename = expand('#'.buflist[winnr - 1].':t')
     let target_filename = current_filename
+
+    if g:IDE_CFG_HIGH_PERFORMANCE_HOST == "n"
+        return target_filename !=# '' ? FileNameShort(target_filename) : '[No Name]'
+    endif
 
     for each_buf in getbufinfo()
         " echom each_buf
@@ -114,7 +129,7 @@ function! LightlineTabFile(n) abort
     endfor
     " echo current_filename . ','. buf_filename  . ','.  buf_full_path. ','. full_path
 
-    return target_filename !=# '' ? target_filename : '[No Name]'
+    return target_filename !=# '' ? FileNameShort(target_filename) : '[No Name]'
 endfunction
 
 function! LightlineFileInfo()
@@ -122,7 +137,7 @@ function! LightlineFileInfo()
     let sep = ' '.g:lightline.subseparator['right'].' '
     let smart_info = 1
 
-    if winwidth(0) < 70 || smart_info == 1
+    if winwidth(0) < g:IDE_ENV_DEF_PAGE_WIDTH || smart_info == 1
         if &fileformat != 'unix'
             let msg = msg . sep . &fileformat
         endif
@@ -153,12 +168,12 @@ function! LightlineNoexpandtab()
 endfunction
 
 function! LightlineTitle()
-    return winwidth(0) < 70 ? '' : get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
+    return winwidth(0) < g:IDE_ENV_DEF_PAGE_WIDTH ? '' : get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 endfunction
 
 function! LightlineFuncName()
     let current_fun = get(b:, 'IDE_ENV_CURRENT_FUNC', "")
-    return winwidth(0) < 70 ? '' : l:current_fun
+    return winwidth(0) < g:IDE_ENV_DEF_PAGE_WIDTH ? '' : l:current_fun
 endfunction
 
 function! LightlinePosition()
@@ -173,14 +188,14 @@ function! LightlineGitInfo()
     if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
         let l:git_chars=" "
     endif
-    " FIXME, there is a bug on 70 char check, i don't count the word like
+    " FIXME, there is a bug on IDE_ENV_DEF_PAGE_WIDTH char check, i don't count the word like
     " @/@locl
-    if winwidth(0) > 70
-        if l:proj_name != '' && l:proj_branch != '' && len(l:proj_branch . l:proj_name) < 70
+    if winwidth(0) > g:IDE_ENV_DEF_PAGE_WIDTH
+        if l:proj_name != '' && l:proj_branch != '' && len(l:proj_branch . l:proj_name) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
-        elseif l:proj_name != '' && len(l:proj_name ) < 70
+        elseif l:proj_name != '' && len(l:proj_name ) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:git_chars.'@'.l:proj_name
-        elseif l:proj_branch != '' && len(l:proj_branch ) < 70
+        elseif l:proj_branch != '' && len(l:proj_branch ) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:git_chars.l:proj_branch.'@local'
         endif
     endif
@@ -188,13 +203,13 @@ function! LightlineGitInfo()
 endfunction
 
 function! LightlineFilename()
-    let proj_path = get(b:, 'IDE_ENV_GIT_PROJECT_PATH', "-1")
-    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "-1")
+    let proj_path = get(b:, 'IDE_ENV_GIT_PROJECT_PATH', "")
+    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
     let name = expand('%:t')
     let full_name = expand('%:p')
 
     " FIXME, find an event when file not exist. so we don't need to call it.
-    if proj_path == -1 || proj_name == -1
+    if len(proj_path) != 0 && len(proj_name) != 0
         call IDE_UpdateEnv_BufOpen()
     endif
 
@@ -211,10 +226,10 @@ function! LightlineFilename()
     " echo proj_path . '/' . name
     if len(name) == 0
         return "[No Name]"
-    elseif winwidth(0) > 70
-        if len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < 72
+    elseif winwidth(0) > g:IDE_ENV_DEF_PAGE_WIDTH
+        if len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:proj_path.l:name
-        elseif len(full_name) <= 72
+        elseif len(full_name) <= g:IDE_ENV_DEF_PAGE_WIDTH
             return l:full_name
         else
             return substitute(getcwd(), '^.*/', '', '').'/'.l:name

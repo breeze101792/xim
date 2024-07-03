@@ -9,8 +9,8 @@ function! TabsOrSpaces()
     "     return
     " endif
 
-    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
-    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
+    let numTabs=len(filter(getbufline(bufname("%"), 100, 250), 'v:val =~ "^\\t"'))
+    let numSpaces=len(filter(getbufline(bufname("%"), 100, 250), 'v:val =~ "^  "'))
     " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
 
     if numTabs > numSpaces

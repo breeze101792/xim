@@ -59,7 +59,7 @@ fHelp()
     printf "    %- 32s\t%s\n" "update" "Tag update commands"
     printf "    %- 32s\t%s\n" "vim|nvim|edit|*" "Editor commands, default send command here"
     printf "    %- 32s\t%s\n" "-v|--verbose" "Print in verbose mode"
-    printf "    %- 32s\t%s\n" "-H" "Print helping"
+    printf "    %- 32s\t%s\n" "-H|--Help" "Print helping"
     # echo "[Commands]"
     # fInit -h
     # fUpdate -h
@@ -612,13 +612,16 @@ function fEdit()
                 return 0
                 ;;
             *)
-                break
+                if test -f "$*"
+                then
+                    vim_args+="'$@'"
+                else
+                    vim_args+="$@"
+                fi
                 ;;
         esac
         shift 1
     done
-
-    vim_args+=$@
 
     # unset var
     # fCleanEnv
@@ -630,7 +633,7 @@ function fEdit()
         var_proj_folder="$(realpath .)"
     fi
 
-    cd ${var_proj_folder}
+    cd "${var_proj_folder}"
 
     if test -f "./proj.vim"
     then
@@ -670,7 +673,7 @@ function fEdit()
         # printf "Project %- 6s: %s\n" "Script" "${VIDE_SH_PROJ_SCRIPT}"
     fi
 
-    cd $cpath
+    cd "${cpath}"
     eval ${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}
     printf "Launching %s: ${DEF_COLOR_GREEN}%s${DEF_COLOR_NORMAL}\n" "${VIDE_SH_PROJ_DATA_PATH}" "${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}"
 
@@ -727,7 +730,7 @@ function fMain()
     fi
 
     fEnvSantiyCheck
-    fEdit $@
+    fEdit "$@"
 }
 
-fMain $@
+fMain "$@"

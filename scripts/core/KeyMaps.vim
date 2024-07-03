@@ -139,6 +139,10 @@ nmap <Leader>h :HexToggle<CR>
 " inoremap <expr> { ConditionalPairMap('{', '}')
 " inoremap <expr> [ ConditionalPairMap('[', ']')
 
+" Type match to reset highlight
+nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
+nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
+
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " IDE map

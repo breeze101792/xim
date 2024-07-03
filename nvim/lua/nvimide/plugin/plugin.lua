@@ -177,7 +177,7 @@ function M.init()
         { "ctrlp"           , dir = vim_plugin_path .. "ctrlp"           , cmd = {"CtrlP"} }              ,
         { "tabular"         , dir = vim_plugin_path .. "tabular"         , cmd = {"Tabularize"} }         ,
         { "vim-bookmarks"   , dir = vim_plugin_path .. "vim-bookmarks"   , cmd = {"BookmarkToggle"        , "BookmarkLoad"     , "BookmarkSave"} }  ,
-        { "tcomment"        , dir = vim_plugin_path .. "tcomment"        , cmd = {"TComment"              , "TCommentBlock"} } ,
+        { "tcomment"        , dir = vim_plugin_path .. "tcomment"        , cmd = {"TComment"              , "TCommentInline"   , "TCommentBlock"} } ,
         { "vim-startuptime" , dir = vim_plugin_path .. "vim-startuptime" , cmd = "StartupTime" }          ,
         { "gitgutter"       , dir = vim_plugin_path .. "gitgutter"       , cmd = {"GitGutterEnable"} }    ,
         { "bufexplorer"     , dir = vim_plugin_path .. "bufexplorer"     , cmd = { "ToggleBufExplorer" }} ,

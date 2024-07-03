@@ -380,11 +380,20 @@ function! TrimTrailingSpace() range
     silent! execute a:firstline.','.a:lastline.'s/\s\+$//g'
 endfunction
 
-command! -range TrimEmptyLine <line1>,<line2>call TrimEmptyLine()
+command! -range -nargs=? TrimEmptyLine <line1>,<line2>call TrimEmptyLine(<f-args>)
 function! TrimEmptyLine() range
+    let line_cnt=get(a:, 0, "0")
+    if line_cnt == "0"
+        silent! execute a:firstline.','.a:lastline.'s/\(\n\)\n\+/\1/e'
+    elseif line_cnt == "1"
+        silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
+    elseif line_cnt == "2"
+        silent! execute a:firstline.','.a:lastline.'s/\(\n\n\n\)\n\+/\1/e'
+    else
+        silent! execute a:firstline.','.a:lastline.'s/\(\n\)\n\+/\1/e'
+    endif
     " echo 'First Line:'.a:firstline.', Last Line:'.a:lastline
     " execute a:firstline.','.a:lastline.'s/\n\{2,\}/\n/g'
-    silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
 endfunction
 
 command! -range Beautify <line1>,<line2>call Beautify()

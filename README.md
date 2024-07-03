@@ -8,3 +8,6 @@ export VIMRUNTIME=/usr/share/vim/vim73
 
 # NVIM
 useing with nvim need to remvoe ~/.share/nvim/* for update settings
+
+# TODO
+1. Tabbar title: Set file name limit shows.

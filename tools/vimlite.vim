@@ -12,6 +12,7 @@
 
 " COPY Start
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+" Disable cscope, due to nvim
 
 """"    Basic Config vim env
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -128,8 +129,8 @@ syntax sync maxlines=50
 
 " set formatoptions
 " set tags=./tags,tags;/     " tag path, this will be setted on auto function
-set cscopetag              " set tags=tags
-set nocscopeverbose        " set cscopeverbose
+" set cscopetag              " set tags=tags
+" set nocscopeverbose        " set cscopeverbose
 
 " Folding
 set foldmethod=syntax " can be set to syntax, indent, manual
