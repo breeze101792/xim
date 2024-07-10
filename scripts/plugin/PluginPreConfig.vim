@@ -112,6 +112,9 @@ function! LightlineTabFile(n) abort
     endif
 
     for each_buf in getbufinfo()
+        if each_buf.listed == 0
+            continue
+        endif
         " echom each_buf
         let buf_filename = expand('#'. each_buf.bufnr .':t')
         let buf_full_path = expand('#'.each_buf.bufnr.':p:h')
@@ -193,10 +196,8 @@ function! LightlineGitInfo()
     if winwidth(0) > g:IDE_ENV_DEF_PAGE_WIDTH
         if l:proj_name != '' && l:proj_branch != '' && len(l:proj_branch . l:proj_name) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:proj_branch == '' ? l:git_chars.l:proj_name : l:git_chars.l:proj_branch.'@'.l:proj_name
-        elseif l:proj_name != '' && len(l:proj_name ) < g:IDE_ENV_DEF_PAGE_WIDTH
-            return l:git_chars.'@'.l:proj_name
-        elseif l:proj_branch != '' && len(l:proj_branch ) < g:IDE_ENV_DEF_PAGE_WIDTH
-            return l:git_chars.l:proj_branch.'@local'
+        elseif l:proj_branch == '' && l:proj_name != '' && len(l:proj_name ) < g:IDE_ENV_DEF_PAGE_WIDTH
+            return l:git_chars.'<local>@'.l:proj_name
         endif
     endif
     return ''
@@ -227,7 +228,9 @@ function! LightlineFilename()
     if len(name) == 0
         return "[No Name]"
     elseif winwidth(0) > g:IDE_ENV_DEF_PAGE_WIDTH
-        if len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < g:IDE_ENV_DEF_PAGE_WIDTH
+        if len(proj_name) != 0 && len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < g:IDE_ENV_DEF_PAGE_WIDTH
+            return l:proj_name.':'.l:proj_path.l:name
+        elseif len(proj_path) != 0 && len(name) != 0 && len(proj_path.name) < g:IDE_ENV_DEF_PAGE_WIDTH
             return l:proj_path.l:name
         elseif len(full_name) <= g:IDE_ENV_DEF_PAGE_WIDTH
             return l:full_name
@@ -261,19 +264,26 @@ let g:ctrlp_lazy_update = 250
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_switch_buffer = 'et'
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20,results:20'
-" let g:ctrlp_root_markers = ['vimproj', '.repo', '.git', 'Makefile', 'Android.mk', 'Android.bp', 'cscope.db']
-let g:ctrlp_root_markers = ['vimproj', '.repo']
+
+let g:ctrlp_root_markers = ['.repo', 'vimproj', 'setup.sh']
 let g:ctrlp_extensions = ['tag']
-" ignore file on .gitignore
-" while using user command, ignore will not work
-" let g:ctrlp_user_command = ['.git', "cd %s && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
 " cd to root of git path.
-let g:ctrlp_user_command = ['.git', "cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | egrep -v '.*(exe|so|dll|a|o|d|bin)$'"]
+" NOTE. use fallback command will ctrlp_custom_ignore
+" FIXME, on repo, xargs realpath will slow down commands
+let g:ctrlp_user_command = {
+            \    'types': {
+            \        1: ['vimproj' , "test -f vimproj/proj.files && cat vimproj/proj.files || find %s -type f"] ,
+            \        2: ['.repo' , "repo forall -j 4 -c 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | xargs realpath '"] ,
+            \        3: ['.git'  , 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard '] ,
+            \    },
+            \    'fallback': 'find %s -type f',
+            \    'ignore': 1
+            \  }
 
 " unlet g:ctrlp_custom_ignore
 let g:ctrlp_custom_ignore = {
             \ 'dir'  : '\v[\/]\.(git|hg|svn)$\|*build*',
-            \ 'file' : '\v\.(exe|so|dll|a|o|d|bin)$',
+            \ 'file' : '\v\.(exe|so|ko|dll|a|o|d|bin|pyc)$',
             \ 'link' : 'some_bad_symbolic_links',
             \ }
 

@@ -179,7 +179,7 @@ function M.init()
         { "vim-bookmarks"   , dir = vim_plugin_path .. "vim-bookmarks"   , cmd = {"BookmarkToggle"        , "BookmarkLoad"     , "BookmarkSave"} }  ,
         { "tcomment"        , dir = vim_plugin_path .. "tcomment"        , cmd = {"TComment"              , "TCommentInline"   , "TCommentBlock"} } ,
         { "vim-startuptime" , dir = vim_plugin_path .. "vim-startuptime" , cmd = "StartupTime" }          ,
-        { "gitgutter"       , dir = vim_plugin_path .. "gitgutter"       , cmd = {"GitGutterEnable"} }    ,
+        -- { "gitgutter"       , dir = vim_plugin_path .. "gitgutter"       , cmd = {"GitGutterEnable"} }    ,
         { "bufexplorer"     , dir = vim_plugin_path .. "bufexplorer"     , cmd = { "ToggleBufExplorer" }} ,
         { "vim-fugitive"    , dir = vim_plugin_path .. "vim-fugitive"    , cmd = {"Git"}}                 ,
         { "vim-highlighter" , dir = vim_plugin_path .. "vim-highlighter" , cmd = {"HI"}}                  ,
@@ -227,7 +227,7 @@ function M.init()
         },},
 
         -- VeryLazy load, there is no way to load this plugins, so load it on VeryLazy
-        { "gitgutter"    , dir = vim_plugin_path .. "gitgutter"    , lazy = true , event = "VeryLazy"  ,
+        { "gitgutter"    , dir = vim_plugin_path .. "gitgutter"    , lazy = true , event = "VeryLazy",
         config = function()
             vim.api.nvim_exec("GitGutterEnable", false)
         end},

@@ -147,7 +147,8 @@ function! s:CMIf(content)
         let l:tmpl="MACRO_DEF"
     endif
     let l:text = [
-                \ "#if defined(<TMPL>) && (<TMPL> == value)",
+                \ "#define <TMPL> (1)",
+                \ "#if defined(<TMPL>) && (<TMPL> == 1)",
                 \ "#else // <TMPL>  Else",
                 \ "#endif // <TMPL> End",
                 \ ""

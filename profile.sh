@@ -48,8 +48,8 @@ fHelp()
     echo "[Example]"
     printf "    %s\n" "run test: .sh -a"
     echo "[Options]"
-    printf "    %- 16s\t%s\n" "--profiling" "Profile vim starup"
-    printf "    %- 16s\t%s\n" "--startuptime" "Record startup time by vim's --startuptime"
+    printf "    %- 16s\t%s\n" "--profiling|pf" "Profile vim starup"
+    printf "    %- 16s\t%s\n" "--startuptime|st" "Record startup time by vim's --startuptime"
     printf "    %- 16s\t%s\n" "-v|--verbose" "Print in verbose mode"
     printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
 }
