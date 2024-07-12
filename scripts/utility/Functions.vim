@@ -429,7 +429,7 @@ function! CommentCode() range
         " echo &filetype
         if &filetype ==# 'c' || &filetype ==# 'cpp'
             echom "FileType: C/Cpp"
-            silent! execute a:firstline.','.a:lastline.' TCommentInline'
+            silent! execute a:firstline.','.a:lastline.' TComment'
             " let l:pattern_cnt=execute(a:firstline.','.a:lastline.'CountPattern *')
             " echom 'Pattern'.l:pattern_cnt
             " if a:lastline - a:firstline + 1 == l:pattern_cnt

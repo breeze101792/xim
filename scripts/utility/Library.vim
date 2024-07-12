@@ -9,11 +9,22 @@ function! TabsOrSpaces()
     "     return
     " endif
 
-    let numTabs=len(filter(getbufline(bufname("%"), 100, 250), 'v:val =~ "^\\t"'))
-    let numSpaces=len(filter(getbufline(bufname("%"), 100, 250), 'v:val =~ "^  "'))
-    " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
+    let check_line_num=250
+    let file_lines=line('$')
+    let start_line=0
+    if file_lines < check_line_num
+        let start_line=0
+    else
+        let start_line=file_lines - check_line_num
+    endif
 
-    if numTabs > numSpaces
+    " TODO, count only on code area. currently use offset to avoid counting on
+    " header descriptions.
+    let tab_num=len(filter(getbufline(bufname("%"), start_line, "$"), 'v:val =~ "^\\t"'))
+    let space_num=len(filter(getbufline(bufname("%"), start_line, "$"), 'v:val =~ "^  "'))
+    " echo 'File num: '.file_lines.', Tabs:'.tab_num.', Spaces: '.space_num
+
+    if tab_num > space_num
         setlocal noexpandtab
     else
         setlocal expandtab
