@@ -53,7 +53,7 @@ fHelp()
 {
     echo "${VAR_SCRIPT_NAME}"
     echo "[Example]"
-    printf "    %s\n" "run test: .sh -a"
+    printf "    %s\n" "run test: xim.sh -a"
     echo "[Options]"
     printf "    %- 32s\t%s\n" "init" "Tag init commands"
     printf "    %- 32s\t%s\n" "update" "Tag update commands"
@@ -343,6 +343,10 @@ function fInit()
                 file_exclude+=("-o -iname \"${2}\"")
                 shift 1
                 ;;
+            -l|--linux)
+                src_path+=("/lib/modules/$(uname -r)/source")
+                shift 1
+                ;;
             -xp|--exclude-path)
                 path_exclude+=("-not -path \"*/${2}/*\"")
                 shift 1
@@ -373,24 +377,24 @@ function fInit()
                 printf "    %- 32s %s\n" "-e|--extension" "add file extension on search"
                 printf "    %- 32s %s\n" "-x|--exclude" "exclude file on search"
                 printf "    %- 32s %s\n" "-xp|--exclude-path" "exclude file path on search"
+                printf "    %- 32s %s\n" "-l|--linux" "include linux header"
                 printf "    %- 32s %s\n" "-c|--clean" "Clean related files"
                 printf "    %- 32s %s\n" "-H|--header" "Add header vim code"
                 printf "    %- 32s %s\n" "-h|--help" "Print help function "
                 return 0
                 ;;
             *)
+                src_path+=($@)
                 break
                 ;;
         esac
         shift 1
     done
     # prechecking
-    if [ "$#" = "0" ]
+    if test -z ${src_path}
     then
         echo "Please enter folder name"
         return -1
-    else
-        src_path=($@)
     fi
 
     # path checking
@@ -399,6 +403,7 @@ function fInit()
         fFileRoot ".repo" || fFileRoot ".git"
         mkdir -p ${var_proj_folder}
     fi
+
     var_proj_path="$(realpath .)"
     var_proj_folder="${var_proj_path}/${var_proj_folder}"
     var_list_file="${var_proj_folder}/${var_list_file}"

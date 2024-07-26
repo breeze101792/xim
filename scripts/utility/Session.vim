@@ -368,12 +368,31 @@ endfunc
 " -------------------------------------------
 command! BufReload call BufReload()
 function! BufReload()
+    " Reload each buffer
     for each_buf in getbufinfo()
         " echom each_buf.name . '-' . each_buf.lnum
         if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
             :edit!
         endif
     endfor
+
+    " Update each tab
+    let tabcount = tabpagenr("$")
+    let current_tab_idx = tabpagenr()
+
+    let tabidx = 1
+    while tabidx <= tabcount
+        let tmp_buf_idx = tabpagebuflist(tabidx)[0]
+        let currtabname = expand('#' . tmp_buf_idx . ':p')
+
+        if !empty(glob(currtabname)) && buflisted(currtabname) == 1
+            " FIXME, do it on acturally tab.
+            silent! exec 'tabn '.tabidx
+            silent! exec 'edit! '
+        endif
+        let tabidx = tabidx + 1
+    endwhile
+    exec 'tabn '.current_tab_idx
 
 endfunc
 
