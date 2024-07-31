@@ -3,31 +3,32 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Source needed scripts
 if !empty(glob("~/.vim/ConfigCustomize.vim"))
-    so ~/.vim/ConfigCustomize.vim
+    source ~/.vim/ConfigCustomize.vim
 else
     " TODO remove it
     if !empty(glob("~/.vim/Config_Customize.vim"))
-        so ~/.vim/Config_Customize.vim
+        source ~/.vim/Config_Customize.vim
     endif
 endif
+let s:config_path='~/.vim/scripts' 
 
-so ~/.vim/vim-ide/core/Config.vim
-so ~/.vim/vim-ide/core/Environment.vim
-so ~/.vim/vim-ide/core/Settings.vim
-so ~/.vim/vim-ide/core/Autocmd.vim
-so ~/.vim/vim-ide/core/KeyMaps.vim
+execute 'source '.s:config_path.'/core/Config.vim' 
+execute 'source '.s:config_path.'/core/Environment.vim' 
+execute 'source '.s:config_path.'/core/Settings.vim' 
+execute 'source '.s:config_path.'/core/Autocmd.vim' 
+execute 'source '.s:config_path.'/core/KeyMaps.vim' 
 
 " Adaptation layer
-so ~/.vim/vim-ide/adaptation/Adaptation.vim
+execute 'source '.s:config_path.'/adaptation/Adaptation.vim' 
 
 " utility function related
-so ~/.vim/vim-ide/utility/Utility.vim
+execute 'source '.s:config_path.'/utility/Utility.vim' 
 
 if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     " plugins related
-    so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
-    so ~/.vim/vim-ide/plugin/Plugin.vim
-    so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
+    execute 'source '.s:config_path.'/plugin/PluginPreConfig.vim' 
+    execute 'source '.s:config_path.'/plugin/Plugin.vim' 
+    execute 'source '.s:config_path.'/plugin/PluginPostConfig.vim' 
 " elseif version < 704
 " skip
 endif
@@ -39,22 +40,24 @@ command! Reload call Reload()
 command! Refresh call Reload()
 
 func! Reload()
-    so ~/.vim/vim-ide/core/Config.vim
-    so ~/.vim/vim-ide/core/Environment.vim
-    so ~/.vim/vim-ide/core/Settings.vim
-    so ~/.vim/vim-ide/core/Autocmd.vim
-    so ~/.vim/vim-ide/core/KeyMaps.vim
+    let l:config_path='~/.vim/scripts' 
+
+    execute 'source '.l:config_path.'/core/Config.vim' 
+    execute 'source '.l:config_path.'/core/Environment.vim' 
+    execute 'source '.l:config_path.'/core/Settings.vim' 
+    execute 'source '.l:config_path.'/core/Autocmd.vim' 
+    execute 'source '.l:config_path.'/core/KeyMaps.vim' 
 
     " Adaptation layer
-    so ~/.vim/vim-ide/adaptation/Adaptation.vim
+    execute 'source '.l:config_path.'/adaptation/Adaptation.vim' 
 
     " utility function related
-    so ~/.vim/vim-ide/utility/Utility.vim
+    execute 'source '.l:config_path.'/utility/Utility.vim' 
 
     if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
         " plugins related
-        so ~/.vim/vim-ide/plugin/PluginPreConfig.vim
-        so ~/.vim/vim-ide/plugin/PluginPostConfig.vim
+        execute 'source '.l:config_path.'/plugin/PluginPreConfig.vim' 
+        execute 'source '.l:config_path.'/plugin/PluginPostConfig.vim' 
     endif
 
     redraw
