@@ -3,7 +3,29 @@
 " Shell Function
 " ===========================================
 " -------------------------------------------
-"  Shell Function
+"  Shell Title
+" -------------------------------------------
+command! -nargs=? SHTitle :call <SID>SHTitle(<q-args>)
+function! s:SHTitle(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="Title"
+    endif
+    let l:text = [
+                \ "################################################################################",
+                \ "##",
+                \ "##    <TMPL>",
+                \ "##",
+                \ "################################################################################",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+" -------------------------------------------
+"  Shell IF
 " -------------------------------------------
 command! -nargs=? SHIf :call <SID>SHIf(<q-args>)
 function! s:SHIf(variable)
