@@ -7,6 +7,7 @@ export DEF_COLOR_YELLOW='\033[0;33m'
 export DEF_COLOR_GREEN='\033[0;32m'
 export DEF_COLOR_NORMAL='\033[0m'
 
+export DEF_PROJ_FOLDER='.vimproject'
 ###########################################################
 ## Vars
 ###########################################################
@@ -57,9 +58,9 @@ fHelp()
     echo "[Options]"
     printf "    %- 32s\t%s\n" "init" "Tag init commands"
     printf "    %- 32s\t%s\n" "update" "Tag update commands"
-    printf "    %- 32s\t%s\n" "vim|nvim|edit|*" "Editor commands, default send command here"
-    printf "    %- 32s\t%s\n" "-v|--verbose" "Print in verbose mode"
-    printf "    %- 32s\t%s\n" "-H|--Help" "Print helping"
+    printf "    %- 32s\t%s\n" "vim|nvim|edit|*" "Editor commands, default action"
+    # printf "    %- 32s\t%s\n" "-v|--verbose" "Print in verbose mode"
+    printf "    %- 32s\t%s\n" "help" "Print helping"
     # echo "[Commands]"
     # fInit -h
     # fUpdate -h
@@ -168,6 +169,7 @@ function fexample()
 }
 function fEnvSantiyCheck()
 {
+    local var_current_path=$(pwd)
     # if env |grep VIDE
     # then
     #     echo "Containation ENV found."
@@ -177,12 +179,20 @@ function fEnvSantiyCheck()
     then
         export VAR_VIM_INSTANCE="vim"
     fi
+    
+    # FIXME, remove me, it's just a patch
+    local legacy_proj_name="vimproj"
+    if fFileRoot ${legacy_proj_name}
+    then
+        DEF_PROJ_FOLDER=${legacy_proj_name}
+    fi
+    cd ${var_current_path}
 }
 
 function fUpdate()
 {
     local cpath=${PWD}
-    local var_proj_folder="vimproj"
+    local var_proj_folder="${DEF_PROJ_FOLDER}"
     local var_list_file="proj.files"
 
     local var_tags_file="tags"
@@ -287,7 +297,7 @@ function fInit()
 {
     local var_cpath=$(pwd)
     local var_proj_path="."
-    local var_proj_folder="vimproj"
+    local var_proj_folder="${DEF_PROJ_FOLDER}"
     local var_list_file="proj.files"
     local var_list_header_file="proj_header.files"
 
@@ -491,7 +501,7 @@ function fEdit()
     local flag_time=n
     local var_timestamp="$(date +%Y%m%d_%H%M%S)"
 
-    local var_proj_folder="vimproj"
+    local var_proj_folder="${DEF_PROJ_FOLDER}"
     local var_list_file="proj.files"
 
     local var_tags_file="tags"
@@ -600,7 +610,7 @@ function fEdit()
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "-m|--map"  "Load cctree in vim"
                 printf "    %- 32s %s\n" "-s|--session"  "Restore session"
-                printf "    %- 32s %s\n" "-d|-distro"  "select vim runtint, default use ${VAR_VIM_INSTANCE}."
+                printf "    %- 32s %s\n" "-i|-intance"  "select vim runtint, default use ${VAR_VIM_INSTANCE}."
                 printf "    %- 32s %s\n" "-p|--pure-mode"  "Load withouth ide file"
                 printf "    %- 32s %s\n" "--buffer-file|buffer|buf"  "Open file with hs var(${HS_VAR_LOGFILE})"
                 printf "    %- 32s %s\n" "-t|--time"  "Enable startup debug mode"
@@ -608,7 +618,6 @@ function fEdit()
                 printf "    %- 32s %s\n" "-e|--extra-command"  "pass extra command to vim"
                 printf "    %- 32s %s\n" "-v|--verbose"  "Record runtime log.(./vim_msg.log)"
                 printf "    %- 32s %s\n" "-h|--help"  "Print help function "
-                printf "    %- 32s %s\n" "-H|--Help"  "Print parent help function "
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "p|plugin"  "Plugin disable/enable, plugin y/n"
                 printf "    %- 32s %s\n" "sc|schars"  "Special chars disable/enable, schars y/n"
@@ -693,6 +702,14 @@ function fMain()
 {
     # fPrintHeader "Launch ${VAR_SCRIPT_NAME}"
     local flag_verbose=false
+    local flag_init=false
+    local flag_update=false
+    local flag_edit=false
+
+    if [[ $# == 0 ]]
+    then
+        flag_edit=true
+    fi
 
     while [[ $# != 0 ]]
     do
@@ -700,27 +717,29 @@ function fMain()
 
             init)
                 shift 1
-                fInit $@
-                return 0
+                flag_init=true
+                break
                 ;;
             update)
                 shift 1
-                fUpdate $@
-                return 0
+                flag_update=true
                 ;;
             vim|nvim|edit)
                 shift 1
+                flag_edit=true
+                break
                 ;;
             # Options
             -v|--verbose)
                 flag_verbose=true
                 ;;
             # -h|--help)
-            -H|--Help)
+            help)
                 fHelp
                 exit 0
                 ;;
             *)
+                flag_edit=true
                 break
                 ;;
         esac
@@ -735,7 +754,18 @@ function fMain()
     fi
 
     fEnvSantiyCheck
-    fEdit "$@"
+
+    if [ ${flag_init} = true ]
+    then
+        fInit "$@"; fErrControl ${FUNCNAME[0]} ${LINENO}
+    elif [ ${flag_update} = true ]
+    then
+        fUpdate "$@"; fErrControl ${FUNCNAME[0]} ${LINENO}
+    else
+    # elif [ ${flag_edit} = true ]
+    # then
+        fEdit "$@"; fErrControl ${FUNCNAME[0]} ${LINENO}
+    fi
 }
 
 fMain "$@"

@@ -11,7 +11,7 @@ set shortmess=I                  " Disable screen welcome message, Read :help sh
 set encoding=utf-8
 set termencoding=utf-8
 set formatoptions+=mM
-set fencs=utf-8
+set fileencodings=utf-8
 set autochdir
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
@@ -33,17 +33,12 @@ set ttimeoutlen=200
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
-set magic                          " Enable extended regexes.
-set regexpengine=1                 " use old reg eng, this may disable some reg syntax
-
+" set magic                          " Enable extended regexes.
+" set regexpengine=1                 " use old reg eng, this may disable some reg syntax
 
 ""    Others
 set report=0                     " Show all changes.
 " :e ++ff=unix " Show ^M windows
-
-""    Old/Compatiable options
-" set re=1 " this force vim use old rex engine
-
 
 """"    Editor Settings (inside buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -109,6 +104,9 @@ endif
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
+
+"" Smart edit
+set nofixendofline " enable this will cause vim add new line at the end of line
 
 """"    IDE Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

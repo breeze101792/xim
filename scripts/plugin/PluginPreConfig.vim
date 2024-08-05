@@ -265,16 +265,17 @@ let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_switch_buffer = 'et'
 let g:ctrlp_match_window = 'bottom,order:btt,min:1,max:20,results:20'
 
-let g:ctrlp_root_markers = ['.repo', 'vimproj', 'setup.sh']
+let g:ctrlp_root_markers = ['.repo', '.vimproject', 'vimproj', 'setup.sh']
 let g:ctrlp_extensions = ['tag']
 " cd to root of git path.
 " NOTE. use fallback command will ctrlp_custom_ignore
 " FIXME, on repo, xargs realpath will slow down commands
 let g:ctrlp_user_command = {
             \    'types': {
-            \        1: ['vimproj' , "test -f vimproj/proj.files && cat vimproj/proj.files || find %s -type f"] ,
-            \        2: ['.repo' , "repo forall -j 4 -c 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | xargs realpath '"] ,
-            \        3: ['.git'  , 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard '] ,
+            \        1: ['.vimproject' , "test -f .vimproject/proj.files && cat .vimproject/proj.files || find %s -type f"] ,
+            \        2: ['vimproj' , "test -f vimproj/proj.files && cat vimproj/proj.files || find %s -type f"] ,
+            \        3: ['.repo' , "repo forall -j 4 -c 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | xargs realpath '"] ,
+            \        4: ['.git'  , 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard '] ,
             \    },
             \    'fallback': 'find %s -type f',
             \    'ignore': 1
