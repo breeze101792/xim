@@ -46,7 +46,12 @@ let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PA
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_REQ_TAG_UPDATE=0
 let g:IDE_ENV_REQ_SESSION_RESTORE=""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Golobal defines                           """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_ENV_DEF_PAGE_WIDTH=100
+let g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD=100 * 1000 * 1000
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

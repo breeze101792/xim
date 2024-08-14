@@ -85,8 +85,9 @@ augroup file_open_gp
     autocmd!
 
     " disable file operation if it's bigger then what we expected.
-    " autocmd BufReadPre * if getfsize(@%) > 1000000000 | echom "Big file size detected(".getfsize(@%)."). diable fsop."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
-    autocmd FileType * if getfsize(@%) > 1000000000 | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
+    " Check if 500MB
+    " autocmd FileType * if getfsize(expand('%')) > 500000000 | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
+    autocmd FileType * if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
 
     " memorize last open line
     autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif

@@ -628,7 +628,24 @@ function fEdit()
             *)
                 if test -f "$*"
                 then
-                    vim_args+="'$@'"
+                    local tmp_file_name="$@"
+                    local tmp_file_size=$(du ${tmp_file_name}| sed 's/\t/ /g' |cut -d ' ' -f 1)
+                    # 500 MB
+                    local tmp_threshold_size="500000"
+
+                    if [[ "${tmp_file_size}" -gt "${tmp_threshold_size}" ]]
+                    then
+                        printf "%s(%dK) is bigger then %dK. Do you want to proceed?(y/N)" ${tmp_file_name} ${tmp_file_size} ${tmp_threshold_size}
+                        read ans
+                        if [ "${ans}" = "y" ] || [ "${ans}" = "Y" ]
+                        then
+                            vim_args+="'$@'"
+                        else
+                            return 0
+                        fi
+                    else
+                        vim_args+="'$@'"
+                    fi
                 else
                     vim_args+="$@"
                 fi
