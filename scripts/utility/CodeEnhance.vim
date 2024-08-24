@@ -71,7 +71,7 @@ function! s:SHIfCalc(variable)
         let l:tmpl="var_tmp"
     endif
     let l:text = [
-                \ "if [[ "${<TMPL>}" -gt "1" ]]",
+                \ "if [[ \"${<TMPL>}\" -gt \"1\" ]]",
                 \ "then",
                 \ "    echo \"Enter <TMPL>: ${<TMPL>}\"",
                 \ "fi",
