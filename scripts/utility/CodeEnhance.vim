@@ -27,8 +27,8 @@ endfunction
 " -------------------------------------------
 "  Shell IF
 " -------------------------------------------
-command! -nargs=? SHIf :call <SID>SHIf(<q-args>)
-function! s:SHIf(variable)
+command! -nargs=? SHIfValue :call <SID>SHIfValue(<q-args>)
+function! s:SHIfValue(variable)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:variable
     if l:tmpl == ""
@@ -38,6 +38,90 @@ function! s:SHIf(variable)
                 \ "if [ \"${<TMPL>}\" = \"value\" ]",
                 \ "then",
                 \ "    echo \"<TMPL>: ${<TMPL>}\"",
+                \ "fi",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+command! -nargs=? SHIfFlag :call <SID>SHIfFlag(<q-args>)
+function! s:SHIfFlag(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="var_tmp"
+    endif
+    let l:text = [
+                \ "if [ ${<TMPL>} = true ]",
+                \ "then",
+                \ "    echo \"Enter <TMPL>: ${<TMPL>}\"",
+                \ "fi",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+command! -nargs=? SHIfCalc :call <SID>SHIfCalc(<q-args>)
+function! s:SHIfCalc(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="var_tmp"
+    endif
+    let l:text = [
+                \ "if [[ "${<TMPL>}" -gt "1" ]]",
+                \ "then",
+                \ "    echo \"Enter <TMPL>: ${<TMPL>}\"",
+                \ "fi",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+command! -nargs=? SHIfArray :call <SID>SHIfArray(<q-args>)
+function! s:SHIfArray(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="var_tmp_array"
+    endif
+    let l:text = [
+                \ "if [[ \"${#<TMPL>}\" -eq \"1\" ]]",
+                \ "then",
+                \ "    echo \"Num: 1 <TMPL>\"",
+                \ "    var_tmp1=\"${<TMPL>[1]}\"",
+                \ "elif [[ \"${#<TMPL>}\" -gt \"1\" ]]",
+                \ "then",
+                \ "    echo \"Num: 2 <TMPL>\"",
+                \ "    var_tmp1=\"${<TMPL>[1]}\"",
+                \ "    var_tmp2=\"${<TMPL>[2]}\"",
+                \ "fi",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+
+command! -nargs=? SHIfAargs :call <SID>SHIfAargs(<q-args>)
+function! s:SHIfAargs(variable)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:variable
+    if l:tmpl == ""
+        let l:tmpl="var_tmp_array"
+    endif
+    let l:text = [
+                \ "if [[ \"${#}\" -eq \"1\" ]]",
+                \ "then",
+                \ "    echo \"Num: 1 \"",
+                \ "    var_arg1=\"${1}\"",
+                \ "elif [[ \"${#}\" -gt \"1\" ]]",
+                \ "then",
+                \ "    echo \"Num: 2 \"",
+                \ "    var_arg1=\"${1}\"",
+                \ "    var_arg2=\"${2}\"",
                 \ "fi",
                 \ ""
                 \ ]
@@ -83,6 +167,35 @@ function! s:SHSwitch()
     let l:tmpl=''
 
     let l:text = [
+        \ 'case $1 in',
+        \ '    -a|--append)',
+        \ '        cmd_args+=("${2}")',
+        \ '        shift 1',
+        \ '        ;;',
+        \ '    -v|--verbose)',
+        \ '        flag_verbose="y"',
+        \ '        shift 1',
+        \ '        ;;',
+        \ '    -h|--help)',
+        \ '        cli_helper -c "template" -cd "template function"',
+        \ '        cli_helper -t "SYNOPSIS"',
+        \ '        ;;',
+        \ '    *)',
+        \ '        echo "Wrong args, $@"',
+        \ '        return -1',
+        \ '        ;;',
+        \ 'esac',
+    \ ]
+
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
+command! SHArgs :call <SID>SHArgs()
+function! s:SHArgs()
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=''
+
+    let l:text = [
         \ 'while [[ "$#" != 0 ]]',
         \ 'do',
         \ '    case $1 in',
@@ -122,8 +235,8 @@ endfunction
 " -------------------------------------------
 "  C Function
 " -------------------------------------------
-command! -nargs=? CFun :call <SID>CFun(<q-args>)
-function! s:CFun(fun_name)
+command! -nargs=? CFunCheck :call <SID>CFunCheck(<q-args>)
+function! s:CFunCheck(fun_name)
     let l:indent = repeat(' ', indent('.'))
     let l:tmpl=a:fun_name
     if l:tmpl == ""
