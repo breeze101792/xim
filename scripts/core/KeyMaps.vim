@@ -203,6 +203,7 @@ nnoremap <silent>tr :CCTreeTraceReverse<CR>
 
 " Commentary settings
 noremap <C-_> :CommentCode<CR>
+noremap cm :CommentCode<CR>
 " noremap! <Leader>/ :CommentCodeBlock<CR>
 " noremap <C-?> :CommentCode<CR>
 
