@@ -5,12 +5,29 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 "" Note. Update golbale variable only on functions, to avoid overide on
 "" restore variable
-if has("nvim")
-    let g:IDE_ENV_INS = get(g:, 'IDE_ENV_INS', "nvim")
-else
-    let g:IDE_ENV_INS = get(g:, 'IDE_ENV_INS', "vim")
+" for Adaption use
+if !exists("g:IDE_ENV_INS")
+    if has("nvim")
+        let g:IDE_ENV_INS = "nvim"
+    else
+        let g:IDE_ENV_INS = "vim"
+    endif
 endif
 
+if !exists("g:IDE_ENV_OS")
+    if has("macunix")
+        let g:IDE_ENV_OS = "Darwin"
+    elseif has("unix")
+        let g:IDE_ENV_OS = "Linux"
+    elseif has("win64") || has("win32") || has("win16")
+        let g:IDE_ENV_OS = "Windows"
+    else
+        " fallbackk to linux.
+        let g:IDE_ENV_OS = "Linux"
+    endif
+endif
+
+" Env settings
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")

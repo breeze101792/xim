@@ -631,6 +631,7 @@ function! IdeInfo()
     let sep="\n"
     let msg="IDE Information"
     let msg=msg . sep . printf("%s"               , "[Envs/Configs/Defs]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_OS'                      , g:IDE_ENV_OS)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_IDE_TITLE'               , g:IDE_ENV_IDE_TITLE)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_ROOT_PATH'               , g:IDE_ENV_ROOT_PATH)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_CONFIG_PATH'             , g:IDE_ENV_CONFIG_PATH)
