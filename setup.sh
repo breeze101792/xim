@@ -68,6 +68,9 @@ fHelp()
     printf "    %- 16s\t%s\n" "-i|--instance" "Specify instance. vim/nvim/all"
     printf "    %- 16s\t%s\n" "-a|--all" "Specify instance. all"
     printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
+    echo "[Pkgs]"
+    printf "    %s\n" "Please install ctags/cscope"
+    printf "    %s\n" "For darwin, dont' use build in ctags, it will crash."
 }
 fInfo()
 {

@@ -1,4 +1,4 @@
-" Adaptation Source
+" Adaptation Instance
 " ===========================================
 if g:IDE_ENV_INS == "nvim"
     " so ~/.vim/vim-ide/adaptation/Nvim.vim
@@ -8,8 +8,17 @@ else
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/adaptation/AdpVim.vim "
 endif
 
-" Adaptation Function
+" Adaptation OS
 " ===========================================
+if g:IDE_ENV_OS == "Darwin"
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/adaptation/AdpDarwin.vim "
+" else
+"     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/adaptation/AdpVim.vim "
+endif
+
+" Function Adaptation
+" ===========================================
+" Jobs Adaptation
 function! AdpJobStart(commands, callback)
     let l:job = 0
     try
@@ -23,4 +32,3 @@ function! AdpJobStart(commands, callback)
     endtry
     return l:job
 endfunc
-
