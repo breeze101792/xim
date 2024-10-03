@@ -236,12 +236,12 @@ function M.init()
         -- LLM config
         {"gen.nvim", dir = vim_plugin_path .. "gen.nvim", lazy = true, cmd = "Gen",
         opts = {
-            model = "mistral", -- The default model to use.
+            model = vim.g.IDE_CFG_LLM_MODEL, -- The default model to use.
             quit_map = "q", -- set keymap for close the response window
             retry_map = "<c-r>", -- set keymap to re-send the current prompt
             accept_map = "<c-cr>", -- set keymap to replace the previous selection with the last result
             host = vim.g.IDE_CFG_LLM_SERVER, -- The host running the Ollama service.
-            port = "11434", -- The port on which the Ollama service is listening.
+            port = vim.g.IDE_CFG_LLM_SERVER_PORT, -- The port on which the Ollama service is listening.
             display_mode = "horizontal-split", -- The display mode. Can be "float" or "split" or "horizontal-split".
             show_prompt = true, -- Shows the prompt submitted to Ollama.
             show_model = true, -- Displays which model you are using at the beginning of your chat session.
@@ -260,7 +260,6 @@ function M.init()
             -- list_models = '<omitted lua function>', -- Retrieves a list of model names
             debug = false -- Prints errors and the command which is run.
         }},
-
 
         -- Others
         -- { "srcexpl"         , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
