@@ -22,6 +22,8 @@ let g:IDE_CFG_COLORSCHEME_NAME               = get(g:, 'IDE_CFG_COLORSCHEME_NAME
 let g:IDE_CFG_BACKGROUND_WORKER              = get(g:, 'IDE_CFG_BACKGROUND_WORKER', "n")
 let g:IDE_CFG_AUTO_TAG_UPDATE                = get(g:, 'IDE_CFG_AUTO_TAG_UPDATE', "n")
 
+"" LLM
+let g:IDE_CFG_LLM_SERVER                     = get(g:, 'IDE_CFG_LLM_SERVER', "localhost")
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Shell vim env                             """"

@@ -122,3 +122,6 @@
 # 	path = plugins/vim-mark
 # 	url = https://github.com/inkarkat/vim-mark.git
 # 	branch = master
+[submodule "plugins/gen.nvim"]
+	path = plugins/gen.nvim
+	url = https://github.com/David-Kunz/gen.nvim.git

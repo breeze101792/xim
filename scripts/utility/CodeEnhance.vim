@@ -113,18 +113,14 @@ function! s:SHIfAargs(variable)
         let l:tmpl="var_tmp_array"
     endif
     let l:text = [
-                \ "if [[ \"${#}\" -eq \"1\" ]]",
+                \ "if [[ \"${#}\" -gt \"2\" ]] && ! [[ $2 =~ \-.* ]]",
                 \ "then",
                 \ "    echo \"Num: 1 \"",
-                \ "    var_arg1=\"${1}\"",
-                \ "elif [[ \"${#}\" -gt \"1\" ]]",
-                \ "then",
-                \ "    echo \"Num: 2 \"",
-                \ "    var_arg1=\"${1}\"",
-                \ "    var_arg2=\"${2}\"",
+                \ "    var_arg1=\"${2}\"",
                 \ "fi",
                 \ ""
                 \ ]
+
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
     call append('.', l:text)
 endfunction

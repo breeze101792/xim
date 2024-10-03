@@ -354,8 +354,12 @@ function fInit()
                 shift 1
                 ;;
             -l|--linux)
-                src_path+=("/lib/modules/$(uname -r)/source")
-                shift 1
+                if test -d "/lib/modules/$(uname -r)/source"
+                then
+                    src_path+=("/lib/modules/$(uname -r)/source")
+                else
+                    src_path+=("/lib/modules/$(uname -r)/kernel")
+                fi
                 ;;
             -xp|--exclude-path)
                 path_exclude+=("-not -path \"*/${2}/*\"")

@@ -66,6 +66,7 @@ let g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD=100 * 1000 * 1000
 " let b:IDE_ENV_GIT_BRANCH       = ""
 " let b:IDE_ENV_GIT_PROJECT_NAME = ""
 " let b:IDE_ENV_GIT_PROJECT_PATH = ""
+" let b:IDE_ENV_PASTE_MODE = ""
 
 "" Buffer Functions
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
