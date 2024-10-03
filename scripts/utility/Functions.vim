@@ -26,7 +26,17 @@ function! LineNumToggle()
 endfunc
 
 " -------------------------------------------
-"  Mouse_on_off for cursor chage
+"  Check for spell
+" -------------------------------------------
+command! Spellcheck call Spellcheck()
+function! Spellcheck()
+    setlocal spell
+    normal z=
+    setlocal nospell
+endfunction
+
+" -------------------------------------------
+"  Save color scheme
 " -------------------------------------------
 command! SaveColorscheme call SaveColorscheme()
 

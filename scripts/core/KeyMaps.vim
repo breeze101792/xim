@@ -41,6 +41,9 @@ map q <nop>
 
 """"    Function Key
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+" Spell check
+nnoremap <F4> :Spellcheck<CR>
+
 " Refresh all
 nmap <F5> :redraw!<CR>
 
