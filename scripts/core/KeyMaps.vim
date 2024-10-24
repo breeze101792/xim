@@ -76,6 +76,7 @@ nnoremap <leader>q :q<CR>
 nnoremap <leader>qq :q!<CR>
 nnoremap <leader>wqa :wqa<CR>
 nnoremap qq :q!<CR>
+nnoremap qa :qa<CR>
 
 " open an shell without close vim
 nnoremap <leader>sh :tab terminal<CR>

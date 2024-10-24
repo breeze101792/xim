@@ -166,3 +166,27 @@ function! PathCompare(path_a,path_b) abort
     endif
     return ""
 endfunc
+" -------------------------------------------
+"  Largefile
+" -------------------------------------------
+function! LargeFileMode()
+    " if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD
+        setlocal syntax=OFF
+        setlocal nowrap
+        setlocal nofoldenable
+        setlocal nohlsearch
+
+        " Set options:
+        "   eventignore+=FileType (no syntax highlighting etc
+        "   assumes FileType always on)
+        "   noswapfile (save copy of file)
+        "   bufhidden=unload (save memory when other file is viewed)
+        "   buftype=nowritefile (is read-only)
+        "   undolevels=-1 (no undo possible)
+        setlocal noswapfile bufhidden=unload buftype=nowrite undolevels=-1
+
+    "     set eventignore+=FileType
+    " else
+    "     set eventignore-=FileType
+    " endif
+endfunc

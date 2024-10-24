@@ -1,4 +1,16 @@
 " -------------------------------------------
+"  Toggle conceal
+" -------------------------------------------
+function! HideFirstNLetter(n_letter)
+    # set 
+    :syn match Concealed '^.\{88\}' conceal
+    :setlocal conceallevel=2
+    # clear
+    :syn clear Concealed
+    :setlocal conceallevel=0
+endfunc
+
+" -------------------------------------------
 "  Plugins load with function.
 " -------------------------------------------
 function! AdpPlugLoad(plugin_name)

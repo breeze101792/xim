@@ -194,6 +194,11 @@ endif
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
 
+" Set cursor shape on different mode
+set t_SI="\e[5 q"
+set t_EI="\e[2 q"
+set t_SR="\e[4 q"
+
 """"    Patch For vim Plugins
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Match paren

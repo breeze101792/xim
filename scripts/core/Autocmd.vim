@@ -86,8 +86,8 @@ augroup file_open_gp
 
     " disable file operation if it's bigger then what we expected.
     " Check if 500MB
-    " autocmd FileType * if getfsize(expand('%')) > 500000000 | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
-    autocmd FileType * if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
+    " autocmd FileType * if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| setlocal syntax=OFF | setlocal nowrap | setlocal nofoldenable | setlocal nohlsearch | endif
+    autocmd BufReadPre * if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD | echom "Big file size detected(".getfsize(@%)."). Enter Fast mode."| call LargeFileMode() | endif
 
     " memorize last open line
     autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
@@ -156,8 +156,9 @@ augroup END
 
 augroup filetype_gp
     autocmd!
-    au BufRead,BufNewFile *.log set filetype=log
-    au BufRead,BufNewFile *.iig set filetype=cpp
+    " au BufReadPost,BufNewFile *.log set filetype=log
+    au BufNewFile *.log set filetype=log
+    au BufNewFile *.iig set filetype=cpp
 augroup END
 
 """"    Plugins cmd
