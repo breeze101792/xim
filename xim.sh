@@ -544,9 +544,9 @@ function fEdit()
             -m|--map)
                 flag_cctree=y
                 ;;
-            # -l|--lite)
-            #     cmd_args+=("-u $HS_PATH_IDE/tools/vimlite.vim")
-            #     ;;
+            -l|--lite)
+                cmd_args+=("-u ${HS_PATH_IDE}/tools/vimlite.vim")
+                ;;
             -c|--clip)
                 shift 1
                 local buf_tmp="$@"
@@ -567,6 +567,9 @@ function fEdit()
                 vim_args+="$(hsexc hs_varconfig -g ${HS_VAR_LOGFILE})"
                 ;;
             # ENV
+            -pn|--plugin-none)
+                export VIDE_SH_PLUGIN_ENABLE='n'
+            ;;
             p|plugin)
                 if [[ "$#" > 1 ]]
                 then
@@ -613,6 +616,7 @@ function fEdit()
                 printf "      %s %s\n" "pvim [Options] [File]"
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "-m|--map"  "Load cctree in vim"
+                printf "    %- 32s %s\n" "-l|--lite"  "Load lite profile"
                 printf "    %- 32s %s\n" "-s|--session"  "Restore session"
                 printf "    %- 32s %s\n" "-i|-intance"  "select vim runtint, default use ${VAR_VIM_INSTANCE}."
                 printf "    %- 32s %s\n" "-p|--pure-mode"  "Load withouth ide file"
@@ -624,6 +628,7 @@ function fEdit()
                 printf "    %- 32s %s\n" "-h|--help"  "Print help function "
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "p|plugin"  "Plugin disable/enable, plugin y/n"
+                printf "    %- 32s %s\n" "-pn|--plugin-none"  "Plugin disable"
                 printf "    %- 32s %s\n" "sc|schars"  "Special chars disable/enable, schars y/n"
                 printf "%- 32s %s\n" "vim-Options"
                 printf "    %- 32s %s\n" "-R"  "vim read only mode"

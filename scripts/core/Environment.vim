@@ -156,7 +156,7 @@ function! IDE_EnvSetup()
 endfunction
 function! IDE_UpdateEnv_CursorHold()
     " if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
-    if g:IDE_CFG_PLUGIN_ENABLE == "y"
+    if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
         catch

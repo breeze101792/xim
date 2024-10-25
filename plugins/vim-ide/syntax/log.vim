@@ -13,48 +13,103 @@ endif
 let s:cpo_save = &cpo
 set cpo&vim
 
-"=============================================================================== match
+" Operators
+"---------------------------------------------------------------------------
+syn match logOperator display '[;,\?\:\.\<=\>\~\/\@\&\!$\%\&\+\-\|\^(){}\*#]'
+syn match logBrackets display '[\[\]]'
+syn match logEmptyLines display '-\{3,}'
+syn match logEmptyLines display '\*\{3,}'
+syn match logEmptyLines display '=\{3,}'
+syn match logEmptyLines display '- - '
 
-" syn match noteBlock /^*.*/
-" syn match logError /\c[^a-zA-Z]err\(or\)\?/
-" syn match logError /\c^err\(or\)\?/
-syn match logError /\cerr\(or\)\?/
+" Constants
+"---------------------------------------------------------------------------
+syn match logNumber       '\<-\?\d\+\>'
+syn match logHexNumber    '\<0[xX]\x\+\>'
+syn match logHexNumber    '\<\d\x\+\>'
+syn match logBinaryNumber '\<0[bB][01]\+\>'
+syn match logFloatNumber  '\<\d.\d\+[eE]\?\>'
 
-" syn match logError /\c[^a-zA-Z]fail\(ed\)\?/
-" syn match logError /\c^fail\(ed\)\?/
-syn match logError /\cfail\(ed\)\?/
+syn keyword logBoolean    TRUE FALSE True False true false
+syn keyword logNull       NULL Null null
 
-syn match logWarning /\cwarn\(ing\)\?/
+syn region logString      start=/"/ end=/"/ end=/$/ skip=/\\./
+" Quoted strings, but no match on quotes like "don't", "plurals' elements"
+syn region logString      start=/'\(s \|t \| \w\)\@!/ end=/'/ end=/$/ end=/s / skip=/\\./
 
-syn match logDebug /\c\(dbg\|debug\)/
 
-"=============================================================================== keyword
-" syn keyword logStatement	False None True
-" syn keyword logStatement	as assert break continue del exec global
+" Dates and Times
+"---------------------------------------------------------------------------
+" Match the date: dd/mm/yyyy hh:mm:ss
+syn match logDate 'd{2}/d{2}/d{4}s*d{2}:d{2}:d{2}'
 
-"=============================================================================== link
-" The default highlight links.  Can be overridden later.
+" Matches 2018-03-12T or 12/03/2018 or 12/Mar/2018
+syn match logDate '\d\{2,4}[-\/]\(\d\{2}\|Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\)[-\/]\d\{2,4}T\?'
+" Matches 8 digit numbers at start of line starting with 20
+syn match logDate '^20\d\{6}'
+" Matches Fri Jan 09 or Feb 11 or Apr  3
+syn match logDate '\(\(Mon\|Tue\|Wed\|Thu\|Fri\|Sat\|Sun\) \)\?\(Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\) [0-9 ]\d'
 
-hi def link logError		Error
-hi def link logWarning		WarningMsg
-hi def link logDebug		Debug
+" Matches Wed Jan 30 00:43:34 2019
+syn match logDate '\v(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d\d \d\d:\d\d:\d\d \d\d\d\d'
 
-" hi def link logAsync		Statement
-" hi def link logComment	Comment
-" hi def link logConditional	Conditional
-" hi def link logDecorator	Define
-" hi def link logDecoratorName	Function
-" hi def link logEscape		Special
-" hi def link logException	Exception
-" hi def link logFunction	Function
-" hi def link logInclude	Include
-" hi def link logOperator	Operator
-" hi def link logQuotes		String
-" hi def link logRawString	String
-" hi def link logRepeat		Repeat
-" hi def link logStatement	Statement
-" hi def link logString		String
-" hi def link logTodo		Todo
+" Matches 12:09:38 or 00:03:38.129Z or 01:32:12.102938 +0700
+syn match logTime '\d\{2}:\d\{2}:\d\{2}\(\.\d\{2,6}\)\?\(\s\?[-+]\d\{2,4}\|Z\)\?\>' nextgroup=logTimeZone,logSysColumns skipwhite
+
+" Follows logTime, matches UTC or PDT 2019 or 2019 EDT
+syn match logTimeZone '\(UTC\|PDT\|EDT\|GMT\|EST\|KST\)\( \d\{4}\)\?' contained
+syn match logTimeZone '\d\{4} \(UTC\|PDT\|EDT\|GMT\|EST\|KST\)' contained
+
+" Syslog Columns
+"---------------------------------------------------------------------------
+" Syslog hostname, program and process number columns
+syn match logSysColumns '\w\(\w\|\.\|-\)\+ \(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logSysProcess contained
+syn match logSysProcess '\(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logNumber,logBrackets contained
+
+" Levels
+"---------------------------------------------------------------------------
+syn keyword logLevelEmergency emergency Emergency EMERGENCY EMERG
+syn keyword logLevelAlert ALERT
+syn keyword logLevelCritical CRITICAL CRIT fatal Fatal FATAL
+syn keyword logLevelError Error error Error Error ERROR ERR fail Fail failed Failed FAILED fails failure Failure FAILURE SEVERE Unable
+syn keyword logLevelWarning warning Warning WARNING warn Warn WARN
+syn keyword logLevelNotice NOTICE
+syn keyword logLevelInfo info Info INFO
+syn keyword logLevelDebug DEBUG FINE
+syn keyword logLevelTrace TRACE FINER FINEST
+
+" Highlight links
+"---------------------------------------------------------------------------
+hi def link logNumber Number
+hi def link logHexNumber Number
+hi def link logBinaryNumber Number
+hi def link logFloatNumber Float
+hi def link logBoolean Boolean
+hi def link logNull Constant
+hi def link logString String
+
+hi def link logDate Function
+hi def link logTime Function
+hi def link logTimeZone Function
+
+hi def link logSysColumns Conditional
+hi def link logSysProcess Include
+
+hi def link logOperator Operator
+hi def link logBrackets Comment
+hi def link logEmptyLines Comment
+
+hi def link logLevelEmergency ErrorMsg
+hi def link logLevelAlert ErrorMsg
+hi def link logLevelCritical ErrorMsg
+hi def link logLevelError ErrorMsg
+hi def link logLevelWarning WarningMsg
+hi def link logLevelNotice Character
+hi def link logLevelInfo Repeat
+hi def link logLevelDebug Debug
+hi def link logLevelTrace Comment
+
+
 
 
 let b:current_syntax = "log"

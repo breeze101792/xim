@@ -25,17 +25,6 @@ local init_nvimide = function()
     -- print("Experiment lazy load.")
     require("nvimide").setup({})
 
-    -- It's for compatibility
-    vim.api.nvim_exec([[
-    function! IDE_PlugInDealyLoading()
-        " :GitGutterEnable
-        " FIXME, It's just a temp fix for nvim cscope
-        " execute 'lua require("cscope_maps").setup()'
-        " Tag setup
-        " -------------------------------------------
-        call TagSetup()
-    endfunction
-    ]], false)
 end
 local init_plug = function()
     local flag_lazy=true
@@ -43,7 +32,24 @@ local init_plug = function()
 
     if vim.g.IDE_CFG_PLUGIN_ENABLE ~= "y" then
         -- If it's not plugin enable, do early return.
+        vim.api.nvim_exec([[
+            function! IDE_PlugInDealyLoading()
+            endfunction
+        ]], false)
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginNone.vim")
         return
+    else
+        -- It's for compatibility
+        vim.api.nvim_exec([[
+        function! IDE_PlugInDealyLoading()
+            " :GitGutterEnable
+            " FIXME, It's just a temp fix for nvim cscope
+            " execute 'lua require("cscope_maps").setup()'
+            " Tag setup
+            " -------------------------------------------
+            call TagSetup()
+        endfunction
+        ]], false)
     end
     -- flag_lazy = false
 

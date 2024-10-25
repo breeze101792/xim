@@ -182,7 +182,7 @@ set mouse=c
 " set paste
 
 " setup column cursor line, this will slow down vim speed
-set cursorcolumn
+" set cursorcolumn
 " This is for linux, we should not let our code length beyound 80 chars
 set colorcolumn=81
 
@@ -226,6 +226,7 @@ nnoremap <leader>q :q<CR>
 nnoremap <leader>qq :q!<ENTER>
 nnoremap <leader>wqa :wqa<CR>
 nnoremap qq :q!<ENTER>
+nnoremap qa :qa<CR>
 
 " open an shell without close vim
 nnoremap <leader>sh :sh<CR>
@@ -262,8 +263,7 @@ nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 "" Lite settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " comments
-noremap <silent> ,cc :<C-b>silent <C-e>norm ^i<C-r>=b:comment_leader<CR><CR>
-noremap <silent> ,uc :<C-b>silent <C-e>norm ^xx<CR>
+noremap <C-_> :SimpleCommentCode<CR>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Auto Groups
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -286,21 +286,6 @@ augroup syntax_hi_gp
                 \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
                 \ )
 augroup END
-
-"" Lite settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" comments
-" TODO, change to use leader+m
-augroup comment_gp_
-    autocmd!
-    autocmd FileType c,cpp,go                let b:comment_leader = '// '
-    autocmd FileType ruby,python             let b:comment_leader = '# '
-    autocmd FileType conf,fstab,sh,bash,tmux let b:comment_leader = '# '
-    autocmd FileType tex                     let b:comment_leader = '% '
-    autocmd FileType mail                    let b:comment_leader = '> '
-    autocmd FileType vim                     let b:comment_leader = '" '
-augroup END
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -429,3 +414,59 @@ function! TabsOrSpaces()
         setlocal expandtab
     endif
 endfunction
+
+" -------------------------------------------
+"  SimpleCommenCodet
+" -------------------------------------------
+command! -range -nargs=? SimpleCommentCode <line1>,<line2>call SimpleCommentCode(<q-args>)
+function! SimpleCommentCode(pattern) range
+    let b:comment_padding = ' '
+    let b:comment_leader = '#'
+    if a:pattern != ''
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'c' || &filetype ==# 'cpp'
+        let b:comment_leader = '//'
+    elseif &filetype ==# 'sh' || &filetype ==# 'conf' || &filetype ==# 'bash'
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'python' || &filetype ==# 'ruby'
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'vim'
+        let b:comment_leader = '"'
+    endif
+    let flag_comment=0
+    let match_ret=0
+
+    let b:comment_pattern = b:comment_leader.b:comment_padding
+    try
+        let match_ret=execute(a:firstline.','.a:lastline.'s/^\s*'.b:comment_leader.'/ /n')
+
+        let token=split(match_ret[1:], ' ')
+        if len(token) < 4
+            let flag_comment=1
+        else
+            let pattern_matches=token[0]
+            let line_matches=token[3]
+            let test=char2nr(pattern_matches[0])
+
+            if a:lastline - a:firstline + 1== pattern_matches
+                let flag_comment=0
+            else
+                let flag_comment=1
+            endif
+        endif
+    catch
+        let flag_comment=1
+    endtry
+
+    echom "Comment Code: '".b:comment_leader."', comment: ".flag_comment.", cnt:".match_ret
+    " Toggle
+    if flag_comment == 1
+        " Do comment
+        call execute(a:firstline.','.a:lastline.'s/^/'.b:comment_pattern.'/g')
+    else
+        " Do uncomment
+        call execute(a:firstline.','.a:lastline.'g/^\s*'.b:comment_leader.'/s/'.b:comment_leader.'[ ]\?//')
+    endif
+
+endfunction
+

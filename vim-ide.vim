@@ -29,6 +29,8 @@ if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
     execute 'source '.s:config_path.'/plugin/PluginPreConfig.vim' 
     execute 'source '.s:config_path.'/plugin/Plugin.vim' 
     execute 'source '.s:config_path.'/plugin/PluginPostConfig.vim' 
+else
+    execute 'source '.s:config_path.'/plugin/PluginNone.vim' 
 " elseif version < 704
 " skip
 endif
@@ -58,6 +60,8 @@ func! Reload()
         " plugins related
         execute 'source '.l:config_path.'/plugin/PluginPreConfig.vim' 
         execute 'source '.l:config_path.'/plugin/PluginPostConfig.vim' 
+    else
+        execute 'source '.s:config_path.'/plugin/PluginNone.vim' 
     endif
 
     redraw
