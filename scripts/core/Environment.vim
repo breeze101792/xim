@@ -155,8 +155,10 @@ function! IDE_EnvSetup()
     endif
 endfunction
 function! IDE_UpdateEnv_CursorHold()
-    " if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
-    if g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
+
+    if g:IDE_CFG_PLUGIN_ENABLE == "n"
+        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    elseif g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
         catch
@@ -167,8 +169,6 @@ function! IDE_UpdateEnv_CursorHold()
         if &filetype != 'ctrlp'
             call lightline#update()
         endif
-    else
-        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
 
 endfunc

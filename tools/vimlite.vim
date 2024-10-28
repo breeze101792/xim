@@ -425,7 +425,7 @@ function! SimpleCommentCode(pattern) range
     if a:pattern != ''
         let b:comment_leader = '#'
     elseif &filetype ==# 'c' || &filetype ==# 'cpp'
-        let b:comment_leader = '//'
+        let b:comment_leader = '\/\/'
     elseif &filetype ==# 'sh' || &filetype ==# 'conf' || &filetype ==# 'bash'
         let b:comment_leader = '#'
     elseif &filetype ==# 'python' || &filetype ==# 'ruby'
