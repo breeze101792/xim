@@ -121,20 +121,19 @@ augroup END
 
 """"    Highlight Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Highlight TODO, FIXME, NOTE, etc.
-if has('autocmd') && v:version > 701
-    augroup syntax_hi_gp
-        autocmd!
-        " autocmd Syntax * call matchadd(
-        "             \ 'Debug',
-        "             \ '\v\W\zs<(NOTE|INFO|IDEA|TODO|FIXME|CHANGED|XXX|BUG|HACK|TRICKY)>'
-        "             \ )
-        autocmd Syntax * call matchadd(
-                    \ 'Debug',
-                    \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
-                    \ )
-    augroup END
-endif
+" Highlight KeyWords etc.
+augroup syntax_hi_gp
+    autocmd!
+    " NOTE|TODO|HACK|FIXME|XXX|BUG|IDEA
+    autocmd Syntax * call matchadd(
+                \ 'Debug',
+                \ '\v\W\zs<(NOTE|HACK)>'
+                \ )
+    autocmd Syntax * call matchadd(
+                \ 'Todo',
+                \ '\v\W\zs<(BUG)>'
+                \ )
+augroup END
 
 """"    Env Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -159,6 +158,12 @@ augroup filetype_gp
     " au BufReadPost,BufNewFile *.log set filetype=log
     au BufNewFile *.log set filetype=log
     au BufNewFile *.iig set filetype=cpp
+augroup END
+
+augroup formatter_gp
+    autocmd!
+    autocmd FileType javascript if executable("js-beautify") == 1 | setlocal equalprg="js-beautify -f -" | endif
+    autocmd FileType sh,bash if executable("shfmt") == 1 | setlocal equalprg="shfmt -i 4 -cs" | endif
 augroup END
 
 """"    Plugins cmd

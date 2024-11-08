@@ -409,15 +409,18 @@ endfunction
 command! -range Beautify <line1>,<line2>call Beautify()
 function! Beautify() range
 
-    " remove the trailing space
-    silent! execute a:firstline.','.a:lastline.'s/\s\+$//e'
-
-    " Remove empty lines with space
-    " execute a:firstline.','.a:lastline. :%s/\($\n\s*\)\+\%$//e
-
-    " remove double next line
-    silent! execute a:firstline.','.a:lastline.'s/\(\n\n\)\n\+/\1/e'
-
+    " This function eim to help those lang is not beautify by =.
+    if &filetype ==# 'sh' || &filetype ==# 'bash' || &filetype ==# 'zsh'
+        if &expandtab
+            silent! execute a:firstline.','.a:lastline.'!shfmt -ci -i 4'
+        else
+            silent! execute a:firstline.','.a:lastline.'!shfmt -ci'
+        endif
+    else
+        " silent! execute a:firstline.','.a:lastline.'!shfmt -ci'
+        echom "Not supported."
+        " call feedkeys(a:firstline.','.a:lastline."=")
+    endif
 endfunction
 
 command! -range FormatCode <line1>,<line2>call FormatCode()

@@ -147,6 +147,9 @@ nmap <Leader>h :HexToggle<CR>
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
 
+" Beautify, currently only support shell
+vnoremap <leader>b :Beautify<CR>
+
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " IDE map
@@ -226,7 +229,7 @@ noremap mm :BookmarkToggle<CR>
 noremap <C-p> :CtrlP<CR>
 
 " bufferexpl
-noremap <leader>b :ToggleBufExplorer<CR>
+nnoremap <leader>b :ToggleBufExplorer<CR>
 
 " mark
 " nmap <unique> <Leader>m <Plug>MarkSet

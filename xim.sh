@@ -513,8 +513,25 @@ function fEdit()
     local var_cctree_file="cctree.db"
     local var_config_file="proj.vim"
 
+    local var_eval="eval"
     local var_vim_distro="${VAR_VIM_INSTANCE}"
 
+    # first parse
+    while [[ "$#" != 0 ]]
+    do
+        case $1 in
+            -r|--root)
+                var_eval="eval sudo"
+                var_vim_distro="vim"
+                ;;
+            *)
+                break
+                ;;
+        esac
+        shift 1
+    done
+
+    # second parse
     while [[ "$#" != 0 ]]
     do
         case $1 in
@@ -615,6 +632,7 @@ function fEdit()
                 printf "%s %s\n" "SYNOPSIS"
                 printf "      %s %s\n" "pvim [Options] [File]"
                 printf "%s %s\n" "Options"
+                printf "    %- 32s %s\n" "-r|--root"  "open with root permission, sudo."
                 printf "    %- 32s %s\n" "-m|--map"  "Load cctree in vim"
                 printf "    %- 32s %s\n" "-l|--lite"  "Load lite profile"
                 printf "    %- 32s %s\n" "-s|--session"  "Restore session"
@@ -714,7 +732,7 @@ function fEdit()
     fi
 
     cd "${cpath}"
-    eval ${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}
+    ${var_eval} ${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}
     printf "Launching %s: ${DEF_COLOR_GREEN}%s${DEF_COLOR_NORMAL}\n" "${VIDE_SH_PROJ_DATA_PATH}" "${var_vim_distro} ${cmd_args[@]} ${vim_args[@]}"
 
     if [ "${flag_time}" = "y" ]
