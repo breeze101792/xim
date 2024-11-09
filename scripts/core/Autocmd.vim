@@ -160,11 +160,12 @@ augroup filetype_gp
     au BufNewFile *.iig set filetype=cpp
 augroup END
 
-augroup formatter_gp
-    autocmd!
-    autocmd FileType javascript if executable("js-beautify") == 1 | setlocal equalprg="js-beautify -f -" | endif
-    autocmd FileType sh,bash if executable("shfmt") == 1 | setlocal equalprg="shfmt -i 4 -cs" | endif
-augroup END
+" Looks like formatter will disable syntax.
+" augroup formatter_gp
+"     autocmd!
+"     autocmd FileType javascript if executable("js-beautify") == 1 | setlocal equalprg="js-beautify -f -" | endif
+"     autocmd FileType sh,bash if executable("shfmt") == 1 | setlocal equalprg="shfmt -i 4 -cs" | endif
+" augroup END
 
 """"    Plugins cmd
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
