@@ -146,11 +146,15 @@ function! IDE_EnvSetup()
     "     let g:IDE_ENV_TMP = "n"
     " endif
 
+    if $VIDE_SH_TITLE != ""
+        let g:IDE_ENV_IDE_TITLE = $VIDE_SH_TITLE
+    elseif g:IDE_ENV_INS == "nvim"
+        let g:IDE_ENV_IDE_TITLE = "NVIM"
+    endif
+
     ""    NVIM
     """"""""""""""""""""""""""""""""""""""""""""""""""""""
     if g:IDE_ENV_INS == "nvim"
-        let g:IDE_ENV_IDE_TITLE = "NVIM"
-
         let g:IDE_ENV_CSCOPE_EXC = "Cscope"
     endif
 endfunction

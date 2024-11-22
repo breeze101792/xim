@@ -574,7 +574,14 @@ function fEdit()
                 printf "V\n%s\n" "${buf_tmp}" > ${HOME}/.vim/clip
                 return 0
                 ;;
-            -t|--time)
+            -t|--title)
+                if [[ "$#" -ge 2 ]]
+                then
+                    export VIDE_SH_TITLE="$2"
+                    shift 1
+                fi
+                ;;
+            -T|--time)
                 flag_time=y
                 cmd_args+=("-X --startuptime startup_${var_timestamp}.log")
                 hsexc hs_varconfig -s "${HS_VAR_LOGFILE}" "startup_${var_timestamp}.log"
@@ -639,7 +646,8 @@ function fEdit()
                 printf "    %- 32s %s\n" "-i|-intance"  "select vim runtint, default use ${VAR_VIM_INSTANCE}."
                 printf "    %- 32s %s\n" "-p|--pure-mode"  "Load withouth ide file"
                 printf "    %- 32s %s\n" "--buffer-file|buffer|buf"  "Open file with hs var(${HS_VAR_LOGFILE})"
-                printf "    %- 32s %s\n" "-t|--time"  "Enable startup debug mode"
+                printf "    %- 32s %s\n" "-t|--title"  "Set title"
+                printf "    %- 32s %s\n" "-T|--time"  "Enable startup debug mode"
                 printf "    %- 32s %s\n" "-c|--clip"  "Save file in vim buffer file"
                 printf "    %- 32s %s\n" "-e|--extra-command"  "pass extra command to vim"
                 printf "    %- 32s %s\n" "-v|--verbose"  "Record runtime log.(./vim_msg.log)"
