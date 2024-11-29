@@ -67,7 +67,7 @@ let g:IDE_ENV_REQ_SESSION_RESTORE=""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Golobal defines                           """"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:IDE_ENV_DEF_PAGE_WIDTH=100
+let g:IDE_ENV_DEF_PAGE_WIDTH=80
 let g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD=100 * 1000 * 1000
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -160,15 +160,17 @@ function! IDE_EnvSetup()
 endfunction
 function! IDE_UpdateEnv_CursorHold()
 
-    if g:IDE_CFG_PLUGIN_ENABLE == "n"
-        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
-    elseif g:IDE_CFG_PLUGIN_ENABLE == "y" && exists('*tagbar#currenttag')
+    if exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
         catch
             let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
         endtry
+    else
+        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    endif
 
+    if exists('*lightline#update')
         " Ignore ctrlp
         if &filetype != 'ctrlp'
             call lightline#update()

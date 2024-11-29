@@ -205,7 +205,8 @@ endfunction
 
 function! LightlineFilename()
     let proj_path = get(b:, 'IDE_ENV_GIT_PROJECT_PATH', "")
-    let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
+    " let proj_name = get(b:, 'IDE_ENV_GIT_PROJECT_NAME', "")
+    let proj_name = ''
     let name = expand('%:t')
     let full_name = expand('%:p')
 
