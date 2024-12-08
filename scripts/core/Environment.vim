@@ -160,6 +160,10 @@ function! IDE_EnvSetup()
 endfunction
 function! IDE_UpdateEnv_CursorHold()
 
+    if &filetype == 'ctrlp'
+        " ignore on ctrlp
+        return
+    endif
     if exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
@@ -172,9 +176,7 @@ function! IDE_UpdateEnv_CursorHold()
 
     if exists('*lightline#update')
         " Ignore ctrlp
-        if &filetype != 'ctrlp'
             call lightline#update()
-        endif
     endif
 
 endfunc
