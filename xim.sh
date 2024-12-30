@@ -591,6 +591,9 @@ function fEdit()
                 vim_args+="$(hsexc hs_varconfig -g ${HS_VAR_LOGFILE})"
                 ;;
             # ENV
+            -an|--autocmd-none)
+                export VIDE_SH_AUTOCMD_ENABLE='n'
+            ;;
             -pn|--plugin-none)
                 export VIDE_SH_PLUGIN_ENABLE='n'
             ;;
@@ -654,6 +657,7 @@ function fEdit()
                 printf "    %- 32s %s\n" "-h|--help"  "Print help function "
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "p|plugin"  "Plugin disable/enable, plugin y/n"
+                printf "    %- 32s %s\n" "-an|--autocmd-none"  "Autocmd disable"
                 printf "    %- 32s %s\n" "-pn|--plugin-none"  "Plugin disable"
                 printf "    %- 32s %s\n" "sc|schars"  "Special chars disable/enable, schars y/n"
                 printf "%- 32s %s\n" "vim-Options"
@@ -675,6 +679,8 @@ function fEdit()
                         if [ "${ans}" = "y" ] || [ "${ans}" = "Y" ]
                         then
                             vim_args+="'$@'"
+                            echo "Big file, diable autocommand, for performance."
+                            export VIDE_SH_AUTOCMD_ENABLE='n'
                         else
                             return 0
                         fi

@@ -160,8 +160,9 @@ function! IDE_EnvSetup()
 endfunction
 function! IDE_UpdateEnv_CursorHold()
 
-    if &filetype == 'ctrlp'
-        " ignore on ctrlp
+    " Ignore logs and other unkown files.
+    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'log' || &filetype == ''
+        " echom 'Filetype: '.&filetype.', Ignore on cursor actions.'
         return
     endif
     if exists('*tagbar#currenttag')
@@ -175,8 +176,7 @@ function! IDE_UpdateEnv_CursorHold()
     endif
 
     if exists('*lightline#update')
-        " Ignore ctrlp
-            call lightline#update()
+        call lightline#update()
     endif
 
 endfunc

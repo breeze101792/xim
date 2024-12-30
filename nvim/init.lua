@@ -12,8 +12,11 @@ local init_base = function()
     vim.cmd("source " .. config_path .."/scripts/core/Config.vim")
     vim.cmd("source " .. config_path .."/scripts/core/Environment.vim")
     vim.cmd("source " .. config_path .."/scripts/core/Settings.vim")
-    vim.cmd("source " .. config_path .."/scripts/core/Autocmd.vim")
     vim.cmd("source " .. config_path .."/scripts/core/KeyMaps.vim")
+
+    if vim.g.IDE_CFG_AUTOCMD_ENABLE ~= "y" then
+        vim.cmd("source " .. config_path .."/scripts/core/Autocmd.vim")
+    end
 
     -- Adaptation layer
     vim.cmd("source " .. config_path .."/scripts/adaptation/Adaptation.vim")
