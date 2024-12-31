@@ -161,7 +161,7 @@ endfunction
 function! IDE_UpdateEnv_CursorHold()
 
     " Ignore logs and other unkown files.
-    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'log' || &filetype == ''
+    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'txt' || &filetype == 'log' || &filetype == ''
         " echom 'Filetype: '.&filetype.', Ignore on cursor actions.'
         return
     endif

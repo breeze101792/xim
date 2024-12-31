@@ -186,7 +186,7 @@ function fEnvSantiyCheck()
     then
         DEF_PROJ_FOLDER=${legacy_proj_name}
     fi
-    cd ${var_current_path}
+    cd "${var_current_path}"
 }
 
 function fUpdate()
@@ -668,7 +668,7 @@ function fEdit()
                 if test -f "$*"
                 then
                     local tmp_file_name="$@"
-                    local tmp_file_size=$(du ${tmp_file_name}| sed 's/\t/ /g' |cut -d ' ' -f 1)
+                    local tmp_file_size=$(du "${tmp_file_name}" | sed 's/\t/ /g' |cut -d ' ' -f 1)
                     # 500 MB
                     local tmp_threshold_size="500000"
 
