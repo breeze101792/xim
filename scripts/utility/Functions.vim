@@ -720,9 +720,10 @@ function! IdeInfo()
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_ENV_DEF_FILE_SIZE_THRESHOLD' , g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD)
 
     let msg=msg . sep . printf("%s"               , "[Configs]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_PLUGIN_ENABLE '          , g:IDE_CFG_PLUGIN_ENABLE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_AUTOCMD_ENABLE '         , g:IDE_CFG_AUTOCMD_ENABLE)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_CACHED_COLORSCHEME '     , g:IDE_CFG_CACHED_COLORSCHEME)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_GIT_ENV '                , g:IDE_CFG_GIT_ENV)
-    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_PLUGIN_ENABLE '          , g:IDE_CFG_PLUGIN_ENABLE)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_SPECIAL_CHARS '          , g:IDE_CFG_SPECIAL_CHARS)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_SESSION_AUTOSAVE'        , g:IDE_CFG_SESSION_AUTOSAVE)
 

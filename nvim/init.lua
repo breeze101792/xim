@@ -14,7 +14,7 @@ local init_base = function()
     vim.cmd("source " .. config_path .."/scripts/core/Settings.vim")
     vim.cmd("source " .. config_path .."/scripts/core/KeyMaps.vim")
 
-    if vim.g.IDE_CFG_AUTOCMD_ENABLE ~= "y" then
+    if vim.g.IDE_CFG_AUTOCMD_ENABLE == "y" then
         vim.cmd("source " .. config_path .."/scripts/core/Autocmd.vim")
     end
 

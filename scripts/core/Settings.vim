@@ -169,7 +169,7 @@ set laststatus=2 " status bar always show
 set cmdheight=1  " Command line height
 set shortmess=aO " option to avoid hit enter, a for all, O for overwrite when reading file
 set ruler        " enable status bar ruler
-" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
+" set statusline=[%{mode()}]\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
 
 " Other settings
 " use group to set it

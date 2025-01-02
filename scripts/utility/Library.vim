@@ -190,3 +190,27 @@ function! LargeFileMode()
     "     set eventignore-=FileType
     " endif
 endfunc
+" -------------------------------------------
+"  GetFileSize
+" -------------------------------------------
+function! GetFileSize()
+    let bytes = getfsize(expand('%:p'))
+    if bytes <= 0
+        return '0B'
+    endif
+
+    if (bytes >= 1024*1024*1024)
+        let gbytes = bytes / 1024 / 1024 / 1024
+        return gbytes.'GB'
+    elseif (bytes >= 1024*1024)
+        let mbytes = bytes / 1024 / 1024
+        return mbytes.'MB'
+    elseif (bytes >= 1024)
+        let kbytes = bytes / 1024
+        return kbytes.'KB'
+    else
+        return bytes.'B'
+    endif
+
+endfunction
+command! GetFileSize call GetFileSize()
