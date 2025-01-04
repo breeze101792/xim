@@ -201,7 +201,7 @@ set fillchars+=vert:│
 
 """"    Lite setting
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme desert
+colorscheme industry
 set noswapfile
 syntax on
 " FIXME, remove this line
@@ -292,7 +292,7 @@ augroup END
 " -------------------------------------------
 "  Tabline override
 " -------------------------------------------
-set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
+set statusline=[%{mode()}]\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
 
 set tabline=%!MyTabLine()
 

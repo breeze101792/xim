@@ -160,6 +160,11 @@ function! IDE_EnvSetup()
 endfunction
 function! IDE_UpdateEnv_CursorHold()
 
+    " Ignore logs and other unkown files.
+    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'txt' || &filetype == 'log' || &filetype == ''
+        " echom 'Filetype: '.&filetype.', Ignore on cursor actions.'
+        return
+    endif
     if exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
@@ -171,10 +176,7 @@ function! IDE_UpdateEnv_CursorHold()
     endif
 
     if exists('*lightline#update')
-        " Ignore ctrlp
-        if &filetype != 'ctrlp'
-            call lightline#update()
-        endif
+        call lightline#update()
     endif
 
 endfunc

@@ -4,6 +4,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:IDE_CFG_GIT_ENV                        = get(g:, 'IDE_CFG_GIT_ENV', "y")
+let g:IDE_CFG_AUTOCMD_ENABLE                 = get(g:, 'IDE_CFG_AUTOCMD_ENABLE', "y")
 let g:IDE_CFG_PLUGIN_ENABLE                  = get(g:, 'IDE_CFG_PLUGIN_ENABLE', "y")
 let g:IDE_CFG_SPECIAL_CHARS                  = get(g:, 'IDE_CFG_SPECIAL_CHARS', "n")
 
@@ -35,6 +36,12 @@ if $VIDE_SH_SPECIAL_CHARS == "y"
     let g:IDE_CFG_SPECIAL_CHARS = "y"
 elseif $VIDE_SH_SPECIAL_CHARS == "n"
     let g:IDE_CFG_SPECIAL_CHARS = "n"
+endif
+
+if $VIDE_SH_AUTOCMD_ENABLE == "y"
+    let g:IDE_CFG_AUTOCMD_ENABLE = "y"
+elseif $VIDE_SH_AUTOCMD_ENABLE == "n"
+    let g:IDE_CFG_AUTOCMD_ENABLE = "n"
 endif
 
 if $VIDE_SH_PLUGIN_ENABLE == "y"

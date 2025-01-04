@@ -15,8 +15,11 @@ let s:config_path='~/.vim/scripts'
 execute 'source '.s:config_path.'/core/Config.vim' 
 execute 'source '.s:config_path.'/core/Environment.vim' 
 execute 'source '.s:config_path.'/core/Settings.vim' 
-execute 'source '.s:config_path.'/core/Autocmd.vim' 
 execute 'source '.s:config_path.'/core/KeyMaps.vim' 
+
+if g:IDE_CFG_AUTOCMD_ENABLE == "y"
+    execute 'source '.s:config_path.'/core/Autocmd.vim' 
+endif
 
 " Adaptation layer
 execute 'source '.s:config_path.'/adaptation/Adaptation.vim' 
@@ -47,8 +50,10 @@ func! Reload()
     execute 'source '.l:config_path.'/core/Config.vim' 
     execute 'source '.l:config_path.'/core/Environment.vim' 
     execute 'source '.l:config_path.'/core/Settings.vim' 
-    execute 'source '.l:config_path.'/core/Autocmd.vim' 
     execute 'source '.l:config_path.'/core/KeyMaps.vim' 
+    if g:IDE_CFG_AUTOCMD_ENABLE == "y"
+        execute 'source '.l:config_path.'/core/Autocmd.vim' 
+    endif
 
     " Adaptation layer
     execute 'source '.l:config_path.'/adaptation/Adaptation.vim' 

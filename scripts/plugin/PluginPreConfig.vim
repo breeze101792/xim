@@ -138,30 +138,38 @@ endfunction
 function! LightlineFileInfo()
     let msg = &filetype
     let sep = ' '.g:lightline.subseparator['right'].' '
-    let smart_info = 1
 
-    if winwidth(0) < g:IDE_ENV_DEF_PAGE_WIDTH || smart_info == 1
-        if &fileformat != 'unix'
+    if len(&filetype) == 0
+        return 'None'
+    elseif winwidth(0) > g:IDE_ENV_DEF_PAGE_WIDTH
+        if &fileformat != 'unix' && len(&fileformat) != 0
             let msg = msg . sep . &fileformat
         endif
 
-        if &fileencoding != 'utf-8'
+        if &fileencoding != 'utf-8' && len(&fileencoding) != 0
             let msg = msg . sep . &fileencoding
         endif
+
         if !&expandtab
             " htab stand for hard tab
             " return &expandtab ? '' : 'htab'
             let msg = msg . sep . 'htab'
         endif
-    else
-        let msg = &filetype
-        let msg = msg . sep  . &fileformat . sep  . &fileencoding
-        if !&expandtab
-            " htab stand for hard tab
-            " return &expandtab ? '' : 'htab'
-            let msg = msg . sep  . 'htab'
+
+        let file_size = GetFileSize()
+        if len(file_size) != 0
+            let msg = msg . sep . file_size
         endif
+    " else
+    "     let msg = &filetype
+    "     let msg = msg . sep  . &fileformat . sep  . &fileencoding
+    "     if !&expandtab
+    "         " htab stand for hard tab
+    "         " return &expandtab ? '' : 'htab'
+    "         let msg = msg . sep  . 'htab'
+    "     endif
     endif
+
     return msg
 endfunction
 
