@@ -199,7 +199,6 @@ function fUpdate()
     local var_cscope_file="cscope.db"
     local var_cctree_file="cctree.db"
     local var_tmp_folder="tmp_db_$(date +%Y%m%d_%H%M%S)"
-    local flag_error_happen='y'
 
     local flag_system_include='n'
 
@@ -249,9 +248,6 @@ function fUpdate()
         return 1
     fi
 
-    # [ -f ${var_cscope_file} ] && rm ${var_cscope_file} 2> /dev/null
-    # [ -f ${var_cctree_file} ] && rm ${var_cctree_file} 2> /dev/null
-    # [ -f ${var_tags_file} ] && rm ${var_tags_file} 2> /dev/null
     [ -d ${var_tmp_folder} ] && rm -rf ${var_tmp_folder} 2> /dev/null
 
     mkdir -p ${var_tmp_folder}
@@ -260,36 +256,63 @@ function fUpdate()
     # Add c(uncompress) for fast read
 
     ## Ctags
-    # ctags -L proj.files
-    $(ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ${var_list_file} || echo 'catg run fail' && flag_error_happen='n' )&
-    # ctags -R  --C-kinds=+p --fields=+aS --extra=+q
-    # ctags -R -f ~/.vim/${var_tags_file}/c  --C-kinds=+p --fields=+aS --extra=+q
-
-    ## Cscope
-    # cscope -c -b -i ${var_list_file} -f ${var_cscope_file} || echo 'cscope run fail' && flag_error_happen='n'
-    cscope -c -b -R -q ${var_cscope_cmd[@]} -i ${var_list_file} -f ${var_cscope_file} || echo 'cscope run fail' && flag_error_happen='n'
-
-    wait
-    # command -V ccglue && ccglue -S cscope.out -o ${var_cctree_file}
-    command -V ccglue > /dev/null 2>&1 && ccglue -S ${var_cscope_file} -o ${var_cctree_file} || echo "Command ccglue not found."
-    # mv cscope.out ${var_cscope_file}
-    ########################################
-    popd
-    if [ "${flag_error_happen}" = "n" ]
-    then
-        cp -rf ${var_tmp_folder}/${var_tags_file} .
-        cp -rf ${var_tmp_folder}/*.db .
-        cp -rf ${var_tmp_folder}/${var_cscope_file}* .
-        printf "${DEF_COLOR_GREEN}Tag generate successfully.${DEF_COLOR_NORMAL}\n"
+    if command -V ctags > /dev/null 2>&1; then
+        $(ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ${var_list_file} || ( echo 'ctags run fail' && rm ${var_tags_file} ) )&
     else
-        ls ${var_tmp_folder}
-        printf "${DEF_COLOR_RED}Fail to generate tag${DEF_COLOR_NORMAL}\n"
-        test -f ${var_tags_file} || echo 'Update ctags' && cp -f ${var_tmp_folder}/${var_tags_file} ${var_tmp_folder}
-        test -f ${var_cscope_file} || echo 'Update cscope' && cp -f ${var_tmp_folder}/${var_cscope_file}* ${var_tmp_folder}
-        test -f ${var_cctree_file} || echo 'Update cctree' && cp -f ${var_tmp_folder}/${var_cctree_file} ${var_tmp_folder}
+        echo "!!! ctags not found. !!!"
     fi
 
-    rm -rf ${var_tmp_folder} 2> /dev/null
+    ## Cscope
+
+    if command -V cscope > /dev/null 2>&1; then
+        cscope -c -b -R -q ${var_cscope_cmd[@]} -i ${var_list_file} -f ${var_cscope_file} || ( echo 'cscope run fail' && rm ${var_cscope_file} )
+    else
+        echo "!!! cscope not found. !!!"
+    fi
+
+    wait
+    # ccglue
+    if command -V ccglue > /dev/null 2>&1; then
+        ccglue -S ${var_cscope_file} -o ${var_cctree_file} || ( echo 'ccglue run fail' && rm ${var_cctree_file} )
+    else
+        echo "ccglue not found!"
+    fi
+
+    ########################################
+    popd
+
+    echo ""
+    echo "################################################################"
+    echo "## Update info."
+    echo "################################################################"
+    if test -f ${var_tmp_folder}/${var_tags_file}
+    then
+        printf "Update ${DEF_COLOR_YELLOW}ctags${DEF_COLOR_NORMAL}\n" && cp -f ${var_tmp_folder}/${var_tags_file} ./
+    fi
+
+    if test -f ${var_tmp_folder}/${var_cscope_file}
+    then
+        printf "Update ${DEF_COLOR_YELLOW}cscope${DEF_COLOR_NORMAL}\n" && cp -f ${var_tmp_folder}/${var_cscope_file}* ./
+    fi
+
+    if test -f ${var_tmp_folder}/${var_cctree_file}
+    then
+        printf "Update ${DEF_COLOR_YELLOW}cctree${DEF_COLOR_NORMAL}\n" && cp -f ${var_tmp_folder}/${var_cctree_file} ./
+    fi
+
+    if ! test -f ${var_tmp_folder}/${var_tags_file} && ! test -f ${var_tmp_folder}/${var_cscope_file}; then
+        printf "${DEF_COLOR_RED}Fail to generate tag${DEF_COLOR_NORMAL}\n"
+    elif test -f ${var_tmp_folder}/${var_tags_file} && test -f ${var_tmp_folder}/${var_cscope_file}; then
+        printf "${DEF_COLOR_GREEN}Tag generate successfully.${DEF_COLOR_NORMAL}\n"
+
+        # only remove when fully success.
+        if test -d ${var_tmp_folder}
+        then
+            rm -rf ${var_tmp_folder} 2> /dev/null
+        fi
+    else
+        printf "${DEF_COLOR_YELLOW}Tag generate not successfully.${DEF_COLOR_NORMAL}\n"
+    fi
 
     cd ${cpath}
 }
@@ -488,7 +511,7 @@ function fInit()
 
     fUpdate
     cd ${var_cpath}
-    echo Vim project create on ${var_proj_path}
+    echo Vim project create under project:${var_proj_path}
 }
 
 function fEdit()

@@ -161,18 +161,20 @@ endfunction
 function! IDE_UpdateEnv_CursorHold()
 
     " Ignore logs and other unkown files.
-    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'txt' || &filetype == 'log' || &filetype == ''
+    if &filetype == 'ctrlp'|| &filetype == 'gitcommit' || &filetype == 'nerdtree' || &filetype == 'text' || &filetype == 'log' || &filetype == ''
         " echom 'Filetype: '.&filetype.', Ignore on cursor actions.'
         return
     endif
+
+    " FIXME, CurrentFunction will break multi-selection plugin.
     if exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
-        catch
-            let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+        " catch
+        "     let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
         endtry
-    else
-        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    " else
+    "     let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
 
     if exists('*lightline#update')

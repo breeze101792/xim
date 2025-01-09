@@ -155,9 +155,12 @@ augroup END
 
 augroup filetype_gp
     autocmd!
-    " au BufReadPost,BufNewFile *.log set filetype=log
-    au BufNewFile *.log set filetype=log
-    au BufNewFile *.iig set filetype=cpp
+    " Larg file check.
+    " au BufNewFile *.log set filetype=log
+    autocmd BufReadPost,BufNewFile *.log if getfsize(@%) < g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD | set filetype=log | endif
+
+    " source code file, don't need to check file size.
+    autocmd BufNewFile,BufReadPost *.iig set filetype=cpp
 augroup END
 
 " Looks like formatter will disable syntax.
