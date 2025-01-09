@@ -93,7 +93,7 @@ function! s:SHIfArray(variable)
                 \ "then",
                 \ "    echo \"Num: 1 <TMPL>\"",
                 \ "    var_tmp1=\"${<TMPL>[1]}\"",
-                \ "elif [[ \"${#<TMPL>}\" -gt \"1\" ]]",
+                \ "elif [[ \"${#<TMPL>}\" -ge \"2\" ]]",
                 \ "then",
                 \ "    echo \"Num: 2 <TMPL>\"",
                 \ "    var_tmp1=\"${<TMPL>[1]}\"",
@@ -113,7 +113,7 @@ function! s:SHIfAargs(variable)
         let l:tmpl="var_tmp_array"
     endif
     let l:text = [
-                \ "if [[ \"${#}\" -gt \"2\" ]] && ! [[ $2 =~ \-.* ]]",
+                \ "if [[ \"${#}\" -ge \"2\" ]] && ! [[ $2 =~ \-.* ]]",
                 \ "then",
                 \ "    echo \"Num: 1 \"",
                 \ "    var_arg1=\"${2}\"",
