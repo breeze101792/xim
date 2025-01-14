@@ -4,3 +4,4 @@
 command! Terminate :qall!
 command! Softtab :set expandtab
 command! Hardtab :set noexpandtab
+command! LogEnable :set filetype=log

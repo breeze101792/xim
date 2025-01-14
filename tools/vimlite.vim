@@ -264,6 +264,9 @@ nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " comments
 noremap <C-_> :SimpleCommentCode<CR>
+
+" buff list
+map <leader>b <Esc>:buffers<CR>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Auto Groups
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -292,7 +295,17 @@ augroup END
 " -------------------------------------------
 "  Tabline override
 " -------------------------------------------
-set statusline=[%{mode()}]\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
+" set statusline=[%{mode()}]\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
+set statusline=[%{mode()}]
+set statusline+=\ %<%F[%1*%M%*%n%R%H]
+set statusline+=%=
+set statusline+=\ %0(%{&filetype}\ \|\ %{&fileformat}\ \|\ %{&encoding}%)
+set statusline+=\ █
+set statusline+=\ %l:%-2c
+set statusline+=\ %2p%%
+set statusline+=\ 
+" set statusline+=\ %l:%L     " Line info
+" set statusline+=\ %c        " Column info
 
 set tabline=%!MyTabLine()
 
@@ -349,6 +362,19 @@ function! MyTabLabel(n)
 
     return l:bname
 endfunction
+
+" -------------------------------------------
+"  Mouse_on_off for cursor chage
+" -------------------------------------------
+command! Reload call Reload()
+
+function! Reload()
+    if !empty(glob($MYVIMRC))
+        source $MYVIMRC
+    else
+        echo 'No RC file found.'. $MYVIMRC
+    endif
+endfunc
 
 " -------------------------------------------
 "  Mouse_on_off for cursor chage

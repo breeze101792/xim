@@ -457,10 +457,13 @@ function fInit()
     fi
 
     echo "################################################################"
-    echo "Searching Path    : ${#src_path[@]}:${src_path[@]}"
-    echo "file_ext          : ${file_ext[@]}"
-    echo "Project List File : ${var_list_file}"
+    echo "##  Setup Info"
+    echo "################################################################"
     echo "Project file path : ${var_proj_path}"
+    echo "Project List File : ${var_list_file}"
+    echo "Folder Count      : ${#src_path[@]}"
+    echo "Searching Path    : ${src_path[@]}"
+    echo "file_ext          : $(echo ${file_ext[@]} | sed 's/-o/,/g'| sed 's/-iname //g')"
     echo "################################################################"
 
     cd ${var_cpath}
