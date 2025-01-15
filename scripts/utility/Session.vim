@@ -399,29 +399,6 @@ endfunc
 " -------------------------------------------
 "  Tab op
 " -------------------------------------------
-function! TabCloseOthers(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
-function! TabCloseRight(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-endfunction
-
-function! TabCloseLeft(bang)
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
 function! TabGo(tabname)
 
     let tabcount = tabpagenr("$")
@@ -438,7 +415,3 @@ function! TabGo(tabname)
         let currenttabidx = currenttabidx + 1
     endwhile
 endfunction
-
-command! -bang Tabcloseothers call TabCloseOthers('<bang>')
-command! -bang Tabcloseright call TabCloseRight('<bang>')
-command! -bang Tabcloseleft call TabCloseLeft('<bang>')

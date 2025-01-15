@@ -38,6 +38,7 @@ else
 " skip
 endif
 
+execute 'source '.s:config_path.'/module/Module.vim' 
 " -------------------------------------------
 "  Reload
 " -------------------------------------------
@@ -68,6 +69,8 @@ func! Reload()
     else
         execute 'source '.s:config_path.'/plugin/PluginNone.vim' 
     endif
+
+    execute 'source '.s:config_path.'/module/Module.vim' 
 
     redraw
     echo 'Vim Setting Reloaded.'

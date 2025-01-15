@@ -74,7 +74,7 @@ set incsearch                                     " increamental search
 " set autowrite                                   " auto save when switch document
 " set noswapfile
 " set directory=~/.vim/swp//
-exec "set directory=" . g:IDE_ENV_CONFIG_PATH . "/swp/"
+exec "set directory=" . get(g:, 'IDE_ENV_CONFIG_PATH', '~/.vim') . "/swp/"
 " set nobackup                                    " no backup when overright
 " set backupdir=~/.vim/backup//
 " set autoread                                    " reload files if changed externally
@@ -178,7 +178,7 @@ set mouse=c
 " set paste
 
 " setup column cursor line, this will slow down vim speed
-if g:IDE_CFG_HIGH_PERFORMANCE_HOST == 'y'
+if get(g:, 'IDE_CFG_HIGH_PERFORMANCE_HOST', 'n') == 'y'
     set cursorcolumn
 endif
 " This is for linux, we should not let our code length beyound 80 chars

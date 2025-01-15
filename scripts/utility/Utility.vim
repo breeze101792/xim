@@ -2,6 +2,7 @@
 " ===========================================
 
 exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/utility/Library.vim"
+exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/utility/Tools.vim"
 exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/utility/Commands.vim"
 exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/utility/Functions.vim"
 exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/utility/Session.vim"

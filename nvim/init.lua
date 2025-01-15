@@ -89,7 +89,11 @@ local nvimreload = function()
         --  Plugin settings
         vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
         vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
+    else
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginNone.vim")
     end
+
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
     print("Neovim Reloaded.")
 end
 
@@ -111,6 +115,9 @@ local initialize = function()
     else
         init_base()
         init_plug()
+
+        -- FIXME, find a place to insert it.
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
 
         -- Reload function
         vim.api.nvim_create_user_command("Reload", nvimreload, {})

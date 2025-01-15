@@ -1,13 +1,18 @@
+#!/bin/vim
+""""    Overview
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" This file is auto generated, do not modify it.
+" Settings
+" AutoCmd
+" KeyMap
+" Function
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Import from /mnt/data/tools/vim-ide/scripts/core/Settings.vim
+" COPY Start
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Config vim env                            """"
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Disable cscope, due to nvim
 
 """"    Basic Config vim env
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -16,7 +21,7 @@ set shortmess=I                  " Disable screen welcome message, Read :help sh
 set encoding=utf-8
 set termencoding=utf-8
 set formatoptions+=mM
-set fileencodings=utf-8
+set fencs=utf-8
 set autochdir
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
@@ -25,9 +30,9 @@ set showtabline=2
 set hidden                       " can put buffer to the background without writing
                                  " to disk, will remember history/marks.
 set lazyredraw                   " don't update the display while executing macros
-set updatetime=500               " how long wil vim wait after your interaction to start plugins/other event
+set updatetime=500
 set ttyfast                      " Send more characters at a given time.
-" set switchbuf+=usetab,newtab     " use new tab when open through quickfix
+set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 set redrawtime=1000
 "" Command timeout, only affect on mapping command
 "" timeout and timeoutlen apply to mappings
@@ -38,12 +43,19 @@ set ttimeoutlen=200
 
 ""   regexp
 " set gdefault                     " RegExp global by default, will add g in the sed
-" set magic                          " Enable extended regexes.
-" set regexpengine=1                 " use old reg eng, this may disable some reg syntax
+set magic                          " Enable extended regexes.
+set regexpengine=1                 " use old reg eng, this may disable some reg syntax
+
 
 ""    Others
 set report=0                     " Show all changes.
+set title                        " Show the filename in the window title bar.
+set splitbelow splitright        " how to split new windows.
 " :e ++ff=unix " Show ^M windows
+
+""    Old/Compatiable options
+" set re=1 " this force vim use old rex engine
+
 
 """"    Editor Settings (inside buffer)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -55,10 +67,6 @@ set undolevels=999                                " More undo (default=100)
 set linebreak                                     " Avoid wrapping a line in the middle of a word.
 " set wrap                                          " Enable line wrapping.
 " set virtualedit=block                           " in visal mode can select empty space
-set title                        " Show the filename in the window title bar.
-set splitbelow splitright        " how to split new windows.
-" FIXME. this will affect Quickfix, so disable it for now.
-" set splitkeep=topline                             " keeps the same screen screen lines in all split windows
 
 
 " Number
@@ -78,8 +86,7 @@ set incsearch                                     " increamental search
 ""    file options
 " set autowrite                                   " auto save when switch document
 " set noswapfile
-" set directory=~/.vim/swp//
-exec "set directory=" . get(g:, 'IDE_ENV_CONFIG_PATH', '~/.vim') . "/swp/"
+set directory=~/.vim/swp//
 " set nobackup                                    " no backup when overright
 " set backupdir=~/.vim/backup//
 " set autoread                                    " reload files if changed externally
@@ -110,9 +117,6 @@ endif
 " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
 
-"" Smart edit
-set nofixendofline " enable this will cause vim add new line at the end of line
-
 """"    IDE Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Syntax one
@@ -125,24 +129,19 @@ syntax sync maxlines=50
 
 " set formatoptions
 " set tags=./tags,tags;/     " tag path, this will be setted on auto function
-if has('cscope')
-    " Nvim 0.9 remove cscope support
-    set cscopetag              " set tags=tags
-    set nocscopeverbose        " set cscopeverbose
-endif
+" set cscopetag              " set tags=tags
+" set nocscopeverbose        " set cscopeverbose
 
 " Folding
-" set foldmethod=syntax " can be set to syntax, indent, manual
+set foldmethod=syntax " can be set to syntax, indent, manual
 set foldnestmax=10    " Only fold up to three nested levels.
 set foldlevel=99
 " set foldminlines=3    " show the min line of folded code
 set nofoldenable
 
 " OmniCppComplete
-" let OmniCpp_GlobalScopeSearch = 0
-" let OmniCpp_DisplayMode = 0
-" let OmniCpp_ShowScopeInAbbr = 1
-" let OmniCpp_NamespaceSearch = 2
+" let OmniCpp_NamespaceSearch = 1
+" let OmniCpp_GlobalScopeSearch = 1
 " let OmniCpp_ShowAccess = 1
 " let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
 " let OmniCpp_MayCompleteDot = 1 " autocomplete after .
@@ -174,7 +173,7 @@ set laststatus=2 " status bar always show
 set cmdheight=1  " Command line height
 set shortmess=aO " option to avoid hit enter, a for all, O for overwrite when reading file
 set ruler        " enable status bar ruler
-" set statusline=[%{mode()}]\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)
+" set statusline=\ %<%F[%1*%M%*%n%R%H]%=\ %y\ %0(%{&fileformat}\ %{&encoding}\ %c:%l/%L%)\
 
 " Other settings
 " use group to set it
@@ -183,9 +182,7 @@ set mouse=c
 " set paste
 
 " setup column cursor line, this will slow down vim speed
-if get(g:, 'IDE_CFG_HIGH_PERFORMANCE_HOST', 'n') == 'y'
-    set cursorcolumn
-endif
+" set cursorcolumn
 " This is for linux, we should not let our code length beyound 80 chars
 set colorcolumn=81
 
@@ -199,160 +196,8 @@ endif
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
 set fillchars+=vert:│
 
-" Set cursor shape on different mode
-" "Cursor settings:
-"  1 -> blinking block
-"  2 -> solid block 
-"  3 -> blinking underscore
-"  4 -> solid underscore
-"  5 -> blinking vertical bar
-"  6 -> solid vertical bar
-set t_SI="\e[6 q"
-set t_EI="\e[2 q"
-set t_SR="\e[4 q"
-
-""""    Patch For vim Plugins
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Match paren
-" let g:loaded_matchparen = 1 " do this will not load plugin
-let g:matchparen_timeout = 60
-let g:matchparen_insert_timeout = 60
-
-""""    Other Settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" save debug msg to /tmp/vim-debug
-if 0
-    let g:vim_debug_enable = 1
-    Check syntax time
-    syntime on
-    syntime report
-endif
-" Import from /mnt/data/tools/vim-ide/scripts/utility/Tools.vim
-" -------------------------------------------
-"  Mouse_on_off for cursor chage
-" -------------------------------------------
-command! MouseToggle call MouseToggle()
-
-function! MouseToggle()
-    if &mouse == 'c'
-        set mouse=a
-    else
-        set mouse=c
-    endif
-    return
-endfunc
-
-command! LineNumToggle call LineNumToggle()
-
-function! LineNumToggle()
-    if &relativenumber
-        set norelativenumber
-    else
-        set relativenumber
-    endif
-    return
-endfunc
-
-" -------------------------------------------
-"  SimpleCommenCode
-" -------------------------------------------
-command! -range -nargs=? SimpleCommentCode <line1>,<line2>call SimpleCommentCode(<q-args>)
-function! SimpleCommentCode(pattern) range
-    let b:comment_padding = ' '
-    let b:comment_leader = '#'
-    if a:pattern != ''
-        let b:comment_leader = '#'
-    elseif &filetype ==# 'c' || &filetype ==# 'cpp'
-        let b:comment_leader = '\/\/'
-    elseif &filetype ==# 'sh' || &filetype ==# 'conf' || &filetype ==# 'bash'
-        let b:comment_leader = '#'
-    elseif &filetype ==# 'python' || &filetype ==# 'ruby'
-        let b:comment_leader = '#'
-    elseif &filetype ==# 'vim'
-        let b:comment_leader = '"'
-    endif
-    let flag_comment=0
-    let match_ret=0
-
-    let b:comment_pattern = b:comment_leader.b:comment_padding
-    try
-        let match_ret=execute(a:firstline.','.a:lastline.'s/^\s*'.b:comment_leader.'/ /n')
-
-        let token=split(match_ret[1:], ' ')
-        if len(token) < 4
-            let flag_comment=1
-        else
-            let pattern_matches=token[0]
-            let line_matches=token[3]
-            let test=char2nr(pattern_matches[0])
-
-            if a:lastline - a:firstline + 1== pattern_matches
-                let flag_comment=0
-            else
-                let flag_comment=1
-            endif
-        endif
-    catch
-        let flag_comment=1
-    endtry
-
-    echom "Comment Code: '".b:comment_leader."', comment: ".flag_comment.", cnt:".match_ret
-    " Toggle
-    if flag_comment == 1
-        " Do comment
-        call execute(a:firstline.','.a:lastline.'s/^/'.b:comment_pattern.'/g')
-    else
-        " Do uncomment
-        call execute(a:firstline.','.a:lastline.'g/^\s*'.b:comment_leader.'/s/'.b:comment_leader.'[ ]\?//')
-    endif
-
-endfunction
-
-" -------------------------------------------
-"  Tab op
-" -------------------------------------------
-function! TabCloseOthers(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
-function! TabCloseRight(bang)
-    let cur=tabpagenr()
-    while cur < tabpagenr('$')
-        exe 'tabclose' . a:bang . ' ' . (cur + 1)
-    endwhile
-endfunction
-
-function! TabCloseLeft(bang)
-    while tabpagenr() > 1
-        exe 'tabclose' . a:bang . ' 1'
-    endwhile
-endfunction
-
-command! -bang Tabcloseothers call TabCloseOthers('<bang>')
-command! -bang Tabcloseright call TabCloseRight('<bang>')
-command! -bang Tabcloseleft call TabCloseLeft('<bang>')
-
-" Import from /mnt/data/tools/vim-ide/scripts/lite.vim
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Start of Lite Settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-""""    Vim Lite Session Overview
-" Settings
-" KeyMap
-" AutoGroups
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" COPY End
 
 """"    Lite setting
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -415,19 +260,15 @@ map <C-o> <Esc>:tabnew<SPACE>
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 
-"" Commands
+"" Lite settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " comments
 noremap <C-_> :SimpleCommentCode<CR>
 
 " buff list
 map <leader>b <Esc>:buffers<CR>
-
-" Highlight words.
-nnoremap <leader>m :call ToggleHighlightWords(expand('<cexpr>'))<CR>
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    AutoGroups
+""""    Auto Groups
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 augroup file_open_gp
     autocmd!
@@ -448,51 +289,6 @@ augroup syntax_hi_gp
                 \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
                 \ )
 augroup END
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Function
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" -------------------------------------------
-"  Mouse_on_off for cursor chage
-" -------------------------------------------
-command! Reload call Reload()
-
-function! Reload()
-    if !empty(glob($MYVIMRC))
-        source $MYVIMRC
-    else
-        echo 'No RC file found.'. $MYVIMRC
-    endif
-endfunc
-
-" -------------------------------------------
-"  TabsOrSpaces
-" -------------------------------------------
-function! TabsOrSpaces()
-    " Determines whether to use spaces or tabs on the current buffer.
-    " if getfsize(bufname("%")) > 256000
-    "     " File is very large, just use the default.
-    "     setlocal expandtab
-    "     return
-    " endif
-
-    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
-    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
-    " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
-
-    if numTabs > numSpaces
-        setlocal noexpandtab
-    else
-        setlocal expandtab
-    endif
-endfunction
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    End of Lite Settings
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Import from /mnt/data/tools/vim-ide/scripts/module/StatusLine.vim
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    UI Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -704,17 +500,151 @@ function! MyTabLabel(n)
 
     return l:bname
 endfunction
-" Import from /mnt/data/tools/vim-ide/scripts/module/HighlightWord.vim
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Function
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" -------------------------------------------
+"  Mouse_on_off for cursor chage
+" -------------------------------------------
+command! Reload call Reload()
+
+function! Reload()
+    if !empty(glob($MYVIMRC))
+        source $MYVIMRC
+    else
+        echo 'No RC file found.'. $MYVIMRC
+    endif
+endfunc
+
+" -------------------------------------------
+"  Mouse_on_off for cursor chage
+" -------------------------------------------
+command! MouseToggle call MouseToggle()
+
+function! MouseToggle()
+    if &mouse == 'c'
+        set mouse=a
+    else
+        set mouse=c
+    endif
+    return
+endfunc
+
+" -------------------------------------------
+"  Tab op
+" -------------------------------------------
+function! TabCloseOthers(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+function! TabCloseRight(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+endfunction
+
+function! TabCloseLeft(bang)
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+command! -bang Tabcloseothers call TabCloseOthers('<bang>')
+command! -bang Tabcloseright call TabCloseRight('<bang>')
+command! -bang Tabcloseleft call TabCloseLeft('<bang>')
+" -------------------------------------------
+"  TabsOrSpaces
+" -------------------------------------------
+function! TabsOrSpaces()
+    " Determines whether to use spaces or tabs on the current buffer.
+    " if getfsize(bufname("%")) > 256000
+    "     " File is very large, just use the default.
+    "     setlocal expandtab
+    "     return
+    " endif
+
+    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
+    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
+    " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
+
+    if numTabs > numSpaces
+        setlocal noexpandtab
+    else
+        setlocal expandtab
+    endif
+endfunction
+
+" -------------------------------------------
+"  SimpleCommenCodet
+" -------------------------------------------
+command! -range -nargs=? SimpleCommentCode <line1>,<line2>call SimpleCommentCode(<q-args>)
+function! SimpleCommentCode(pattern) range
+    let b:comment_padding = ' '
+    let b:comment_leader = '#'
+    if a:pattern != ''
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'c' || &filetype ==# 'cpp'
+        let b:comment_leader = '\/\/'
+    elseif &filetype ==# 'sh' || &filetype ==# 'conf' || &filetype ==# 'bash'
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'python' || &filetype ==# 'ruby'
+        let b:comment_leader = '#'
+    elseif &filetype ==# 'vim'
+        let b:comment_leader = '"'
+    endif
+    let flag_comment=0
+    let match_ret=0
+
+    let b:comment_pattern = b:comment_leader.b:comment_padding
+    try
+        let match_ret=execute(a:firstline.','.a:lastline.'s/^\s*'.b:comment_leader.'/ /n')
+
+        let token=split(match_ret[1:], ' ')
+        if len(token) < 4
+            let flag_comment=1
+        else
+            let pattern_matches=token[0]
+            let line_matches=token[3]
+            let test=char2nr(pattern_matches[0])
+
+            if a:lastline - a:firstline + 1== pattern_matches
+                let flag_comment=0
+            else
+                let flag_comment=1
+            endif
+        endif
+    catch
+        let flag_comment=1
+    endtry
+
+    echom "Comment Code: '".b:comment_leader."', comment: ".flag_comment.", cnt:".match_ret
+    " Toggle
+    if flag_comment == 1
+        " Do comment
+        call execute(a:firstline.','.a:lastline.'s/^/'.b:comment_pattern.'/g')
+    else
+        " Do uncomment
+        call execute(a:firstline.','.a:lastline.'g/^\s*'.b:comment_leader.'/s/'.b:comment_leader.'[ ]\?//')
+    endif
+
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Modules
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Map to toggle highlighting
-nnoremap <leader>th :call ToggleHighlightWords(expand('<cword>'))<CR>
+nnoremap <leader>m :call ToggleHighlightWords(expand('<cexpr>'))<CR>
 
 " Map to clear all highlights
-nnoremap <leader>ch :call ClearAllHighlightedWords()<CR>
-
-command! -nargs=1 ToggleHighlightWords call ToggleHighlightWords(<q-args>)
-
-command! ClearAllHighlightedWords call ClearAllHighlightedWords()
+" nnoremap <leader>ch :call ClearAllHighlightedWords(expand('<cword>'))<CR>
 
 " Define a function to toggle highlighting of specified words with different colors
 function! ToggleHighlightWords(...) abort
@@ -781,12 +711,12 @@ function! ToggleHighlightWords(...) abort
             \ ' cterm=bold gui=bold'
 
       " Define the syntax match to highlight the whole word, case-sensitive
-      " execute 'syntax match ' . l:group_name . ' /\<'. escape(l:word, '/\') . '\>/ containedin=ALL'
-      execute 'syntax match ' . l:group_name . ' /\V' . escape(l:word, '/\') . '/ containedin=ALL'
+      execute 'syntax match ' . l:group_name . ' /\<'. escape(l:word, '/\') . '\>/ containedin=ALL'
+      " execute 'syntax match ' . l:group_name . ' /\V' . escape(l:word, '/\') . '/ containedin=ALL'
 
       " Add the highlight group to the tracking list
       let g:highlighted_words[l:group_name] = l:word
-      echo 'Added highlight for "' . l:word . '".'
+      " echo 'Added highlight for "' . l:word . '".'
     endif
   endfor
 endfunction

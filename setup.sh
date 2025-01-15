@@ -65,6 +65,7 @@ fHelp()
     printf "    %- 16s\t%s\n" "-n|--nvim" "Specify instance. nvim"
     printf "    %- 16s\t%s\n" "-c|--config" "Generate config file"
     printf "    %- 16s\t%s\n" "-l|--lite" "Setup litevim."
+    printf "    %- 16s\t%s\n" "-r|--release-lite" "Release litevim."
     printf "    %- 16s\t%s\n" "-i|--instance" "Specify instance. vim/nvim/all"
     printf "    %- 16s\t%s\n" "-a|--all" "Specify instance. all"
     printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
@@ -368,6 +369,42 @@ function fSetupNeovim()
     fSoftLink ${var_nvim_root}/${var_init_file} ${path_target_ins}/${var_init_file}
     fSoftLink ${var_nvim_root}/lua ${path_target_ins}/lua
 }
+
+function fRelease_lite()
+{
+    fPrintHeader ${FUNCNAME[0]}
+    local var_lite_path=${PATH_IDE_ROOT}/tools/vimlite.vim
+    local var_file_list=()
+    # Settings source after lite.vim
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/core/Settings.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/utility/Tools.vim")
+
+    # Lite
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/lite.vim")
+
+    # Module source after lite.vim
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/StatusLine.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/HighlightWord.vim")
+
+    test -f ${var_lite_path} && rm ${var_lite_path}
+
+    for each_script in "${var_file_list[@]}"; do
+        if ! test -f ${each_script};then
+            echo "File not found. '${each_script}'"
+            return -1
+        fi
+    done
+
+    echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""' > ${var_lite_path}
+    echo "\" This file is auto generated, do not modify it." >> ${var_lite_path}
+    echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""' >> ${var_lite_path}
+    echo '' >> ${var_lite_path}
+    for each_script in "${var_file_list[@]}"; do
+        echo "\" Import from ${each_script}"
+        cat ${each_script}
+    done >> ${var_lite_path}
+    echo "Lite release finished."
+}
 function fSetup_lite()
 {
     fPrintHeader ${FUNCNAME[0]}
@@ -450,6 +487,7 @@ function fMain()
     local flag_setup_lite=false
     local flag_setup_config=false
     local flag_plugin_check=false
+    local flag_release_lite=false
     local var_ins="vim"
 
     while [[ $# != 0 ]]
@@ -464,6 +502,9 @@ function fMain()
                 ;;
             -l|--lite)
                 flag_setup_lite=true
+                ;;
+            -r|--release-lite)
+                flag_release_lite=true
                 ;;
             -a|--all)
                 flag_setup=true
@@ -530,6 +571,11 @@ function fMain()
     then
         fSetupCusConfig; fErrControl ${FUNCNAME[0]} ${LINENO}
         fInstallScript; fErrControl ${FUNCNAME[0]} ${LINENO}
+    fi
+
+    if [ ${flag_release_lite} = true ]
+    then
+        fRelease_lite; fErrControl ${FUNCNAME[0]} ${LINENO}
     fi
 
     if [ ${flag_setup_lite} = true ]
