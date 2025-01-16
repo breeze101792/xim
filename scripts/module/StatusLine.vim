@@ -85,7 +85,7 @@ set statusline+=%8*\ %=                                  " Space
 " Right
 set statusline+=%5*\ %{&filetype}                        " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
-set statusline+=%1*\ %-2c\ %2l:%2p%%\                   " Col, Rownumber/total (%)
+set statusline+=%1*\ %-2c\ %2l\ %2p%%\                   " Col, Rownumber/total (%)
 
 " -------------------------------------------
 "  Tabline override

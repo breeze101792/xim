@@ -8,6 +8,8 @@
 " Settings
 " KeyMap
 " AutoGroups
+" Adaption
+" Function
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Settings
@@ -16,13 +18,14 @@
 """"    Lite setting
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 colorscheme industry
-set noswapfile
 syntax on
 " FIXME, remove this line
 " -------->
 set listchars=tab:>-,nbsp:␣,trail:·,precedes:←,extends:→
 set hlsearch
 " <--------
+set noswapfile
+set colorcolumn=""
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    KeyMap
@@ -109,8 +112,29 @@ augroup syntax_hi_gp
 augroup END
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Adaption
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has("nvim")
+    cnoremap <expr> <up> wildmenumode() ? "\<left>" : "\<up>"
+    cnoremap <expr> <down> wildmenumode() ? "\<right>" : "\<down>"
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+" -------------------------------------------
+"  TabsOrSpaces
+" -------------------------------------------
+function! TabsOrSpaces()
+    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
+    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
+
+    if numTabs > numSpaces
+        setlocal noexpandtab
+    else
+        setlocal expandtab
+    endif
+endfunction
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
@@ -123,28 +147,27 @@ function! Reload()
         echo 'No RC file found.'. $MYVIMRC
     endif
 endfunc
-
 " -------------------------------------------
-"  TabsOrSpaces
+"  Pure mode
 " -------------------------------------------
-function! TabsOrSpaces()
-    " Determines whether to use spaces or tabs on the current buffer.
-    " if getfsize(bufname("%")) > 256000
-    "     " File is very large, just use the default.
-    "     setlocal expandtab
-    "     return
-    " endif
+command! PureToggle call PureToggle()
 
-    let numTabs=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^\\t"'))
-    let numSpaces=len(filter(getbufline(bufname("%"), 1, 250), 'v:val =~ "^  "'))
-    " echo 'Tabs Or Spaces: '.numTabs.', '.numSpaces
-
-    if numTabs > numSpaces
-        setlocal noexpandtab
+function! PureToggle()
+    if &paste
+        echo 'Disable Pure mode'
+        " backup vars
+        setlocal nopaste
+        " setlocal cursorline
+        setlocal number
+        setlocal list
     else
-        setlocal expandtab
+        echo 'Enable Pure mode'
+        setlocal paste
+        " setlocal nocursorline
+        setlocal nonumber
+        setlocal nolist
     endif
-endfunction
+endfunc
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

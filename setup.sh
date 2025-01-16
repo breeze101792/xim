@@ -385,6 +385,7 @@ function fRelease_lite()
     # Module source after lite.vim
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/StatusLine.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/HighlightWord.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/Bookmark.vim")
 
     test -f ${var_lite_path} && rm ${var_lite_path}
 
@@ -395,14 +396,21 @@ function fRelease_lite()
         fi
     done
 
-    echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""' > ${var_lite_path}
-    echo "\" This file is auto generated, do not modify it." >> ${var_lite_path}
-    echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""' >> ${var_lite_path}
-    echo '' >> ${var_lite_path}
-    for each_script in "${var_file_list[@]}"; do
-        echo "\" Import from ${each_script}"
-        cat ${each_script}
-    done >> ${var_lite_path}
+    {
+        echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""'
+        echo "\" This file is auto generated, do not modify it."
+        echo '""""""""""""""""""""""""""""""""""""""""""""""""""""""'
+        echo ''
+        for each_script in "${var_file_list[@]}"; do
+            echo '"------------------------------------------------------'
+            echo "\"\" Import from $(basename ${each_script})"
+            echo '"------------------------------------------------------'
+            cat ${each_script}
+        done
+        echo '"------------------------------------------------------'
+        echo "\"\" End of Importing."
+        echo '"------------------------------------------------------'
+    } > ${var_lite_path}
     echo "Lite release finished."
 }
 function fSetup_lite()
