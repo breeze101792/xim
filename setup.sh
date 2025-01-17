@@ -405,7 +405,7 @@ function fRelease_lite()
             echo '"------------------------------------------------------'
             echo "\"\" Import from $(basename ${each_script})"
             echo '"------------------------------------------------------'
-            cat ${each_script}
+            cat ${each_script} | grep -v '^[ ]\+".*\|^".*\|^$'
         done
         echo '"------------------------------------------------------'
         echo "\"\" End of Importing."

@@ -5,11 +5,19 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """"    Vim Lite Session Overview
+" Env
 " Settings
 " KeyMap
 " AutoGroups
 " Adaption
 " Function
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Env setting
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:IDE_ENV_OS = "Linux"
+let g:IDE_ENV_INS = "vim"
+let g:IDE_ENV_IDE_TITLE = "LITE"
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Settings
@@ -86,7 +94,7 @@ noremap <C-_> :SimpleCommentCode<CR>
 map <leader>b <Esc>:buffers<CR>
 
 " Highlight words.
-nnoremap <leader>m :call ToggleHighlightWords(expand('<cexpr>'))<CR>
+nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    AutoGroups
@@ -138,15 +146,17 @@ endfunction
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-command! Reload call Reload()
-
-function! Reload()
-    if !empty(glob($MYVIMRC))
-        source $MYVIMRC
-    else
-        echo 'No RC file found.'. $MYVIMRC
-    endif
-endfunc
+if !exists("Reload")
+    command! Reload call Reload()
+    function! Reload()
+        if !empty(glob($MYVIMRC))
+            source $MYVIMRC
+            echo 'Lite reloaded.'
+        else
+            echo 'No RC file found.'. $MYVIMRC
+        endif
+    endfunc
+end
 " -------------------------------------------
 "  Pure mode
 " -------------------------------------------

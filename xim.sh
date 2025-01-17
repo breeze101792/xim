@@ -588,7 +588,8 @@ function fEdit()
                 flag_cctree=y
                 ;;
             -l|--lite)
-                cmd_args+=("-u ${HS_PATH_IDE}/tools/vimlite.vim")
+                # cmd_args+=("-u ${HS_PATH_IDE}/tools/vimlite.vim")
+                export VIDE_SH_IDE_LITE='y'
                 ;;
             -c|--clip)
                 shift 1

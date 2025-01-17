@@ -1,16 +1,24 @@
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Settings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Map to toggle highlighting
-nnoremap <leader>th :call ToggleHighlightWords(expand('<cword>'))<CR>
+" nnoremap <leader>th :call HighlightWordsToggle(expand('<cexpr>'))<CR>
+nnoremap <leader>th :call HighlightWordsToggle(expand('<cword>'))<CR>
 
 " Map to clear all highlights
-nnoremap <leader>ch :call ClearAllHighlightedWords()<CR>
+nnoremap <leader>ch :call HighlightedAllWordsToggle()<CR>
 
-command! -nargs=1 ToggleHighlightWords call ToggleHighlightWords(<q-args>)
+" Commands
+command! -nargs=1 HighlightWordsToggle call HighlightWordsToggle(<q-args>)
 
-command! ClearAllHighlightedWords call ClearAllHighlightedWords()
+command! HighlightedAllWordsToggle call HighlightedAllWordsToggle()
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Function
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Define a function to toggle highlighting of specified words with different colors
-function! ToggleHighlightWords(...) abort
+function! HighlightWordsToggle(...) abort
   " If no arguments are provided, prompt the user to enter words
   if a:0 == 0
     let l:input = input('Enter words to toggle highlight (separate with spaces): ')
@@ -85,7 +93,7 @@ function! ToggleHighlightWords(...) abort
 endfunction
 
 " Define a function to clear all highlighted words
-function! ClearAllHighlightedWords() abort
+function! HighlightedAllWordsToggle() abort
   if exists('g:highlighted_words')
     for l:group_name in keys(g:highlighted_words)
       " Remove syntax and highlight settings for each group

@@ -1,3 +1,21 @@
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Settings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Map shortcut keys
+nnoremap mt :call MarkingToggle()<CR>
+nnoremap mp :call MarkJumpToPrev()<CR>
+nnoremap mn :call MarkJumpToNext()<CR>
+nnoremap mm :call MarkToggleLine()<CR>
+nnoremap ml :call MarkJumpToMarkList()<CR>
+
+" Commands
+command! MarkingToggle call MarkingToggle()
+command! MarkJumpToMarkList call MarkJumpToMarkList()
+
+""""    Variable
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Define global variables
 let g:marking_enabled = 1
 let g:marked_lines = {} " Use a dictionary to store line numbers and match IDs
@@ -5,8 +23,11 @@ let g:marked_lines = {} " Use a dictionary to store line numbers and match IDs
 " Define highlight group
 highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Function
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle marking functionality
-function! ToggleMarking()
+function! MarkingToggle()
     if g:marking_enabled
         let g:marking_enabled = 0
         echo "Marking functionality disabled."
@@ -52,7 +73,7 @@ function! UnmarkLine()
 endfunction
 
 " Toggle mark on the current line
-function! ToggleMarkLine()
+function! MarkToggleLine()
     if !g:marking_enabled
         echo "Please enable marking functionality first."
         return
@@ -77,7 +98,7 @@ function! ClearAllMarks()
 endfunction
 
 " Jump to a marked line from a list
-function! JumpToMark()
+function! MarkJumpToMarkList()
     if empty(keys(g:marked_lines))
         echo "No marked lines."
         return
@@ -100,7 +121,7 @@ function! JumpToMark()
 endfunction
 
 " Jump to previous marked line
-function! JumpToPrevMark()
+function! MarkJumpToPrev()
     if empty(keys(g:marked_lines))
         echo "No marked lines."
         return
@@ -121,7 +142,7 @@ function! JumpToPrevMark()
 endfunction
 
 " Jump to next marked line
-function! JumpToNextMark()
+function! MarkJumpToNext()
     if empty(keys(g:marked_lines))
         echo "No marked lines."
         return
@@ -140,17 +161,3 @@ function! JumpToNextMark()
         echo "No next marked line."
     endif
 endfunction
-
-" Map shortcut keys
-" nnoremap <F5> :call ToggleMarking()<CR>
-" nnoremap <F6> :call MarkLine()<CR>
-" nnoremap <F7> :call UnmarkLine()<CR>
-" nnoremap <F8> :call JumpToMark()<CR>
-" nnoremap <F9> :call JumpToPrevMark()<CR>
-" nnoremap <F10> :call JumpToNextMark()<CR>
-" nnoremap <F11> :call ToggleMarkLine()<CR>
-nnoremap mt :call ToggleMarking()<CR>
-nnoremap mp :call JumpToPrevMark()<CR>
-nnoremap mn :call JumpToNextMark()<CR>
-nnoremap mm :call ToggleMarkLine()<CR>
-nnoremap ml :call JumpToMark()<CR>

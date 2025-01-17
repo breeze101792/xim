@@ -219,14 +219,14 @@ function! IDE_UpdateEnv_BufOpen(...)
         let b:IDE_ENV_GIT_PROJECT_PATH = ""
     endif
 
-    if g:IDE_CFG_PLUGIN_ENABLE == "y"
+    if exists('*tagbar#currenttag')
         try
             let b:IDE_ENV_CURRENT_FUNC = tagbar#currenttag('%s','','f')
-        catch
-            let b:IDE_ENV_CURRENT_FUNC = ''
+        " catch
+        "     let b:IDE_ENV_CURRENT_FUNC = ''
         endtry
-    else
-        let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    " else
+    "     let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
     endif
 
     " NOTE. We only run this onces.

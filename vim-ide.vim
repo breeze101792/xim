@@ -1,44 +1,74 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    initialize
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Source needed scripts
-if !empty(glob("~/.vim/ConfigCustomize.vim"))
-    source ~/.vim/ConfigCustomize.vim
-else
-    " TODO remove it
-    if !empty(glob("~/.vim/Config_Customize.vim"))
-        source ~/.vim/Config_Customize.vim
+let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.vim")
+
+function! LiteInit()
+
+    " It's a patch for Env
+    let g:IDE_ENV_OS = "Linux"
+    let g:IDE_ENV_INS = "vim"
+    let g:IDE_ENV_IDE_TITLE = "LITE"
+    " execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/core/Config.vim' 
+    " execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/core/Environment.vim' 
+
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/core/Settings.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/adaptation/Adaptation.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim' 
+
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/lite.vim' 
+
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginNone.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim' 
+endfunction
+
+function! IdeInit()
+    " Source needed scripts
+    if !empty(glob("~/.vim/ConfigCustomize.vim"))
+        source ~/.vim/ConfigCustomize.vim
+    else
+        " TODO remove it
+        if !empty(glob("~/.vim/Config_Customize.vim"))
+            source ~/.vim/Config_Customize.vim
+        endif
     endif
-endif
-let s:config_path='~/.vim/scripts' 
 
-execute 'source '.s:config_path.'/core/Config.vim' 
-execute 'source '.s:config_path.'/core/Environment.vim' 
-execute 'source '.s:config_path.'/core/Settings.vim' 
-execute 'source '.s:config_path.'/core/KeyMaps.vim' 
+    " Core
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/core/Core.vim' 
 
-if g:IDE_CFG_AUTOCMD_ENABLE == "y"
-    execute 'source '.s:config_path.'/core/Autocmd.vim' 
-endif
+    " Adaptation layer
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/adaptation/Adaptation.vim' 
 
-" Adaptation layer
-execute 'source '.s:config_path.'/adaptation/Adaptation.vim' 
+    " utility function related
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim' 
 
-" utility function related
-execute 'source '.s:config_path.'/utility/Utility.vim' 
+    if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
+        " plugins related
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPreConfig.vim' 
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/Plugin.vim' 
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPostConfig.vim' 
+    else
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginNone.vim' 
+        " elseif version < 704
+        " skip
+    endif
 
-if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
-    " plugins related
-    execute 'source '.s:config_path.'/plugin/PluginPreConfig.vim' 
-    execute 'source '.s:config_path.'/plugin/Plugin.vim' 
-    execute 'source '.s:config_path.'/plugin/PluginPostConfig.vim' 
-else
-    execute 'source '.s:config_path.'/plugin/PluginNone.vim' 
-" elseif version < 704
-" skip
-endif
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim' 
+endfunction
 
-execute 'source '.s:config_path.'/module/Module.vim' 
+func! IdeMain()
+    "" Main init
+    if $VIDE_SH_IDE_LITE != ""
+        call LiteInit()
+    else
+        call IdeInit()
+    endif
+endfunc
+
+"  Main Function
+" -------------------------------------------
+call IdeMain()
+
 " -------------------------------------------
 "  Reload
 " -------------------------------------------
@@ -46,32 +76,29 @@ command! Reload call Reload()
 command! Refresh call Reload()
 
 func! Reload()
-    let l:config_path='~/.vim/scripts' 
-
-    execute 'source '.l:config_path.'/core/Config.vim' 
-    execute 'source '.l:config_path.'/core/Environment.vim' 
-    execute 'source '.l:config_path.'/core/Settings.vim' 
-    execute 'source '.l:config_path.'/core/KeyMaps.vim' 
-    if g:IDE_CFG_AUTOCMD_ENABLE == "y"
-        execute 'source '.l:config_path.'/core/Autocmd.vim' 
-    endif
-
-    " Adaptation layer
-    execute 'source '.l:config_path.'/adaptation/Adaptation.vim' 
-
-    " utility function related
-    execute 'source '.l:config_path.'/utility/Utility.vim' 
-
-    if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
-        " plugins related
-        execute 'source '.l:config_path.'/plugin/PluginPreConfig.vim' 
-        execute 'source '.l:config_path.'/plugin/PluginPostConfig.vim' 
+    if $VIDE_SH_IDE_LITE != ""
+        call LiteInit()
     else
-        execute 'source '.s:config_path.'/plugin/PluginNone.vim' 
+        " Core layer
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/core/Core.vim' 
+
+        " Adaptation layer
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/adaptation/Adaptation.vim' 
+
+        " utility function related
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim' 
+
+        if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
+            " plugins related
+            execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPreConfig.vim' 
+            execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPostConfig.vim' 
+        else
+            execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginNone.vim' 
+        endif
+
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim' 
+
     endif
-
-    execute 'source '.s:config_path.'/module/Module.vim' 
-
     redraw
     echo 'Vim Setting Reloaded.'
 endfunc

@@ -1,28 +1,47 @@
 ----------------------------------------------------------------
 ----    Initialize
 ----------------------------------------------------------------
+local init_lite = function()
+    -- FIXME, it's an patch.
+    --[[
+    vim.g.IDE_ENV_OS = 'Linux'
+    vim.g.IDE_ENV_INS = 'nvim'
+    vim.g.IDE_ENV_IDE_TITLE = 'LITE'
+    --]]
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/core/Settings.vim')
+
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/lite.vim')
+
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/adaptation/Adaptation.vim')
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/utility/Utility.vim')
+
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/plugin/PluginNone.vim')
+    vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/module/Module.vim')
+end
+
 local init_base = function()
-    local config_path="~/.config/nvim"
-    -- Lua script
     -- FIXME, Still use vim config scripts
     if vim.fn.filereadable("~/.vim/ConfigCustomize.vim") then
         vim.cmd("source ~/.vim/ConfigCustomize.vim")
     end
 
-    vim.cmd("source " .. config_path .."/scripts/core/Config.vim")
-    vim.cmd("source " .. config_path .."/scripts/core/Environment.vim")
-    vim.cmd("source " .. config_path .."/scripts/core/Settings.vim")
-    vim.cmd("source " .. config_path .."/scripts/core/KeyMaps.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/Core.vim")
+    --[[
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/Config.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/Environment.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/Settings.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/KeyMaps.vim")
 
     if vim.g.IDE_CFG_AUTOCMD_ENABLE == "y" then
-        vim.cmd("source " .. config_path .."/scripts/core/Autocmd.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/core/Autocmd.vim")
     end
+    --]]
 
     -- Adaptation layer
-    vim.cmd("source " .. config_path .."/scripts/adaptation/Adaptation.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/adaptation/Adaptation.vim")
 
     -- utility function related
-    vim.cmd("source " .. config_path .."/scripts//utility/Utility.vim")
+    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts//utility/Utility.vim")
 end
 local init_nvimide = function()
     -- print("Experiment lazy load.")
@@ -83,17 +102,22 @@ local init_plug = function()
 end
 
 local nvimreload = function()
-    init_base()
-    require("nvimide").reload({})
-    if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
-        --  Plugin settings
-        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
-        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
+    local flag_lite=os.getenv("VIDE_SH_IDE_LITE")
+    if flag_lite == 'y' then
+        init_lite()
     else
-        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginNone.vim")
-    end
+        init_base()
+        require("nvimide").reload({})
+        if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
+            --  Plugin settings
+            vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPreConfig.vim")
+            vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginPostConfig.vim")
+        else
+            vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/plugin/PluginNone.vim")
+        end
 
-    vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
+        vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
+    end
     print("Neovim Reloaded.")
 end
 
@@ -101,10 +125,13 @@ end
 ----    Setup function
 ----------------------------------------------------------------
 local initialize = function()
-    local flag_lagacy=false
+    local flag_legacy=false
+    local flag_lite=os.getenv("VIDE_SH_IDE_LITE")
     -- print("Neovim Init.")
 
-    if flag_lagacy then
+    vim.g.IDE_ENV_ROOT_PATH = "~/.config/nvim"
+
+    if flag_legacy then
         -- Vim script
         -- Don't use vim script for start up
         -- vim.opt.packpath = vim.g.runtimepath
@@ -112,6 +139,11 @@ local initialize = function()
         vim.opt.runtimepath:append('~/.vim/after')
 
         vim.cmd('source ~/.vimrc')
+    elseif flag_lite == 'y' then
+        init_lite()
+
+        -- Reload function
+        vim.api.nvim_create_user_command("Reload", nvimreload, {})
     else
         init_base()
         init_plug()

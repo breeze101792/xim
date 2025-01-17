@@ -63,8 +63,8 @@ endfunction
 "location on screen returning to the line you started from in FunctionName()
 " map \func :let name = FunctionName()<CR> :echo name<CR>
 
-command! CurrentFunction call CurrentFunction()
-function! CurrentFunction()
+command! GetCurrentFunction call GetCurrentFunction()
+function! GetCurrentFunction()
     let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
     let counter = 0
     let max_find = 5
@@ -105,6 +105,7 @@ function! CurrentFunction()
     call winrestview(view)
     return tempstring.position
 endfun
+
 " -------------------------------------------
 "  Conditional Pair
 " -------------------------------------------

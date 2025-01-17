@@ -77,15 +77,16 @@ hi User8 ctermfg=007 ctermbg=236
 hi User9 ctermfg=015 ctermbg=232
 
 set statusline=
-set statusline+=%{UpdateStatuslineColor()}               " Changing the statusline color
-set statusline+=%1*\ %{toupper(GetCurrentMode())}        " Current mode
-set statusline+=%8*\ %<%F\ %{GetReadOnly()}\ %m\ %w\     " File+path
+set statusline+=%{UpdateStatuslineColor()}                 " Changing the statusline color
+set statusline+=%1*\ %{toupper(GetCurrentMode())}          " Current mode
+set statusline+=%8*\ %<%F\ %{GetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
-set statusline+=%8*\ %=                                  " Space
-" Right
-set statusline+=%5*\ %{&filetype}                        " FileType
+set statusline+=%8*\ %=                                    " Space
+                                                           " Right
+                                                           " set statusline+=%5*\ %{&filetype} " FileType
+set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
-set statusline+=%1*\ %-2c\ %2l\ %2p%%\                   " Col, Rownumber/total (%)
+set statusline+=%1*\ %-2c\ %2l\ %2p%%\                     " Col, Rownumber/total (%)
 
 " -------------------------------------------
 "  Tabline override
@@ -101,8 +102,11 @@ hi TabTitle cterm=bold ctermfg=000 ctermbg=014
 " Set the entire tabline
 function! MyTabLine() " acclamation to avoid conflict
     let s = '' " complete tabline goes here
+    " FIXME, maybe use some script variable to define title name.
+    let title = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
+
     " Title
-    let s .= '%#TabTitle# VIM '
+    let s .= '%#TabTitle# ' . title . ' '
     " loop through each tab page
     for t in range(tabpagenr('$'))
         " set highlight
@@ -186,26 +190,26 @@ function! TabLineLabel(n)
 endfunction
 
 " Set the label for a single tab
-function! MyTabLabel(n)
-
-    " This is run in the scope of the active tab, so t:name
-    " won't work.
-    let l:tabname = gettabvar(a:n, 'name', '')
-
-    " This variable exists!
-    if l:tabname != ''
-        return l:tabname
-    endif
-
-    " If it's not found fall back to the buffer name
-    let buflist = tabpagebuflist(a:n)
-    let winnr = tabpagewinnr(a:n)
-    let l:bname = bufname(buflist[winnr - 1])
-
-    " Unnamed buffer, scratch buffer, etc. Could be more detailed.
-    if l:bname == ''
-        let l:bname = '[No Name]'
-    endif
-
-    return l:bname
-endfunction
+" function! MyTabLabel(n)
+"
+"     " This is run in the scope of the active tab, so t:name
+"     " won't work.
+"     let l:tabname = gettabvar(a:n, 'name', '')
+"
+"     " This variable exists!
+"     if l:tabname != ''
+"         return l:tabname
+"     endif
+"
+"     " If it's not found fall back to the buffer name
+"     let buflist = tabpagebuflist(a:n)
+"     let winnr = tabpagewinnr(a:n)
+"     let l:bname = bufname(buflist[winnr - 1])
+"
+"     " Unnamed buffer, scratch buffer, etc. Could be more detailed.
+"     if l:bname == ''
+"         let l:bname = '[No Name]'
+"     endif
+"
+"     return l:bname
+" endfunction
