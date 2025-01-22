@@ -25,8 +25,12 @@ let g:IDE_ENV_IDE_TITLE = "LITE"
 
 """"    Lite setting
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-colorscheme industry
-syntax on
+try
+    colorscheme industry
+endtry
+try
+    syntax on
+endtry
 " FIXME, remove this line, syntax issue.
 " -------->
 set listchars=tab:>-,trail:~,extends:>,precedes:<

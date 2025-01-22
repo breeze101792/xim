@@ -100,7 +100,7 @@ if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
     " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 else
-    set showbreak=→\
+    set showbreak=->\
     " set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
     set listchars=tab:>-,trail:~,extends:>,precedes:<
 endif
@@ -109,7 +109,7 @@ endif
 set list
 
 "" Smart edit
-if exists('&nofixendofline') 
+if exists('&nofixendofline')
     set nofixendofline " enable this will cause vim add new line at the end of line
 endif
 

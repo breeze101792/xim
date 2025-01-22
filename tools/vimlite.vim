@@ -91,7 +91,7 @@ if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     set showbreak=↪\
     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
 else
-    set showbreak=→\
+    set showbreak=->\
     set listchars=tab:>-,trail:~,extends:>,precedes:<
 endif
 set list
@@ -300,8 +300,10 @@ command! -bang Tabcloseleft call TabCloseLeft('<bang>')
 let g:IDE_ENV_OS = "Linux"
 let g:IDE_ENV_INS = "vim"
 let g:IDE_ENV_IDE_TITLE = "LITE"
-colorscheme industry
-syntax on
+try
+    colorscheme industry
+    syntax on
+endtry
 set listchars=tab:>-,trail:~,extends:>,precedes:<
 set noswapfile
 if exists('&colorcolumn') 
