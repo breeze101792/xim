@@ -3,6 +3,49 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 "------------------------------------------------------
+"" Import from Environment.vim
+"------------------------------------------------------
+if !exists("g:IDE_ENV_INS")
+    if has("nvim")
+        let g:IDE_ENV_INS = "nvim"
+    else
+        let g:IDE_ENV_INS = "vim"
+    endif
+endif
+if !exists("g:IDE_ENV_OS")
+    if has("macunix")
+        let g:IDE_ENV_OS = "Darwin"
+    elseif has("unix")
+        let g:IDE_ENV_OS = "Linux"
+    elseif has("win64") || has("win32") || has("win16")
+        let g:IDE_ENV_OS = "Windows"
+    else
+        let g:IDE_ENV_OS = "Linux"
+    endif
+endif
+let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
+let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
+let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")
+if g:IDE_ENV_INS == "nvim"
+    let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.config/nvim")
+else
+    let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.vim")
+endif
+let g:IDE_ENV_CSCOPE_EXC = get(g:, 'IDE_ENV_CSCOPE_EXC', "cscope")
+let g:IDE_ENV_CONFIG_PATH = get(g:, 'IDE_ENV_CONFIG_PATH', $HOME."/.vim")
+let g:IDE_ENV_CLIP_PATH = get(g:, 'IDE_ENV_CLIP_PATH', g:IDE_ENV_CONFIG_PATH."/clip")
+let g:IDE_ENV_PROJ_DATA_PATH = get(g:, 'IDE_ENV_PROJ_DATA_PATH', "./")
+let g:IDE_ENV_PROJ_SCRIPT = get(g:, 'IDE_ENV_PROJ_SCRIPT', "")
+let g:IDE_ENV_TAGS_DB = get(g:, 'IDE_ENV_TAGS_DB', "")
+let g:IDE_ENV_CSCOPE_DB = get(g:, 'IDE_ENV_CSCOPE_DB', "")
+let g:IDE_ENV_CCTREE_DB = get(g:, 'IDE_ENV_CCTREE_DB', "")
+let g:IDE_ENV_SESSION_AUTOSAVE_PATH = get(g:, 'IDE_ENV_SESSION_AUTOSAVE_PATH', g:IDE_ENV_CONFIG_PATH."/session_autosave")
+let g:IDE_ENV_SESSION_PATH = get(g:, 'IDE_ENV_SESSION_PATH', g:IDE_ENV_CONFIG_PATH."/session")
+let g:IDE_ENV_REQ_TAG_UPDATE=0
+let g:IDE_ENV_REQ_SESSION_RESTORE=""
+let g:IDE_ENV_DEF_PAGE_WIDTH=80
+let g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD=100 * 1000 * 1000
+"------------------------------------------------------
 "" Import from Settings.vim
 "------------------------------------------------------
 set nocompatible                 " disable vi compatiable
@@ -11,7 +54,9 @@ set encoding=utf-8
 set termencoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
-set autochdir
+if exists('&autochdir') 
+    set autochdir
+endif
 set showtabline=2
 set hidden                       " can put buffer to the background without writing
 set lazyredraw                   " don't update the display while executing macros
@@ -47,10 +92,12 @@ if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
 else
     set showbreak=→\
-    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+    set listchars=tab:>-,trail:~,extends:>,precedes:<
 endif
 set list
-set nofixendofline " enable this will cause vim add new line at the end of line
+if exists('&nofixendofline') 
+    set nofixendofline " enable this will cause vim add new line at the end of line
+endif
 syntax sync maxlines=50
 if has('cscope')
     set cscopetag              " set tags=tags
@@ -79,12 +126,18 @@ set mouse=c
 if get(g:, 'IDE_CFG_HIGH_PERFORMANCE_HOST', 'n') == 'y'
     set cursorcolumn
 endif
-set colorcolumn=81
+if exists('&colorcolumn') 
+    set colorcolumn=81
+endif
 set cursorline
-if version >= 802
+if exists('&cursorlineopt') 
     set cursorlineopt=number " only line number will be highlighted, dosen't
 endif
-set fillchars+=vert:│
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
+    set fillchars+=vert:│
+else
+    set fillchars+=vert:\|
+endif
 set t_SI="\e[6 q"
 set t_EI="\e[2 q"
 set t_SR="\e[4 q"
@@ -96,6 +149,64 @@ if 0
     syntime on
     syntime report
 endif
+"------------------------------------------------------
+"" Import from KeyMaps.vim
+"------------------------------------------------------
+nnoremap q: <nop>
+nnoremap q/ <nop>
+map q <nop>
+nnoremap <leader>wqa :wqa<CR>
+nnoremap <leader>wa :wa<CR>
+nnoremap <leader>qq :q!<CR>
+nnoremap <leader>qa :qa<CR>
+nnoremap <leader>qe :exit()<CR>
+nnoremap qq :q!<CR>
+nnoremap qa :qa<CR>
+nnoremap <leader>sh :tab terminal<CR>
+map <C-a> <Esc>ggVG<CR>
+map <leader>a <Esc>ggVG<CR>
+nnoremap <S-k> <Esc>dd<Up>P
+nnoremap <S-j> <Esc>dd<Down>P
+nnoremap <leader><CR> o<Esc>
+map <leader>d <Esc>:tab split<CR>
+map <C-h> <Esc>:tabprev<CR>
+map <C-l> <Esc>:tabnext<CR>
+map <S-h> <Esc>:tabmove -1 <CR>
+map <S-l> <Esc>:tabmove +1 <CR>
+map <C-Left> <Esc>:tabprev<CR>
+map <C-Right> <Esc>:tabnext<CR>
+map <S-Left> <Esc>:tabmove -1 <CR>
+map <S-Right> <Esc>:tabmove +1 <CR>
+map <C-o> <Esc>:tabnew<SPACE>
+nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
+nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
+nnoremap <C-W>M <C-W>\| <C-W>_
+nnoremap <C-W>m <C-W>=
+nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
+nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
+"------------------------------------------------------
+"" Import from Autocmd.vim
+"------------------------------------------------------
+augroup mouse_gp
+    autocmd!
+    autocmd VimEnter * :set mouse=c
+    autocmd VimLeave * :set mouse=c
+augroup END
+augroup menu_gp
+    autocmd!
+    autocmd CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
+augroup END
+augroup syntax_hi_gp
+    autocmd!
+    autocmd Syntax * call matchadd(
+                \ 'Debug',
+                \ '\v\W\zs<(NOTE|HACK)>'
+                \ )
+    autocmd Syntax * call matchadd(
+                \ 'Todo',
+                \ '\v\W\zs<(BUG)>'
+                \ )
+augroup END
 "------------------------------------------------------
 "" Import from Tools.vim
 "------------------------------------------------------
@@ -191,55 +302,14 @@ let g:IDE_ENV_INS = "vim"
 let g:IDE_ENV_IDE_TITLE = "LITE"
 colorscheme industry
 syntax on
-set listchars=tab:>-,nbsp:␣,trail:·,precedes:←,extends:→
-set hlsearch
+set listchars=tab:>-,trail:~,extends:>,precedes:<
 set noswapfile
-set colorcolumn=""
-nnoremap q: <nop>
-nnoremap q/ <nop>
-map q <nop>
-nnoremap <leader>wa :wa<CR>
-nnoremap <leader>qa :qa<CR>
-nnoremap <leader>q :q<CR>
-nnoremap <leader>qq :q!<ENTER>
-nnoremap <leader>wqa :wqa<CR>
-nnoremap qq :q!<ENTER>
-nnoremap qa :qa<CR>
-nnoremap <leader>sh :sh<CR>
-map <C-a> <Esc>ggVG<CR>
-nmap <S-k> <Esc>dd<Up>p
-nnoremap <S-j> <Esc>dd<Down>p
-nnoremap <leader><CR> o<Esc>
-map <leader>d <Esc>:tab split<CR>
-map <C-h> <Esc>:tabprev<CR>
-map <C-l> <Esc>:tabnext<CR>
-map <S-h> <Esc>:tabmove -1 <CR>
-map <S-l> <Esc>:tabmove +1 <CR>
-map <C-Left> <Esc>:tabprev<CR>
-map <C-Right> <Esc>:tabnext<CR>
-map <S-Left> <Esc>:tabmove -1 <CR>
-map <S-Right> <Esc>:tabmove +1 <CR>
-map <C-o> <Esc>:tabnew<SPACE>
-nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
-nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
+if exists('&colorcolumn') 
+    set colorcolumn=""
+endif
 noremap <C-_> :SimpleCommentCode<CR>
 map <leader>b <Esc>:buffers<CR>
 nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
-augroup file_open_gp
-    autocmd!
-    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
-augroup END
-augroup tab_gp
-    autocmd!
-    autocmd BufReadPost * call TabsOrSpaces()
-augroup END
-augroup syntax_hi_gp
-    autocmd!
-    autocmd Syntax * call matchadd(
-                \ 'Debug',
-                \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
-                \ )
-augroup END
 if has("nvim")
     cnoremap <expr> <up> wildmenumode() ? "\<left>" : "\<up>"
     cnoremap <expr> <down> wildmenumode() ? "\<right>" : "\<down>"
@@ -281,7 +351,7 @@ endfunc
 "------------------------------------------------------
 "" Import from StatusLine.vim
 "------------------------------------------------------
-function! GetCurrentMode()
+function! StatusLineGetCurrentMode()
     let l:mode = mode()
     let l:mode_name = ''
     if l:mode == 'n'
@@ -309,17 +379,11 @@ function! GetCurrentMode()
     endif
     return l:mode_name
 endfunction
-function! GetReadOnly()
-    if &readonly || !&modifiable
-        return ''
-    else
-        return ''
-endfunction
-function! UpdateStatuslineColor()
-    let currentmode=GetCurrentMode()
+function! StatusLineUpdateColor()
+    let currentmode=StatusLineGetCurrentMode()
     if (mode() ==# 'i')
         exe 'hi! User1 ctermfg=000 ctermbg=001' 
-    elseif (mode() =~# '\v(v|V)' || currentmode ==# 'V·Block' || currentmode ==# 't')
+    elseif (mode() =~# '\v(v|V)' || currentmode ==# 'V·Block')
         exe 'hi! User1 ctermfg=000 ctermbg=002' 
     elseif (mode() ==# 'R')
         exe 'hi! User1 ctermfg=000 ctermbg=006' 
@@ -327,6 +391,15 @@ function! UpdateStatuslineColor()
         exe 'hi! User1 ctermfg=000 ctermbg=003' 
     endif
     return ''
+endfunction
+function! StatusLineGetReadOnly()
+    if &readonly || !&modifiable
+        return ''
+    else
+        return ''
+endfunction
+function! StatusLineGetFilePositon()
+    return printf('%.2f%%', ( 100.0 * line('.') / line('$') ))
 endfunction
 hi! StatusLine  ctermfg=000 ctermbg=003
 hi User1 ctermfg=000 ctermbg=003
@@ -338,20 +411,20 @@ hi User7 ctermfg=007 ctermbg=240
 hi User8 ctermfg=007 ctermbg=236
 hi User9 ctermfg=015 ctermbg=232
 set statusline=
-set statusline+=%{UpdateStatuslineColor()}                 " Changing the statusline color
-set statusline+=%1*\ %{toupper(GetCurrentMode())}          " Current mode
-set statusline+=%8*\ %<%F\ %{GetReadOnly()}\ %m\ %w\       " File+path
+set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
+set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
+set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
 set statusline+=%8*\ %=                                    " Space
 set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
-set statusline+=%1*\ %-2c\ %2l\ %2p%%\                     " Col, Rownumber/total (%)
-set tabline=%!MyTabLine()
+set statusline+=%1*\ %2l:%-2c\ %{StatusLineGetFilePositon()}\                     " Col, Rownumber/total (%)
+set tabline=%!TabLineCompose()
 hi TabLine cterm=None ctermfg=007 ctermbg=240
 hi TabLineSel cterm=None ctermfg=000 ctermbg=003
 hi TabLineFill cterm=None ctermfg=007 ctermbg=236
 hi TabTitle cterm=bold ctermfg=000 ctermbg=014
-function! MyTabLine() " acclamation to avoid conflict
+function! TabLineCompose() " acclamation to avoid conflict
     let s = '' " complete tabline goes here
     let title = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
     let s .= '%#TabTitle# ' . title . ' '
@@ -414,6 +487,7 @@ nnoremap <leader>th :call HighlightWordsToggle(expand('<cword>'))<CR>
 nnoremap <leader>ch :call HighlightedAllWordsToggle()<CR>
 command! -nargs=1 HighlightWordsToggle call HighlightWordsToggle(<q-args>)
 command! HighlightedAllWordsToggle call HighlightedAllWordsToggle()
+let g:highlighted_words = {}
 function! HighlightWordsToggle(...) abort
   if a:0 == 0
     let l:input = input('Enter words to toggle highlight (separate with spaces): ')
@@ -482,28 +556,29 @@ nnoremap mm :call MarkToggleLine()<CR>
 nnoremap ml :call MarkJumpToMarkList()<CR>
 command! MarkingToggle call MarkingToggle()
 command! MarkJumpToMarkList call MarkJumpToMarkList()
-let g:marking_enabled = 1
-let g:marked_lines = {} " Use a dictionary to store line numbers and match IDs
+let g:bookmark_marking_enabled = 1
+let g:bookmark_marked_lines = {}
+let g:bookmark_center_jumped_line = 0
 highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
 function! MarkingToggle()
-    if g:marking_enabled
-        let g:marking_enabled = 0
+    if g:bookmark_marking_enabled
+        let g:bookmark_marking_enabled = 0
         echo "Marking functionality disabled."
         call ClearAllMarks()
     else
-        let g:marking_enabled = 1
+        let g:bookmark_marking_enabled = 1
         echo "Marking functionality enabled."
     endif
 endfunction
 function! MarkLine()
-    if !g:marking_enabled
+    if !g:bookmark_marking_enabled
         echo "Please enable marking functionality first."
         return
     endif
     let l:lnum = line('.')
-    if !has_key(g:marked_lines, l:lnum)
+    if !has_key(g:bookmark_marked_lines, l:lnum)
         let l:matchid = matchadd('MarkedLine', '\%' . l:lnum . 'l')
-        let g:marked_lines[l:lnum] = l:matchid
+        let g:bookmark_marked_lines[l:lnum] = l:matchid
         echo "Marked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is already marked."
@@ -511,40 +586,40 @@ function! MarkLine()
 endfunction
 function! UnmarkLine()
     let l:lnum = line('.')
-    if has_key(g:marked_lines, l:lnum)
-        let l:matchid = g:marked_lines[l:lnum]
+    if has_key(g:bookmark_marked_lines, l:lnum)
+        let l:matchid = g:bookmark_marked_lines[l:lnum]
         call matchdelete(l:matchid)
-        call remove(g:marked_lines, l:lnum)
+        call remove(g:bookmark_marked_lines, l:lnum)
         echo "Unmarked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is not marked."
     endif
 endfunction
 function! MarkToggleLine()
-    if !g:marking_enabled
+    if !g:bookmark_marking_enabled
         echo "Please enable marking functionality first."
         return
     endif
     let l:lnum = line('.')
-    if has_key(g:marked_lines, l:lnum)
+    if has_key(g:bookmark_marked_lines, l:lnum)
         call UnmarkLine()
     else
         call MarkLine()
     endif
 endfunction
 function! ClearAllMarks()
-    for l:lnum in keys(g:marked_lines)
-        let l:matchid = g:marked_lines[l:lnum]
+    for l:lnum in keys(g:bookmark_marked_lines)
+        let l:matchid = g:bookmark_marked_lines[l:lnum]
         call matchdelete(l:matchid)
     endfor
-    let g:marked_lines = {}
+    let g:bookmark_marked_lines = {}
 endfunction
 function! MarkJumpToMarkList()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:choices = []
     for l:lnum in l:marked_lnums
         let l:line_text = getline(l:lnum)
@@ -553,40 +628,46 @@ function! MarkJumpToMarkList()
     let l:choice = inputlist(['Select a line to jump to:'] + l:choices)
     if l:choice > 0 && l:choice <= len(l:marked_lnums)
         execute l:marked_lnums[l:choice - 1]
-        normal! zz " Center the jumped line
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
     else
         echo "Invalid choice."
     endif
 endfunction
 function! MarkJumpToPrev()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:prev_marks = filter(copy(l:marked_lnums), 'v:val < l:current_line')
     if !empty(l:prev_marks)
         let l:target_line = l:prev_marks[-1]
         execute l:target_line
-        normal! zz
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
         echo "Jumped to previous marked line " . l:target_line . "."
     else
         echo "No previous marked line."
     endif
 endfunction
 function! MarkJumpToNext()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:next_marks = filter(copy(l:marked_lnums), 'v:val > l:current_line')
     if !empty(l:next_marks)
         let l:target_line = l:next_marks[0]
         execute l:target_line
-        normal! zz
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
         echo "Jumped to next marked line " . l:target_line . "."
     else
         echo "No next marked line."

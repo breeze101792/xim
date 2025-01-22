@@ -111,37 +111,6 @@ function! SessionStore(...)
     endwhile
     exec 'tabn '.current_tab_idx
 
-    " " opened tab
-    " " FIXME, No win support.
-    " let tabcount = tabpagenr("$")
-    " " FIXME, i dn't know how to get current tab id.
-    " exec 'tabn '.tabpagenr("#")
-    " let current_tab_idx = tabpagenr("#")
-    "
-    " let tabidx = 1
-    " call writefile(['" Session opened tab'], session_file, "a")
-    " call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-    " while tabidx <= tabcount
-    "     let tmp_buf_idx = tabpagebuflist(tabidx)[0]
-    "     let currtabname = expand('#' . tmp_buf_idx . ':p')
-    "
-    "     " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
-    "     if !empty(glob(currtabname)) && buflisted(currtabname) == 1
-    "         " FIXME, do it on acturally tab.
-    "         exec 'tabn '.tabidx
-    "         " echo 'tabn '.tabidx
-    "         call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
-    "         " if currtabname == current_buffer_name && current_tab_idx == tabidx
-    "         if current_tab_idx == tabidx
-    "             call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
-    "         endif
-    "
-    "         let tab_cnt = tab_cnt + 1
-    "     endif
-    "     let tabidx = tabidx + 1
-    " endwhile
-    " exec 'tabn '.current_tab_idx
-
     call writefile(['" Restore settings'], session_file, "a")
     call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
     call writefile(['"Open buffer:'. bufname("%")], session_file, "a")
@@ -395,23 +364,3 @@ function! BufReload()
     exec 'tabn '.current_tab_idx
 
 endfunc
-
-" -------------------------------------------
-"  Tab op
-" -------------------------------------------
-function! TabGo(tabname)
-
-    let tabcount = tabpagenr("$")
-    let currenttabidx = 1
-    call writefile(['" Session opened tab'], g:IDE_ENV_SESSION_PATH, "a")
-    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], g:IDE_ENV_SESSION_PATH, "a")
-    while currenttabidx <= tabcount
-        let currtabname = expand('#' . currenttabidx)
-
-        if tabname == currtabname
-            exe 'tabclose' . a:bang . ' 1'
-            break
-        endif
-        let currenttabidx = currenttabidx + 1
-    endwhile
-endfunction

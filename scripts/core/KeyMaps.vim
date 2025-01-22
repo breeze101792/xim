@@ -39,42 +39,14 @@ map q <nop>
 " zR: Open all folds.
 " zM: Close all folds.
 
-""""    Function Key
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Spell check
-nnoremap <F4> :Spellcheck<CR>
-
-" Refresh all
-nmap <F5> :redraw!<CR>
-
-" nmap <F6> :TlistToggle<CR>
-nmap <F6> :TagbarToggle<CR>
-" nmap <F6> :NERDTreeToggle<CR>
-
-nmap <F7> :NERDTreeToggle<CR>
-
-" SrcExpl
-" nmap <F8> :SrcExplToggle<CR>
-
-" cctree
-" will be needed first CCTreeTraceForward
-nmap <F8> :CCTreeWindowToggle<CR>
-
-"" function
-nmap <leader>5 :redraw!<CR>
-nmap <leader>6 :TagbarToggle<CR>
-nmap <leader>7 :NERDTreeToggle<CR>
-" nmap <leader>8 :SrcExplToggle<CR>
-nmap <leader>8 :CCTreeWindowToggle<CR>
-
 """"    Editor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " for quick save and exit
-nnoremap <leader>wa :wa<CR>
-nnoremap <leader>qa :qa<CR>
-nnoremap <leader>q :q<CR>
-nnoremap <leader>qq :q!<CR>
 nnoremap <leader>wqa :wqa<CR>
+nnoremap <leader>wa :wa<CR>
+nnoremap <leader>qq :q!<CR>
+nnoremap <leader>qa :qa<CR>
+nnoremap <leader>qe :exit()<CR>
 nnoremap qq :q!<CR>
 nnoremap qa :qa<CR>
 
@@ -90,12 +62,6 @@ nnoremap <S-k> <Esc>dd<Up>P
 nnoremap <S-j> <Esc>dd<Down>P
 " inseart an line below
 nnoremap <leader><CR> o<Esc>
-
-" " Move 5 times fast
-" map <C-H> 5h
-" map <C-L> 5l
-" map <C-J> 5j
-" map <C-K> 5k
 
 " duplicate current tab
 map <leader>d <Esc>:tab split<CR>
@@ -121,161 +87,6 @@ nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 
-""""    Function map
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Session copy/pates
-map <silent> <Leader>y :call SessionYank()<CR>
-vmap <silent> <Leader>y y:call SessionYank()<CR>
-vmap <silent> <Leader>Y Y:call SessionYank()<CR>
-nmap <silent> <Leader>p :call SessionPaste("p")<CR>
-nmap <silent> <Leader>P :call SessionPaste("P")<CR>
-nmap <silent> <Leader>o :call ClipOpen()<CR>
-
-" Mouse Toggle
-nnoremap <silent> <C-m> :MouseToggle<CR>
-
-" Toggle Hex Mode
-nmap <Leader>h :HexToggle<CR>
-
-" Match & complete patterns
-" TODO, think another way to detect paried one, so disable it for now.
-" inoremap <expr> ( ConditionalPairMap('(', ')')
-" inoremap <expr> { ConditionalPairMap('{', '}')
-" inoremap <expr> [ ConditionalPairMap('[', ']')
-
 " Type match to reset highlight
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
-
-" Beautify, currently only support shell
-vnoremap <leader>b :Beautify<CR>
-
-""""    Plugins map
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" IDE map
-
-" cscope
-" a: Find places where this symbol is assigned a value
-" c: Find functions calling this function
-" d: Find functions called by this function
-" e: Find this egrep pattern
-" f: Find this file
-" g: Find this definition
-" i: Find files #including this file
-" s: Find this C symbol
-" t: Find this text string
-if g:IDE_ENV_INS == "nvim"
-    nnoremap <silent>ca :exec "Cscope find a ".expand('<cword>')<CR>
-    nnoremap <silent>cc :exec "Cscope find c ".expand('<cword>')<CR>
-    nnoremap <silent>cd :exec "Cscope find d ".expand('<cword>')<CR>
-    nnoremap <silent>ce :exec "Cscope find e ".expand('<cword>')<CR>
-    nnoremap <silent>cf :exec "Cscope find f ".expand('<cword>')<CR>
-    nnoremap <silent>cg :exec "Cscope find g ".expand('<cword>')<CR>
-    nnoremap <silent>ci :exec "Cscope find i ".expand('<cword>')<CR>
-    " nnoremap <silent>cs :exec "Cscope find s ".expand('<cword>')<CR>
-    nnoremap <silent>ct :exec "Cscope find t ".expand('<cword>')<CR>
-else
-    nnoremap <silent>ca :cscope find a <cword><CR>
-    nnoremap <silent>cc :cscope find c <cword><CR>
-    nnoremap <silent>cd :cscope find d <cword><CR>
-    nnoremap <silent>ce :cscope find e <cword><CR>
-    nnoremap <silent>cf :cscope find f <cword><CR>
-    nnoremap <silent>cg :cscope find g <cword><CR>
-    nnoremap <silent>ci :cscope find i <cword><CR>
-    nnoremap <silent>cs :cscope find s <cword><CR>
-    nnoremap <silent>ct :cscope find t <cword><CR>
-endif
-
-" LSP
-nnoremap <silent>gD :lua vim.lsp.buf.declaration()<CR>
-nnoremap <silent>gd :lua vim.lsp.buf.definition()<CR>
-nnoremap <silent>gh :lua vim.lsp.buf.hover()<CR>
-nnoremap <silent>gi :lua vim.lsp.buf.implementation()<CR>
-nnoremap <silent>gR :lua vim.lsp.buf.references()<CR>
-nnoremap <silent>gr :lua vim.lsp.buf.incoming_calls()<CR>
-nnoremap <silent>go :lua vim.lsp.buf.outgoing_calls()<CR>
-nnoremap <silent>gN :lua vim.lsp.diagnostic.goto_prev()<CR>
-nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
-
-" nnoremap <silent>ga :lua vim.lsp.buf.code_action()<CR>
-" nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
-" nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
-
-" CCTree 
-nnoremap <silent>tf :CCTreeTraceForward<CR>
-nnoremap <silent>tr :CCTreeTraceReverse<CR>
-
-" " srcexpl
-" nnoremap <silent><Leader>t :SrcExplRefresh<CR>
-
-" Commentary settings
-noremap <C-_> :CommentCode<CR>
-noremap cm :CommentCode<CR>
-" noremap! <Leader>/ :CommentCodeBlock<CR>
-" noremap <C-?> :CommentCode<CR>
-
-" GitGutter settings
-" map <C-g> :GitGutterToggle<CR>
-nmap ]c :GitGutterNextHunk<CR>
-nmap [c :GitGutterPrevHunk<CR>
-
-" tabular
-vnoremap <leader>t :Tabularize /
-
-" bookmark
-noremap mm :BookmarkToggle<CR>
-
-" CtrlP
-noremap <C-p> :CtrlP<CR>
-
-" bufferexpl
-nnoremap <leader>b :ToggleBufExplorer<CR>
-
-" mark
-" nmap <unique> <Leader>m <Plug>MarkSet
-nmap <Leader>m :HighlighterToggle<CR>
-" hlsearch work only when /[search] noh
-nnoremap <silent>* *:nohlsearch<CR>
-nnoremap <silent># #:nohlsearch<CR>
-
-"  cctree trace
-noremap <leader>] :CCTreeTraceForward<CR>
-noremap <leader>[ :CCTreeTraceReverse<CR>
-
-" supertab
-" imap <script> <Plug>SuperTabForward <c-r>=SuperTab('n')<cr>
-" imap <script> <Plug>SuperTabBackward <c-r>=SuperTab('p')<cr>
-" imap <silent> <tab> <Plug>SuperTabForward
-
-" vim easy-grep
-" map <silent> <Leader>vo <plug>EgMapGrepOptions
-map <silent> <Leader>vv <plug>EgMapGrepCurrentWord_v
-vmap <silent> <Leader>vv <plug>EgMapGrepSelection_v
-map <silent> <Leader>vV <plug>EgMapGrepCurrentWord_V
-vmap <silent> <Leader>vV <plug>EgMapGrepSelection_V
-map <silent> <Leader>va <plug>EgMapGrepCurrentWord_a
-vmap <silent> <Leader>va <plug>EgMapGrepSelection_a
-map <silent> <Leader>vA <plug>EgMapGrepCurrentWord_A
-vmap <silent> <Leader>vA <plug>EgMapGrepSelection_A
-map <silent> <Leader>vr <plug>EgMapReplaceCurrentWord_r
-vmap <silent> <Leader>vr <plug>EgMapReplaceSelection_r
-map <silent> <Leader>vR <plug>EgMapReplaceCurrentWord_R
-vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
-
-" QuickFix can open the current line with :.cc
-
-" Ale
-nmap <silent> <C-k> <Plug>(ale_previous_wrap)
-nmap <silent> <C-j> <Plug>(ale_next_wrap)
-
-" Patch
-"""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Enable Alt Keys
-" for i in range(97,122)
-"     let c = nr2char(i)
-"     exec "map \e".c." <M-".c.">"
-"     exec "map! \e".c." <M-".c.">"
-" endfor
-" No Ctrl Key Patch
-" nmap <A-t> <Esc>:pop<CR>

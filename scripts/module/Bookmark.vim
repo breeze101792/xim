@@ -17,8 +17,13 @@ command! MarkJumpToMarkList call MarkJumpToMarkList()
 """"    Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Define global variables
-let g:marking_enabled = 1
-let g:marked_lines = {} " Use a dictionary to store line numbers and match IDs
+let g:bookmark_marking_enabled = 1
+
+ " Use a dictionary to store line numbers and match IDs
+let g:bookmark_marked_lines = {}
+
+" Center jumped line.
+let g:bookmark_center_jumped_line = 0
 
 " Define highlight group
 highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
@@ -28,29 +33,29 @@ highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Toggle marking functionality
 function! MarkingToggle()
-    if g:marking_enabled
-        let g:marking_enabled = 0
+    if g:bookmark_marking_enabled
+        let g:bookmark_marking_enabled = 0
         echo "Marking functionality disabled."
         " Clear all highlights
         call ClearAllMarks()
     else
-        let g:marking_enabled = 1
+        let g:bookmark_marking_enabled = 1
         echo "Marking functionality enabled."
     endif
 endfunction
 
 " Mark the current line
 function! MarkLine()
-    if !g:marking_enabled
+    if !g:bookmark_marking_enabled
         echo "Please enable marking functionality first."
         return
     endif
     let l:lnum = line('.')
-    if !has_key(g:marked_lines, l:lnum)
+    if !has_key(g:bookmark_marked_lines, l:lnum)
         " Highlight the current line
         let l:matchid = matchadd('MarkedLine', '\%' . l:lnum . 'l')
         " Store line number and match ID
-        let g:marked_lines[l:lnum] = l:matchid
+        let g:bookmark_marked_lines[l:lnum] = l:matchid
         echo "Marked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is already marked."
@@ -60,12 +65,12 @@ endfunction
 " Unmark the current line
 function! UnmarkLine()
     let l:lnum = line('.')
-    if has_key(g:marked_lines, l:lnum)
+    if has_key(g:bookmark_marked_lines, l:lnum)
         " Get match ID and delete highlight
-        let l:matchid = g:marked_lines[l:lnum]
+        let l:matchid = g:bookmark_marked_lines[l:lnum]
         call matchdelete(l:matchid)
         " Remove line number from marked lines
-        call remove(g:marked_lines, l:lnum)
+        call remove(g:bookmark_marked_lines, l:lnum)
         echo "Unmarked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is not marked."
@@ -74,12 +79,12 @@ endfunction
 
 " Toggle mark on the current line
 function! MarkToggleLine()
-    if !g:marking_enabled
+    if !g:bookmark_marking_enabled
         echo "Please enable marking functionality first."
         return
     endif
     let l:lnum = line('.')
-    if has_key(g:marked_lines, l:lnum)
+    if has_key(g:bookmark_marked_lines, l:lnum)
         " If line is marked, unmark it
         call UnmarkLine()
     else
@@ -90,21 +95,21 @@ endfunction
 
 " Clear all marks and highlights
 function! ClearAllMarks()
-    for l:lnum in keys(g:marked_lines)
-        let l:matchid = g:marked_lines[l:lnum]
+    for l:lnum in keys(g:bookmark_marked_lines)
+        let l:matchid = g:bookmark_marked_lines[l:lnum]
         call matchdelete(l:matchid)
     endfor
-    let g:marked_lines = {}
+    let g:bookmark_marked_lines = {}
 endfunction
 
 " Jump to a marked line from a list
 function! MarkJumpToMarkList()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     " Sort line numbers
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     " Build choice list
     let l:choices = []
     for l:lnum in l:marked_lnums
@@ -114,7 +119,9 @@ function! MarkJumpToMarkList()
     let l:choice = inputlist(['Select a line to jump to:'] + l:choices)
     if l:choice > 0 && l:choice <= len(l:marked_lnums)
         execute l:marked_lnums[l:choice - 1]
-        normal! zz " Center the jumped line
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
     else
         echo "Invalid choice."
     endif
@@ -122,19 +129,21 @@ endfunction
 
 " Jump to previous marked line
 function! MarkJumpToPrev()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
     " Get marked line numbers
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     " Filter lines less than current line
     let l:prev_marks = filter(copy(l:marked_lnums), 'v:val < l:current_line')
     if !empty(l:prev_marks)
         let l:target_line = l:prev_marks[-1]
         execute l:target_line
-        normal! zz
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
         echo "Jumped to previous marked line " . l:target_line . "."
     else
         echo "No previous marked line."
@@ -143,19 +152,21 @@ endfunction
 
 " Jump to next marked line
 function! MarkJumpToNext()
-    if empty(keys(g:marked_lines))
+    if empty(keys(g:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
     " Get marked line numbers
-    let l:marked_lnums = sort(map(keys(g:marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
     " Filter lines greater than current line
     let l:next_marks = filter(copy(l:marked_lnums), 'v:val > l:current_line')
     if !empty(l:next_marks)
         let l:target_line = l:next_marks[0]
         execute l:target_line
-        normal! zz
+        if g:bookmark_center_jumped_line == 1
+            normal! zz " Center the jumped line
+        endif
         echo "Jumped to next marked line " . l:target_line . "."
     else
         echo "No next marked line."

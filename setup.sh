@@ -376,7 +376,12 @@ function fRelease_lite()
     local var_lite_path=${PATH_IDE_ROOT}/tools/vimlite.vim
     local var_file_list=()
     # Settings source after lite.vim
+    # Core
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/core/Environment.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/core/Settings.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/core/KeyMaps.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/core/Autocmd.vim")
+
     var_file_list+=("${PATH_IDE_ROOT}/scripts/utility/Tools.vim")
 
     # Lite

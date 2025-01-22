@@ -1,0 +1,17 @@
+" Function Adaptation
+" ===========================================
+
+" Jobs Adaptation
+function! AdpJobStart(commands, callback)
+    let l:job = 0
+    try
+        if g:IDE_ENV_INS == "nvim"
+            let l:job = jobstart(a:commands)
+        else
+            let l:job = job_start(a:commands, { 'callback': a:callback })
+        endif
+    catch
+        echom a:commands." Failed."
+    endtry
+    return l:job
+endfunc

@@ -1,10 +1,17 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    UI Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" -------------------------------------------
+"  Session
+" -------------------------------------------
+" Status line override
+" Tabline override
+
 " -------------------------------------------
 "  Status line override
 " -------------------------------------------
-function! GetCurrentMode()
+function! StatusLineGetCurrentMode()
     let l:mode = mode()
     let l:mode_name = ''
     if l:mode == 'n'
@@ -32,18 +39,12 @@ function! GetCurrentMode()
     endif
     return l:mode_name
 endfunction
-function! GetReadOnly()
-    if &readonly || !&modifiable
-        return ''
-    else
-        return ''
-endfunction
-function! UpdateStatuslineColor()
-    let currentmode=GetCurrentMode()
+function! StatusLineUpdateColor()
+    let currentmode=StatusLineGetCurrentMode()
     " exe 'hi! StatusLine ctermbg=008' 
     if (mode() ==# 'i')
         exe 'hi! User1 ctermfg=000 ctermbg=001' 
-    elseif (mode() =~# '\v(v|V)' || currentmode ==# 'V·Block' || currentmode ==# 't')
+    elseif (mode() =~# '\v(v|V)' || currentmode ==# 'V·Block')
         exe 'hi! User1 ctermfg=000 ctermbg=002' 
     elseif (mode() ==# 'R')
         exe 'hi! User1 ctermfg=000 ctermbg=006' 
@@ -54,6 +55,19 @@ function! UpdateStatuslineColor()
     endif
     return ''
 endfunction
+
+function! StatusLineGetReadOnly()
+    if &readonly || !&modifiable
+        return ''
+    else
+        return ''
+endfunction
+function! StatusLineGetFilePositon()
+    return printf('%.2f%%', ( 100.0 * line('.') / line('$') ))
+endfunction
+
+"  Tabline Settings
+" -------------------------------------------
 " status line %n defined color.
 " Color Idx. 0~7 Dark, 9~16 Bright
 " Black     : 0
@@ -77,21 +91,24 @@ hi User8 ctermfg=007 ctermbg=236
 hi User9 ctermfg=015 ctermbg=232
 
 set statusline=
-set statusline+=%{UpdateStatuslineColor()}                 " Changing the statusline color
-set statusline+=%1*\ %{toupper(GetCurrentMode())}          " Current mode
-set statusline+=%8*\ %<%F\ %{GetReadOnly()}\ %m\ %w\       " File+path
+" Left
+set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
+set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
+set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
 set statusline+=%8*\ %=                                    " Space
-                                                           " Right
-                                                           " set statusline+=%5*\ %{&filetype} " FileType
+
+" Right
+" set statusline+=%5*\ %{&filetype} " FileType
 set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
-set statusline+=%1*\ %-2c\ %2l\ %2p%%\                     " Col, Rownumber/total (%)
+" set statusline+=%1*\ %-2c\ %2l\ %2p%%\                     " Col, Rownumber/total (%)
+set statusline+=%1*\ %2l:%-2c\ %{StatusLineGetFilePositon()}\                     " Col, Rownumber/total (%)
 
 " -------------------------------------------
 "  Tabline override
 " -------------------------------------------
-set tabline=%!MyTabLine()
+set tabline=%!TabLineCompose()
 
 " Color theme
 hi TabLine cterm=None ctermfg=007 ctermbg=240
@@ -100,7 +117,7 @@ hi TabLineFill cterm=None ctermfg=007 ctermbg=236
 hi TabTitle cterm=bold ctermfg=000 ctermbg=014
 
 " Set the entire tabline
-function! MyTabLine() " acclamation to avoid conflict
+function! TabLineCompose() " acclamation to avoid conflict
     let s = '' " complete tabline goes here
     " FIXME, maybe use some script variable to define title name.
     let title = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")

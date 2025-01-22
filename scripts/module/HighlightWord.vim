@@ -14,6 +14,10 @@ command! -nargs=1 HighlightWordsToggle call HighlightWordsToggle(<q-args>)
 
 command! HighlightedAllWordsToggle call HighlightedAllWordsToggle()
 
+""""    Variable
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:highlighted_words = {}
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

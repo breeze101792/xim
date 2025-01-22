@@ -225,8 +225,8 @@ endfunc
 " -------------------------------------------
 "  Tags/cscope
 " -------------------------------------------
-command! TreeSetup call TreeSetup()
-function! TreeSetup()
+command! CCTreeSetup call CCTreeSetup()
+function! CCTreeSetup()
     try
         if g:IDE_ENV_CCTREE_DB != ''
             echo "Update cctree db from " . g:IDE_ENV_CCTREE_DB

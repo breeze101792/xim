@@ -27,64 +27,88 @@ let g:IDE_ENV_IDE_TITLE = "LITE"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 colorscheme industry
 syntax on
-" FIXME, remove this line
+" FIXME, remove this line, syntax issue.
 " -------->
-set listchars=tab:>-,nbsp:␣,trail:·,precedes:←,extends:→
-set hlsearch
+set listchars=tab:>-,trail:~,extends:>,precedes:<
 " <--------
+
 set noswapfile
-set colorcolumn=""
+if exists('&colorcolumn') 
+    set colorcolumn=""
+endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    KeyMap
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Patch for disable anoying key mapping
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap q: <nop>
-nnoremap q/ <nop>
-map q <nop>
-
-" for quick save and exit
-nnoremap <leader>wa :wa<CR>
-nnoremap <leader>qa :qa<CR>
-nnoremap <leader>q :q<CR>
-nnoremap <leader>qq :q!<ENTER>
-nnoremap <leader>wqa :wqa<CR>
-nnoremap qq :q!<ENTER>
-nnoremap qa :qa<CR>
-
-" open an shell without close vim
-nnoremap <leader>sh :sh<CR>
-
-" select all content
-map <C-a> <Esc>ggVG<CR>
-
-" Edit
-nmap <S-k> <Esc>dd<Up>p
-nnoremap <S-j> <Esc>dd<Down>p
-" inseart an line below
-nnoremap <leader><CR> o<Esc>
-
-" duplicate current tab
-map <leader>d <Esc>:tab split<CR>
-
-" tab manipulation with hjkl
-map <C-h> <Esc>:tabprev<CR>
-map <C-l> <Esc>:tabnext<CR>
-map <S-h> <Esc>:tabmove -1 <CR>
-map <S-l> <Esc>:tabmove +1 <CR>
-
-" tab manipulation with arror keys
-map <C-Left> <Esc>:tabprev<CR>
-map <C-Right> <Esc>:tabnext<CR>
-map <S-Left> <Esc>:tabmove -1 <CR>
-map <S-Right> <Esc>:tabmove +1 <CR>
-map <C-o> <Esc>:tabnew<SPACE>
-
-" Add hilighted word with " or '
-nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
-nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
-
+" nnoremap q: <nop>
+" nnoremap q/ <nop>
+" map q <nop>
+"
+" " for quick save and exit
+" nnoremap <leader>wa :wa<CR>
+" nnoremap <leader>qa :qa<CR>
+" nnoremap <leader>q :q<CR>
+" nnoremap <leader>qq :q!<ENTER>
+" nnoremap <leader>wqa :wqa<CR>
+" nnoremap qq :q!<ENTER>
+" nnoremap qa :qa<CR>
+"
+" " open an shell without close vim
+" nnoremap <leader>sh :sh<CR>
+"
+" " select all content
+" map <C-a> <Esc>ggVG<CR>
+"
+" " Edit
+" nmap <S-k> <Esc>dd<Up>p
+" nnoremap <S-j> <Esc>dd<Down>p
+" " inseart an line below
+" nnoremap <leader><CR> o<Esc>
+"
+" " duplicate current tab
+" map <leader>d <Esc>:tab split<CR>
+"
+" " tab manipulation with hjkl
+" map <C-h> <Esc>:tabprev<CR>
+" map <C-l> <Esc>:tabnext<CR>
+" map <S-h> <Esc>:tabmove -1 <CR>
+" map <S-l> <Esc>:tabmove +1 <CR>
+"
+" " tab manipulation with arror keys
+" map <C-Left> <Esc>:tabprev<CR>
+" map <C-Right> <Esc>:tabnext<CR>
+" map <S-Left> <Esc>:tabmove -1 <CR>
+" map <S-Right> <Esc>:tabmove +1 <CR>
+" map <C-o> <Esc>:tabnew<SPACE>
+"
+" " Add hilighted word with " or '
+" nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
+" nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    AutoGroups
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" augroup file_open_gp
+"     autocmd!
+"     " memorize last open line
+"     autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
+" augroup END
+"
+" " Call the function after opening a buffer
+" augroup tab_gp
+"     autocmd!
+"     autocmd BufReadPost * call TabsOrSpaces()
+" augroup END
+"
+" augroup syntax_hi_gp
+"     autocmd!
+"     autocmd Syntax * call matchadd(
+"                 \ 'Debug',
+"                 \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
+"                 \ )
+" augroup END
+"
 "" Commands
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " comments
@@ -96,28 +120,6 @@ map <leader>b <Esc>:buffers<CR>
 " Highlight words.
 nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    AutoGroups
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-augroup file_open_gp
-    autocmd!
-    " memorize last open line
-    autocmd BufReadPost * if line("'\"") > 0|if line("'\"") <= line("$")|exe("norm '\"")|else|exe "norm $"|endif|endif
-augroup END
-
-" Call the function after opening a buffer
-augroup tab_gp
-    autocmd!
-    autocmd BufReadPost * call TabsOrSpaces()
-augroup END
-
-augroup syntax_hi_gp
-    autocmd!
-    autocmd Syntax * call matchadd(
-                \ 'Debug',
-                \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
-                \ )
-augroup END
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Adaption

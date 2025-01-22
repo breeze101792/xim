@@ -12,7 +12,9 @@ set encoding=utf-8
 set termencoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
-set autochdir
+if exists('&autochdir') 
+    set autochdir
+endif
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
 
@@ -96,17 +98,20 @@ set smarttab                                      " Insert tabstop number of spa
 if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
     set showbreak=↪\
     set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+    " set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 else
     set showbreak=→\
-    set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+    " set listchars=tab:▸-,nbsp:␣,trail:·,precedes:←,extends:→
+    set listchars=tab:>-,trail:~,extends:>,precedes:<
 endif
 " set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
 " set listchars=tab:>-,trail:~,extends:>,precedes:<
-" set listchars=tab:▸\ ,nbsp:␣,trail:·,precedes:←,extends:→,eol:↲
 set list
 
 "" Smart edit
-set nofixendofline " enable this will cause vim add new line at the end of line
+if exists('&nofixendofline') 
+    set nofixendofline " enable this will cause vim add new line at the end of line
+endif
 
 """"    IDE Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -182,17 +187,23 @@ if get(g:, 'IDE_CFG_HIGH_PERFORMANCE_HOST', 'n') == 'y'
     set cursorcolumn
 endif
 " This is for linux, we should not let our code length beyound 80 chars
-set colorcolumn=81
+if exists('&colorcolumn') 
+    set colorcolumn=81
+endif
 
 " setup row cursor line
 set cursorline
-if version >= 802
+if exists('&cursorlineopt') 
     set cursorlineopt=number " only line number will be highlighted, dosen't
 endif
 
 " Windows fill chars
 " set fillchars=stl:^,stlnc:=,vert:\ ,fold:-,diff:-
-set fillchars+=vert:│
+if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
+    set fillchars+=vert:│
+else
+    set fillchars+=vert:\|
+endif
 
 " Set cursor shape on different mode
 " "Cursor settings:
