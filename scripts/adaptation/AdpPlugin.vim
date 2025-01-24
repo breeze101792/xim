@@ -1,5 +1,8 @@
 " Plugins Functions
 " ===========================================
+let g:IDE_MDOULE_STATUSLINE = 'n'
+let g:IDE_MDOULE_HIGHLIGHTWORD = 'n'
+let g:IDE_MDOULE_BOOKMARK = 'n'
 
 " -------------------------------------------
 "  Highlighter Toggle #Plugins

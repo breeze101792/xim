@@ -12,6 +12,10 @@ local init_lite = function()
     vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/adaptation/Adaptation.vim')
     vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/utility/Utility.vim')
 
+    -- FIXME, Patch for neovim restore env.
+    vim.g.IDE_MDOULE_STATUSLINE = "y"
+    vim.g.IDE_MDOULE_HIGHLIGHTWORD = "y"
+    vim.g.IDE_MDOULE_BOOKMARK = "y"
     vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/module/Module.vim')
 end
 
@@ -38,6 +42,10 @@ local init_base = function()
 
     -- utility function related
     vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts//utility/Utility.vim")
+
+    if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
+        vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/framework/Framework.vim')
+    end
 end
 local init_nvimide = function()
     -- print("Experiment lazy load.")
@@ -100,6 +108,8 @@ local nvimreload = function()
     local flag_lite=os.getenv("VIDE_SH_IDE_LITE")
     if flag_lite == 'y' then
         init_lite()
+        vim.cmd('redraw')
+        print("Neovim Lite Reloaded.")
     else
         init_base()
         require("nvimide").reload({})
@@ -111,11 +121,12 @@ local nvimreload = function()
 
         vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
 
-        if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
+        if vim.g.IDE_CFG_PLUGIN_ENABLE ~= "n" then
             vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/framework/Framework.vim')
         end
+        vim.cmd('redraw')
+        print("Neovim Reloaded.")
     end
-    print("Neovim Reloaded.")
 end
 
 ----------------------------------------------------------------
@@ -125,6 +136,8 @@ local initialize = function()
     local flag_legacy=false
     local flag_lite=os.getenv("VIDE_SH_IDE_LITE")
     -- print("Neovim Init.")
+    -- Note. disable session optons for fixing var restore.
+    -- vim.opt.sessionoptions:remove('globals')
 
     vim.g.IDE_ENV_ROOT_PATH = "~/.config/nvim"
 
@@ -147,10 +160,6 @@ local initialize = function()
 
         -- FIXME, find a place to insert it.
         vim.cmd("source " .. vim.g.IDE_ENV_ROOT_PATH .."/scripts/module/Module.vim")
-
-        if vim.g.IDE_CFG_PLUGIN_ENABLE == "y" then
-            vim.cmd('source ' .. vim.g.IDE_ENV_ROOT_PATH .. '/scripts/framework/Framework.vim')
-        end
 
         -- Reload function
         vim.api.nvim_create_user_command("Reload", nvimreload, {})

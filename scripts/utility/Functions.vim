@@ -651,6 +651,11 @@ function! IdeInfo()
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_BACKGROUND_WORKER '      , g:IDE_CFG_BACKGROUND_WORKER)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_AUTO_TAG_UPDATE '        , g:IDE_CFG_AUTO_TAG_UPDATE)
 
+    let msg=msg . sep . printf("%s"               , "[Modules]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_BOOKMARK '            , g:IDE_MDOULE_BOOKMARK)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_STATUSLINE '          , g:IDE_MDOULE_STATUSLINE)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_HIGHLIGHTWORD '       , g:IDE_MDOULE_HIGHLIGHTWORD)
+
     echo msg
 endfunc
 

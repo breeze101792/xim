@@ -18,6 +18,11 @@ func! Reload()
         " utility function related
         execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim'
 
+        " Framwork
+        if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
+            execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/framework/Framework.vim'
+        endif
+
         if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
             " plugins related
             execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPreConfig.vim'
@@ -25,10 +30,6 @@ func! Reload()
         endif
 
         execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim'
-
-        if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
-            execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/framework/Framework.vim'
-        endif
 
     endif
     redraw
@@ -46,12 +47,12 @@ function! LiteInit()
     execute 'source ' . g:IDE_ENV_ROOT_PATH . '/scripts/core/KeyMaps.vim'
     execute 'source ' . g:IDE_ENV_ROOT_PATH . '/scripts/core/Autocmd.vim'
 
-    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/lite.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/lite.vim'
 
-    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/adaptation/Adaptation.vim' 
-    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/adaptation/Adaptation.vim'
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim'
 
-    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim' 
+    execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim'
 endfunction
 
 function! IdeInit()
@@ -74,6 +75,11 @@ function! IdeInit()
     " utility function related
     execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/utility/Utility.vim' 
 
+    " Framwork
+    if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
+        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/framework/Framework.vim' 
+    endif
+
     if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
         " plugins related
         execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/plugin/PluginPreConfig.vim' 
@@ -83,9 +89,6 @@ function! IdeInit()
 
     execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/module/Module.vim' 
 
-    if version >= 704 && g:IDE_CFG_PLUGIN_ENABLE == "y"
-        execute 'source '.g:IDE_ENV_ROOT_PATH.'/scripts/framework/Framework.vim' 
-    endif
 endfunction
 
 func! IdeMain()

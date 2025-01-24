@@ -79,18 +79,18 @@ endfunction
 " Cyan      : 6
 " White     : 7
 hi! StatusLine  ctermfg=000 ctermbg=003
-hi User1 ctermfg=000 ctermbg=003
-hi User2 ctermfg=007 ctermbg=000
+hi! User1 ctermfg=000 ctermbg=003
+hi! User2 ctermfg=007 ctermbg=000
 " Right
-hi User3 ctermfg=007 ctermbg=236
-hi User4 ctermfg=007 ctermbg=240
-hi User5 ctermfg=007 ctermbg=008
+hi! User3 ctermfg=007 ctermbg=236
+hi! User4 ctermfg=007 ctermbg=240
+hi! User5 ctermfg=007 ctermbg=008
 " Left
-hi User7 ctermfg=007 ctermbg=240
-hi User8 ctermfg=007 ctermbg=236
-hi User9 ctermfg=015 ctermbg=232
+hi! User7 ctermfg=007 ctermbg=240
+hi! User8 ctermfg=007 ctermbg=236
+hi! User9 ctermfg=015 ctermbg=232
 
-set statusline=
+set! statusline=
 " Left
 set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
 set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
@@ -111,10 +111,10 @@ set statusline+=%1*\ %2l:%-2c\ %{StatusLineGetFilePositon()}\                   
 set tabline=%!TabLineCompose()
 
 " Color theme
-hi TabLine cterm=None ctermfg=007 ctermbg=240
-hi TabLineSel cterm=None ctermfg=000 ctermbg=003
-hi TabLineFill cterm=None ctermfg=007 ctermbg=236
-hi TabTitle cterm=bold ctermfg=000 ctermbg=014
+hi! TabLine cterm=None ctermfg=007 ctermbg=240
+hi! TabLineSel cterm=None ctermfg=000 ctermbg=003
+hi! TabLineFill cterm=None ctermfg=007 ctermbg=236
+hi! TabTitle cterm=bold ctermfg=000 ctermbg=014
 
 " Set the entire tabline
 function! TabLineCompose() " acclamation to avoid conflict

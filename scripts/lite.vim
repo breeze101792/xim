@@ -27,9 +27,14 @@ let g:IDE_ENV_IDE_TITLE = "LITE"
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 try
     colorscheme industry
+catch
+    echom 'colorscheme industry not found.'
 endtry
+
 try
     syntax on
+catch
+    echom 'Syntax enable fail.'
 endtry
 " FIXME, remove this line, syntax issue.
 " -------->
@@ -152,7 +157,7 @@ endfunction
 " -------------------------------------------
 "  Mouse_on_off for cursor chage
 " -------------------------------------------
-if !exists("Reload")
+if !exists("*Reload") ||  !exists(":Reload")
     command! Reload call Reload()
     function! Reload()
         if !empty(glob($MYVIMRC))
