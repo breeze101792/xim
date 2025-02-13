@@ -377,6 +377,7 @@ let g:SrcExpl_isUpdateTags = 0
 " let g:CCTreeDisplayMode = 3
 " let g:CCTreeWindowVertical = 1
 " let g:CCTreeWindowMinWidth = 40
+" let g:CCTreeRecursiveDepth = 3
 let g:CCTreeUseUTF8Symbols = 1
 let g:CCTreeDbFileMaxSize  = 40000000 " (40 Mbytes)
 

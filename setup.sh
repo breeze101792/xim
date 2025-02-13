@@ -391,6 +391,7 @@ function fRelease_lite()
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/StatusLine.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/HighlightWord.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/Bookmark.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/CodeTags.vim")
 
     test -f ${var_lite_path} && rm ${var_lite_path}
 

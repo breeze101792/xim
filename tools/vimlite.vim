@@ -95,7 +95,7 @@ else
     set listchars=tab:>-,trail:~,extends:>,precedes:<
 endif
 set list
-if exists('&nofixendofline') 
+if exists('&nofixendofline')
     set nofixendofline " enable this will cause vim add new line at the end of line
 endif
 syntax sync maxlines=50
@@ -302,7 +302,13 @@ let g:IDE_ENV_INS = "vim"
 let g:IDE_ENV_IDE_TITLE = "LITE"
 try
     colorscheme industry
+catch
+    echom 'colorscheme industry not found.'
+endtry
+try
     syntax on
+catch
+    echom 'Syntax enable fail.'
 endtry
 set listchars=tab:>-,trail:~,extends:>,precedes:<
 set noswapfile
@@ -325,7 +331,7 @@ function! TabsOrSpaces()
         setlocal expandtab
     endif
 endfunction
-if !exists("Reload")
+if !exists("*Reload") ||  !exists(":Reload")
     command! Reload call Reload()
     function! Reload()
         if !empty(glob($MYVIMRC))
@@ -404,15 +410,15 @@ function! StatusLineGetFilePositon()
     return printf('%.2f%%', ( 100.0 * line('.') / line('$') ))
 endfunction
 hi! StatusLine  ctermfg=000 ctermbg=003
-hi User1 ctermfg=000 ctermbg=003
-hi User2 ctermfg=007 ctermbg=000
-hi User3 ctermfg=007 ctermbg=236
-hi User4 ctermfg=007 ctermbg=240
-hi User5 ctermfg=007 ctermbg=008
-hi User7 ctermfg=007 ctermbg=240
-hi User8 ctermfg=007 ctermbg=236
-hi User9 ctermfg=015 ctermbg=232
-set statusline=
+hi! User1 ctermfg=000 ctermbg=003
+hi! User2 ctermfg=007 ctermbg=000
+hi! User3 ctermfg=007 ctermbg=236
+hi! User4 ctermfg=007 ctermbg=240
+hi! User5 ctermfg=007 ctermbg=008
+hi! User7 ctermfg=007 ctermbg=240
+hi! User8 ctermfg=007 ctermbg=236
+hi! User9 ctermfg=015 ctermbg=232
+set! statusline=
 set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
 set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
 set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
@@ -422,10 +428,10 @@ set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
 set statusline+=%1*\ %2l:%-2c\ %{StatusLineGetFilePositon()}\                     " Col, Rownumber/total (%)
 set tabline=%!TabLineCompose()
-hi TabLine cterm=None ctermfg=007 ctermbg=240
-hi TabLineSel cterm=None ctermfg=000 ctermbg=003
-hi TabLineFill cterm=None ctermfg=007 ctermbg=236
-hi TabTitle cterm=bold ctermfg=000 ctermbg=014
+hi! TabLine cterm=None ctermfg=007 ctermbg=240
+hi! TabLineSel cterm=None ctermfg=000 ctermbg=003
+hi! TabLineFill cterm=None ctermfg=007 ctermbg=236
+hi! TabTitle cterm=bold ctermfg=000 ctermbg=014
 function! TabLineCompose() " acclamation to avoid conflict
     let s = '' " complete tabline goes here
     let title = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
@@ -674,6 +680,100 @@ function! MarkJumpToNext()
     else
         echo "No next marked line."
     endif
+endfunction
+"------------------------------------------------------
+"" Import from CodeTags.vim
+"------------------------------------------------------
+if has('cscope')
+    nnoremap <silent>ca :cscope find a <cword><CR>
+    nnoremap <silent>cc :cscope find c <cword><CR>
+    nnoremap <silent>cd :cscope find d <cword><CR>
+    nnoremap <silent>ce :cscope find e <cword><CR>
+    nnoremap <silent>cf :cscope find f <cword><CR>
+    nnoremap <silent>cg :cscope find g <cword><CR>
+    nnoremap <silent>ci :cscope find i <cword><CR>
+    nnoremap <silent>cs :cscope find s <cword><CR>
+    nnoremap <silent>ct :cscope find t <cword><CR>
+endif
+command! CodeTagGenerateTags call CodeTagGenerateTags()
+command! CodeTagLoadTags call CodeTagLoadTags()
+command! CodeTagSetup call CodeTagSetup()
+function! CodeTagGetProjectRoot()
+    let git_root = system('git rev-parse --show-toplevel 2>/dev/null')
+    if git_root != ''
+        return trim(git_root)
+    endif
+    let repo_root = system('pwd')
+    if repo_root != ''
+        return trim(repo_root)
+    endif
+    return ''
+endfunction
+function! CodeTagGenerateTags()
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+    let tags_dir = root . '/tags'
+    if !isdirectory(tags_dir)
+        call system('mkdir -p ' . tags_dir)
+    endif
+    echom "Generate ctags".tags_dir
+    let ctags_file = tags_dir . '/tags'
+    if filereadable(ctags_file)
+        let answer = input("CTags file already exists. Do you want to rebuild it? (y/n)")
+        echo ""
+        if answer =~ '^[Yy]$'
+            call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+        endif
+    else
+        call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+    endif
+    let cscope_file = tags_dir . '/cscope.file'
+    if filereadable(cscope_file)
+        let answer = input("Cscope list already exists. Do you want to rebuild it? (y/n)")
+        echo ""
+        if answer =~ '^[Yy]$'
+            call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . cscope_file)
+        endif
+    else
+        call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . cscope_file)
+    endif
+    echom "Generate cscope".tags_dir
+    let cscope_tags = tags_dir . '/cscope.out'
+    if filereadable(cscope_tags)
+        let answer = input("Cscope file already exists. Do you want to rebuild it? (y/n)")
+        echo ""
+        if answer =~ '^[Yy]$'
+            call system('cscope -cRbq -i ' . cscope_file)
+        endif
+    else
+        call system('cscope -cRbq -i ' . cscope_file)
+    endif
+    if filereadable('./cscope.out')
+        call system('mv cscope*out ' . tags_dir)
+    endif
+endfunction
+function! CodeTagLoadTags()
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+    let tags_dir = root . '/tags'
+    echom "Load tag from ".tags_dir
+    if isdirectory(tags_dir)
+        execute 'set tags^='.tags_dir.'/tags'
+        execute 'helptags '.tags_dir
+        if has('cscope')
+            execute 'cscope add '.tags_dir.'/cscope.out'
+        endif
+    endif
+endfunction
+function! CodeTagSetup()
+    call CodeTagGenerateTags()
+    call CodeTagLoadTags()
 endfunction
 "------------------------------------------------------
 "" End of Importing.

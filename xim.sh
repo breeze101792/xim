@@ -540,7 +540,7 @@ function fEdit()
     local var_config_file="proj.vim"
 
     local var_eval="eval"
-    local var_vim_distro="${VAR_VIM_INSTANCE}"
+    local var_vim_distro=""
 
     # first parse
     while [[ "$#" != 0 ]]
@@ -590,6 +590,10 @@ function fEdit()
             -l|--lite)
                 # cmd_args+=("-u ${HS_PATH_IDE}/tools/vimlite.vim")
                 export VIDE_SH_IDE_LITE='y'
+                # If not specify, use vim.
+                if test -z "${var_vim_distro}"; then
+                    var_vim_distro="vim"
+                fi
                 ;;
             -c|--clip)
                 shift 1
@@ -770,6 +774,11 @@ function fEdit()
     then
         export VIDE_SH_PROJ_SCRIPT=$(realpath ${var_config_file})
         # printf "Project %- 6s: %s\n" "Script" "${VIDE_SH_PROJ_SCRIPT}"
+    fi
+
+    # Check empty variable
+    if test -z "${var_vim_distro}"; then
+        var_vim_distro="${VAR_VIM_INSTANCE}"
     fi
 
     cd "${cpath}"

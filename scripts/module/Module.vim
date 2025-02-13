@@ -17,3 +17,10 @@ endif
 if get(g:, 'IDE_MDOULE_HIGHLIGHTWORD', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/HighlightWord.vim"
 endif
+
+if get(g:, 'IDE_MDOULE_CODETAGS', 'n') == 'y'
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/CodeTags.vim"
+endif
+
+" it's for testing.
+exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Lab.vim"
