@@ -698,6 +698,10 @@ endif
 command! CodeTagGenerateTags call CodeTagGenerateTags()
 command! CodeTagLoadTags call CodeTagLoadTags()
 command! CodeTagSetup call CodeTagSetup()
+let g:codetag_folder_name='.vimproject'
+let g:codetag_ctag_name='tags'
+let g:codetag_proj_list_name='proj.files'
+let g:codetag_cscope_name='cscope.db'
 function! CodeTagGetProjectRoot()
     let git_root = system('git rev-parse --show-toplevel 2>/dev/null')
     if git_root != ''
@@ -715,44 +719,42 @@ function! CodeTagGenerateTags()
         echo "Error: Could not determine project root"
         return
     endif
-    let tags_dir = root . '/tags'
+    let tags_dir = root . '/' . g:codetag_folder_name
     if !isdirectory(tags_dir)
         call system('mkdir -p ' . tags_dir)
     endif
-    echom "Generate ctags".tags_dir
-    let ctags_file = tags_dir . '/tags'
+    let project_list_file = tags_dir . '/'.g:codetag_proj_list_name
+    echom "Generate project srouce code list ".project_list_file
+    if filereadable(project_list_file)
+        let answer = input("Cscope list already exists. Do you want to rebuild it? (y/n)")
+        echo ""
+        if answer =~ '^[Yy]$'
+            call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+        endif
+    else
+        call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+    endif
+    let ctags_file = tags_dir . '/'.g:codetag_ctag_name
+    echom "Generate ctags ". ctags_file
     if filereadable(ctags_file)
         let answer = input("CTags file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+            call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
         endif
     else
-        call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+        call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
     endif
-    let cscope_file = tags_dir . '/cscope.file'
-    if filereadable(cscope_file)
-        let answer = input("Cscope list already exists. Do you want to rebuild it? (y/n)")
-        echo ""
-        if answer =~ '^[Yy]$'
-            call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . cscope_file)
-        endif
-    else
-        call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . cscope_file)
-    endif
-    echom "Generate cscope".tags_dir
-    let cscope_tags = tags_dir . '/cscope.out'
+    let cscope_tags = tags_dir . '/'.g:codetag_cscope_name
+    echom "Generate cscope ".cscope_tags
     if filereadable(cscope_tags)
         let answer = input("Cscope file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('cscope -cRbq -i ' . cscope_file)
+            call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
         endif
     else
-        call system('cscope -cRbq -i ' . cscope_file)
-    endif
-    if filereadable('./cscope.out')
-        call system('mv cscope*out ' . tags_dir)
+        call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
     endif
 endfunction
 function! CodeTagLoadTags()
@@ -761,19 +763,100 @@ function! CodeTagLoadTags()
         echo "Error: Could not determine project root"
         return
     endif
-    let tags_dir = root . '/tags'
+    let tags_dir = root . '/' . g:codetag_folder_name
     echom "Load tag from ".tags_dir
     if isdirectory(tags_dir)
-        execute 'set tags^='.tags_dir.'/tags'
+        execute 'set tags^='.tags_dir.'/'.g:codetag_ctag_name
         execute 'helptags '.tags_dir
         if has('cscope')
-            execute 'cscope add '.tags_dir.'/cscope.out'
+            execute 'cscope add '.tags_dir.'/'.g:codetag_cscope_name
         endif
     endif
 endfunction
 function! CodeTagSetup()
     call CodeTagGenerateTags()
     call CodeTagLoadTags()
+endfunction
+"------------------------------------------------------
+"" Import from SearchProject.vim
+"------------------------------------------------------
+nnoremap <leader>sg :call SearchProjectGrep(expand("<cword>"))<CR>
+nnoremap <leader>sf :call SearchProjectFind(expand("<cword>"))<CR>
+nnoremap <C-p> :call SearchProjectFindInput()<CR>
+command! SearchProjectFind call SearchProjectFind()
+command! SearchProjectGrep call SearchProjectGrep()
+function! SearchProjectRoot()
+    let git_root = system('git rev-parse --show-toplevel 2>/dev/null')
+    if git_root != ''
+        return trim(git_root)
+    endif
+    let repo_root = system('pwd')
+    if repo_root != ''
+        return trim(repo_root)
+    endif
+    return ''
+endfunction
+function! SearchProjectFindInput()
+    let pattern = input("Find file: ")
+    call SearchProjectFind(pattern)
+endfunction
+function! SearchProjectGrepInput()
+    let pattern = input("Grep file: ")
+    call SearchProjectGrep(pattern)
+endfunction
+function! SearchProjectFind(pattern)
+    let root = SearchProjectRoot()
+    let command = 'find ' . root . ' -type f -iname "*' . a:pattern . '*" -print'
+    let output = system(command)
+    let results = []
+    let lines = split(output, "\n")
+    for line in lines
+        if line != ''
+            let file = line
+            let lnum = 1  " Default to line 1 since we're just searching by filename
+            call add(results, {
+                        \ 'bufnr': 0,
+                        \ 'filename': file,
+                        \ 'lnum': lnum,
+                        \ 'text': 'Matched file',
+                        \ 'vcol': 0
+                        \ })
+        endif
+    endfor
+    if len(results) > 0
+        call setloclist(0, results, 'r')
+        lwindow
+    else
+        echo "No files found matching pattern: " . a:pattern
+    endif
+endfunction
+function! SearchProjectGrep(pattern)
+    let root = SearchProjectRoot()
+    let command = 'find ' . root . ' -type f -exec grep -Hn ' . shellescape(a:pattern) . ' {} +'
+    let output = system(command)
+    let results = []
+    let lines = split(output, "\n")
+    for line in lines
+        if line =~ '^.*:'  " Match lines in format: file:line:content
+            let parts = split(line, ":", 3)
+            let file = parts[0]
+            let lnum = parts[1]
+            let text = parts[2]
+            call add(results, {
+                        \ 'bufnr': 0,
+                        \ 'filename': file,
+                        \ 'lnum': lnum,
+                        \ 'text': text,
+                        \ 'vcol': 0
+                        \ })
+        endif
+    endfor
+    if len(results) > 0
+        call setloclist(0, results, 'r')
+        lwindow
+    else
+        echo "No results found"
+    endif
 endfunction
 "------------------------------------------------------
 "" End of Importing.
