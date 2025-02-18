@@ -117,7 +117,10 @@ endif
 "                 \ '\v\W\zs<(NOTE|CHANGED|BUG|HACK|TRICKY)>'
 "                 \ )
 " augroup END
-"
+
+" Open QF win on ther tab
+" autocmd FileType qf nnoremap <buffer> <Enter> <C-W><Enter><C-W>T
+
 "" Commands
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " comments
@@ -162,9 +165,9 @@ if !exists("*Reload") ||  !exists(":Reload")
     function! Reload()
         if !empty(glob($MYVIMRC))
             source $MYVIMRC
-            echo 'Lite reloaded.'
+            echom 'Lite reloaded.'
         else
-            echo 'No RC file found.'. $MYVIMRC
+            echom 'No RC file found.'. $MYVIMRC
         endif
     endfunc
 end

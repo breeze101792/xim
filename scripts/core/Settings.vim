@@ -24,7 +24,7 @@ set hidden                       " can put buffer to the background without writ
 set lazyredraw                   " don't update the display while executing macros
 set updatetime=500               " how long wil vim wait after your interaction to start plugins/other event
 set ttyfast                      " Send more characters at a given time.
-" set switchbuf+=usetab,newtab     " use new tab when open through quickfix
+set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 set redrawtime=1000
 "" Command timeout, only affect on mapping command
 "" timeout and timeoutlen apply to mappings

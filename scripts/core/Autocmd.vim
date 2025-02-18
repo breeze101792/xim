@@ -36,6 +36,9 @@ augroup END
 "   autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | set nornu | endif
 " augroup END
 
+" Open qf windows on other window
+" autocmd FileType qf nnoremap <buffer> <Enter> <C-W><Enter><C-W>T
+
 """"    Highlight Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Highlight KeyWords etc.

@@ -34,14 +34,8 @@ function! SearchProjectRoot()
     return ''
 endfunction
 
-" Function to open selected file in a new tab
-" FIXME, it's not working yet.
-" function! SearchProjectOpenFileInTab()
-"     let entry = getloclist(0, {'idx': getloclist(0, {'idx': 0, 'count': 1})[0].idx})[0]
-"     if !empty(entry)
-"         tabedit entry.filename
-"     endif
-" endfunction
+" Map the function to a key combination (e.g., <leader>o)
+nnoremap <leader>o :call OpenQuickfixInTab()<CR>
 
 function! SearchProjectFindInput()
     let pattern = input("Find file: ")

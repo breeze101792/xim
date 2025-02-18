@@ -171,7 +171,8 @@ function! TabLineLabel(n)
         elseif getbufvar( each_buf_in_tab, "&buftype"  ) == 'quickfix'
             let tmp_str .= '[Q]'
         else
-            let tmp_str .= pathshorten(bufname(each_buf_in_tab))
+            " let tmp_str .= pathshorten(bufname(each_buf_in_tab))
+            let tmp_str .= fnamemodify(bufname(each_buf_in_tab), ':t')
         endif
         " check and ++ tab'bname &modified count
         if getbufvar( each_buf_in_tab, "&modified"  )

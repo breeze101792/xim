@@ -62,6 +62,7 @@ set hidden                       " can put buffer to the background without writ
 set lazyredraw                   " don't update the display while executing macros
 set updatetime=500               " how long wil vim wait after your interaction to start plugins/other event
 set ttyfast                      " Send more characters at a given time.
+set switchbuf+=usetab,newtab     " use new tab when open through quickfix
 set redrawtime=1000
 set timeout
 set timeoutlen=500
@@ -336,9 +337,9 @@ if !exists("*Reload") ||  !exists(":Reload")
     function! Reload()
         if !empty(glob($MYVIMRC))
             source $MYVIMRC
-            echo 'Lite reloaded.'
+            echom 'Lite reloaded.'
         else
-            echo 'No RC file found.'. $MYVIMRC
+            echom 'No RC file found.'. $MYVIMRC
         endif
     endfunc
 end
@@ -463,7 +464,7 @@ function! TabLineLabel(n)
         elseif getbufvar( each_buf_in_tab, "&buftype"  ) == 'quickfix'
             let tmp_str .= '[Q]'
         else
-            let tmp_str .= pathshorten(bufname(each_buf_in_tab))
+            let tmp_str .= fnamemodify(bufname(each_buf_in_tab), ':t')
         endif
         if getbufvar( each_buf_in_tab, "&modified"  )
             let modify_cnt += 1
@@ -491,11 +492,44 @@ endfunction
 "------------------------------------------------------
 "" Import from HighlightWord.vim
 "------------------------------------------------------
-nnoremap <leader>th :call HighlightWordsToggle(expand('<cword>'))<CR>
+nnoremap <leader>ha :call HighlightWordsAdd(expand('<cword>'))<CR>
+nnoremap <leader>hr :call HighlightWordsRemove(expand('<cword>'))<CR>
 nnoremap <leader>ch :call HighlightedAllWordsToggle()<CR>
-command! -nargs=1 HighlightWordsToggle call HighlightWordsToggle(<q-args>)
+nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
+command! -nargs=1 HighlightWordsAdd call HighlightWordsAdd(<q-args>)
+command! -nargs=1 HighlightWordsRemove call HighlightWordsRemove(<q-args>)
 command! HighlightedAllWordsToggle call HighlightedAllWordsToggle()
-let g:highlighted_words = {}
+autocmd WinEnter,BufEnter * :call SyncGlobalHighlights()
+let g:highlighted_color_list = [
+            \ ['White', 'Red',    '#ffffff', '#ff0000'],
+            \ ['Black', 'Yellow', '#000000', '#ffff00'],
+            \ ['White', 'Blue',   '#ffffff', '#0000ff'],
+            \ ['Black', 'Green',  '#000000', '#00ff00'],
+            \ ['White', 'Magenta','#ffffff', '#ff00ff'],
+            \ ['Black', 'Cyan',   '#000000', '#00ffff'],
+            \ ['White', 'Black',  '#ffffff', '#000000'],
+            \ ['Black', 'White',  '#000000', '#ffffff'],
+            \ ]
+let g:global_highlighted_words = {}
+let g:highlight_color_index = len(g:global_highlighted_words) % len(g:highlighted_color_list)
+function! HighlightWord(word, color_idx)
+    let l:group_name = 'UserHL_' . substitute(a:word, '\W', '_', 'g')
+    let l:ctermfg = g:highlighted_color_list[a:color_idx][0]
+    let l:ctermbg = g:highlighted_color_list[a:color_idx][1]
+    let l:guifg   = g:highlighted_color_list[a:color_idx][2]
+    let l:guibg   = g:highlighted_color_list[a:color_idx][3]
+    let b:highlighted_words[a:word] = {
+                \ 'color_index': a:color_idx,
+                \ 'group_name': l:group_name
+                \ }
+    execute 'highlight ' . l:group_name .
+                \ ' ctermfg=' . l:ctermfg .
+                \ ' ctermbg=' . l:ctermbg .
+                \ ' guifg='   . l:guifg .
+                \ ' guibg='   . l:guibg .
+                \ ' cterm=bold gui=bold'
+    execute 'syntax match ' . l:group_name . ' /\<'. escape(a:word, '/\') . '\>/ containedin=ALL'
+endfunction
 function! HighlightWordsToggle(...) abort
   if a:0 == 0
     let l:input = input('Enter words to toggle highlight (separate with spaces): ')
@@ -503,56 +537,113 @@ function! HighlightWordsToggle(...) abort
   else
     let l:words = a:000
   endif
-  if !exists('g:highlighted_words')
-    let g:highlighted_words = {}
+  if !exists('b:highlighted_words')
+    let b:highlighted_words = {}
   endif
-  let l:color_list = [
-        \ ['White', 'Red',    '#ffffff', '#ff0000'],
-        \ ['Black', 'Yellow', '#000000', '#ffff00'],
-        \ ['White', 'Blue',   '#ffffff', '#0000ff'],
-        \ ['Black', 'Green',  '#000000', '#00ff00'],
-        \ ['White', 'Magenta','#ffffff', '#ff00ff'],
-        \ ['Black', 'Cyan',   '#000000', '#00ffff'],
-        \ ['White', 'Black',  '#ffffff', '#000000'],
-        \ ['Black', 'White',  '#000000', '#ffffff'],
-        \ ]
-  let l:color_index = len(g:highlighted_words) % len(color_list)
+  for l:word in l:words
+    if has_key(b:highlighted_words, l:word)
+        call HighlightWordsRemove(l:word)
+    else
+        call HighlightWordsAdd(l:word)
+    endif
+  endfor
+endfunction
+function! HighlightWordsAdd(...) abort
+  if a:0 == 0
+    let l:input = input('Enter words to add highlight (separate with spaces): ')
+    let l:words = split(l:input)
+  else
+    let l:words = a:000
+  endif
+  if !exists('b:highlighted_words')
+    let b:highlighted_words = {}
+  endif
   for l:word in l:words
     let l:group_name = 'UserHL_' . substitute(l:word, '\W', '_', 'g')
-    if has_key(g:highlighted_words, l:group_name)
+    if !has_key(b:highlighted_words, l:word)
+      let l:ctermfg = g:highlighted_color_list[g:highlight_color_index][0]
+      let l:ctermbg = g:highlighted_color_list[g:highlight_color_index][1]
+      let l:guifg   = g:highlighted_color_list[g:highlight_color_index][2]
+      let l:guibg   = g:highlighted_color_list[g:highlight_color_index][3]
+      if !has_key(g:global_highlighted_words, l:word)
+          let g:global_highlighted_words[l:word] = {
+                      \ 'color_index': g:highlight_color_index,
+                      \ 'group_name': l:group_name
+                      \ }
+      endif
+      call HighlightWord(l:word, g:highlight_color_index)
+      let g:highlight_color_index = (g:highlight_color_index + 1) % len(g:highlighted_color_list)
+      echo 'Added highlight for "' . l:word . '".'
+    else
+      echo 'Highlight for "' . l:word . '" already exists.'
+    endif
+  endfor
+endfunction
+function! HighlightWordsRemove(...) abort
+  if a:0 == 0
+    let l:input = input('Enter words to remove highlight (separate with spaces): ')
+    let l:words = split(l:input)
+  else
+    let l:words = a:000
+  endif
+  if !exists('b:highlighted_words')
+    let b:highlighted_words = {}
+  endif
+  for l:word in l:words
+    let l:group_name = 'UserHL_' . substitute(l:word, '\W', '_', 'g')
+    if has_key(b:highlighted_words, l:word)
       execute 'syntax clear ' . l:group_name
       execute 'highlight clear ' . l:group_name
-      call remove(g:highlighted_words, l:group_name)
+      call remove(b:highlighted_words, l:word)
       echo 'Removed highlight for "' . l:word . '".'
+      if has_key(g:global_highlighted_words, l:word)
+        call remove(g:global_highlighted_words, l:word)
+      endif
     else
-      let l:ctermfg = l:color_list[l:color_index][0]
-      let l:ctermbg = l:color_list[l:color_index][1]
-      let l:guifg   = l:color_list[l:color_index][2]
-      let l:guibg   = l:color_list[l:color_index][3]
-      let l:color_index = (l:color_index + 1) % len(l:color_list)
-      execute 'highlight ' . l:group_name .
-            \ ' ctermfg=' . l:ctermfg .
-            \ ' ctermbg=' . l:ctermbg .
-            \ ' guifg='   . l:guifg .
-            \ ' guibg='   . l:guibg .
-            \ ' cterm=bold gui=bold'
-      execute 'syntax match ' . l:group_name . ' /\V' . escape(l:word, '/\') . '/ containedin=ALL'
-      let g:highlighted_words[l:group_name] = l:word
-      echo 'Added highlight for "' . l:word . '".'
+      echo 'Highlight for "' . l:word . '" does not exist.'
     endif
   endfor
 endfunction
 function! HighlightedAllWordsToggle() abort
-  if exists('g:highlighted_words')
-    for l:group_name in keys(g:highlighted_words)
+  if exists('b:highlighted_words')
+    for l:word in keys(b:highlighted_words)
+        let l:group_name = 'UserHL_' . substitute(l:word, '\W', '_', 'g')
       execute 'syntax clear ' . l:group_name
       execute 'highlight clear ' . l:group_name
     endfor
-    unlet g:highlighted_words
+    unlet b:highlighted_words
     echo 'All highlights cleared.'
+    let g:global_highlighted_words = {}
   else
     echo 'No highlights to clear.'
   endif
+endfunction
+function! SyncGlobalHighlights() abort
+    if !exists('b:highlighted_words')
+        let b:highlighted_words = {}
+    endif
+    for l:word in keys(g:global_highlighted_words)
+        if !has_key(b:highlighted_words, l:word)
+            let l:color_idx = g:global_highlighted_words[l:word].color_index
+            let l:group_name = g:global_highlighted_words[l:word].group_name
+            call HighlightWord(l:word, l:color_idx)
+            let b:highlighted_words[l:word] = {
+                        \ 'color_index': l:color_idx,
+                        \ 'group_name': l:group_name
+                        \ }
+        endif
+    endfor
+    for l:word in keys(b:highlighted_words)
+        if !has_key(g:global_highlighted_words, l:word)
+            let l:color_idx = b:highlighted_words[l:word].color_index
+            let l:group_name = b:highlighted_words[l:word].group_name
+            call HighlightWord(l:word, l:color_idx)
+            let g:global_highlighted_words[l:word] = {
+                        \ 'color_index': l:color_idx,
+                        \ 'group_name': l:group_name
+                        \ }
+        endif
+    endfor
 endfunction
 "------------------------------------------------------
 "" Import from Bookmark.vim
@@ -564,8 +655,12 @@ nnoremap mm :call MarkToggleLine()<CR>
 nnoremap ml :call MarkJumpToMarkList()<CR>
 command! MarkingToggle call MarkingToggle()
 command! MarkJumpToMarkList call MarkJumpToMarkList()
+augroup BookmarkSync
+    autocmd!
+    autocmd WinEnter,BufEnter * call MarkSyncMarks()
+augroup END
 let g:bookmark_marking_enabled = 1
-let g:bookmark_marked_lines = {}
+let b:bookmark_marked_lines = {}
 let g:bookmark_center_jumped_line = 0
 highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
 function! MarkingToggle()
@@ -583,21 +678,34 @@ function! MarkLine()
         echo "Please enable marking functionality first."
         return
     endif
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
     let l:lnum = line('.')
-    if !has_key(g:bookmark_marked_lines, l:lnum)
+    if !has_key(b:bookmark_marked_lines, l:lnum)
         let l:matchid = matchadd('MarkedLine', '\%' . l:lnum . 'l')
-        let g:bookmark_marked_lines[l:lnum] = l:matchid
+        let b:bookmark_marked_lines[l:lnum] = l:matchid
+        if !exists('w:match_ids')
+            let w:match_ids = {}
+        endif
+        let w:match_ids[l:lnum] = l:matchid
         echo "Marked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is already marked."
     endif
 endfunction
 function! UnmarkLine()
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
     let l:lnum = line('.')
-    if has_key(g:bookmark_marked_lines, l:lnum)
-        let l:matchid = g:bookmark_marked_lines[l:lnum]
+    if has_key(b:bookmark_marked_lines, l:lnum)
+        let l:matchid = b:bookmark_marked_lines[l:lnum]
         call matchdelete(l:matchid)
-        call remove(g:bookmark_marked_lines, l:lnum)
+        call remove(b:bookmark_marked_lines, l:lnum)
+        if exists('w:match_ids') && has_key(w:match_ids, l:lnum)
+            call remove(w:match_ids, l:lnum)
+        endif
         echo "Unmarked line " . l:lnum . "."
     else
         echo "Line " . l:lnum . " is not marked."
@@ -608,26 +716,35 @@ function! MarkToggleLine()
         echo "Please enable marking functionality first."
         return
     endif
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
     let l:lnum = line('.')
-    if has_key(g:bookmark_marked_lines, l:lnum)
+    if has_key(b:bookmark_marked_lines, l:lnum)
         call UnmarkLine()
     else
         call MarkLine()
     endif
 endfunction
 function! ClearAllMarks()
-    for l:lnum in keys(g:bookmark_marked_lines)
-        let l:matchid = g:bookmark_marked_lines[l:lnum]
-        call matchdelete(l:matchid)
-    endfor
-    let g:bookmark_marked_lines = {}
+    if exists('w:match_ids')
+        for l:lnum in keys(w:match_ids)
+            let l:matchid = w:match_ids[l:lnum]
+            call matchdelete(l:matchid)
+        endfor
+    endif
+    let w:match_ids = {}
+    let b:bookmark_marked_lines = {}
 endfunction
 function! MarkJumpToMarkList()
-    if empty(keys(g:bookmark_marked_lines))
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
+    if empty(keys(b:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
-    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(b:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:choices = []
     for l:lnum in l:marked_lnums
         let l:line_text = getline(l:lnum)
@@ -644,12 +761,15 @@ function! MarkJumpToMarkList()
     endif
 endfunction
 function! MarkJumpToPrev()
-    if empty(keys(g:bookmark_marked_lines))
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
+    if empty(keys(b:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
-    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(b:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:prev_marks = filter(copy(l:marked_lnums), 'v:val < l:current_line')
     if !empty(l:prev_marks)
         let l:target_line = l:prev_marks[-1]
@@ -663,12 +783,15 @@ function! MarkJumpToPrev()
     endif
 endfunction
 function! MarkJumpToNext()
-    if empty(keys(g:bookmark_marked_lines))
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
+    if empty(keys(b:bookmark_marked_lines))
         echo "No marked lines."
         return
     endif
     let l:current_line = line('.')
-    let l:marked_lnums = sort(map(keys(g:bookmark_marked_lines), 'str2nr(v:val)'))
+    let l:marked_lnums = sort(map(keys(b:bookmark_marked_lines), 'str2nr(v:val)'))
     let l:next_marks = filter(copy(l:marked_lnums), 'v:val > l:current_line')
     if !empty(l:next_marks)
         let l:target_line = l:next_marks[0]
@@ -680,6 +803,33 @@ function! MarkJumpToNext()
     else
         echo "No next marked line."
     endif
+endfunction
+function! MarkSyncMarks()
+    if ! exists('b:bookmark_marked_lines')
+        call ClearAllMarks()
+    endif
+    if ! exists('w:match_ids')
+        let w:match_ids = {}
+    endif
+    for l:lnum in keys(b:bookmark_marked_lines)
+        let l:matchid = b:bookmark_marked_lines[l:lnum]
+        if !exists('w:match_ids') || !has_key(w:match_ids, l:lnum)
+            call matchadd('MarkedLine', '\%' . l:lnum . 'l', 10, l:matchid)
+            if !exists('w:match_ids')
+                let w:match_ids = {}
+            endif
+            let w:match_ids[l:lnum] = l:matchid
+        endif
+    endfor
+    try
+        for l:lnum in keys(w:match_ids)
+            let l:matchid = w:match_ids[l:lnum]
+            if !exists('b:bookmark_marked_lines') || !has_key(b:bookmark_marked_lines, l:lnum)
+                call matchdelete(l:matchid)
+                call remove(w:match_ids, l:lnum)
+            endif
+        endfor
+    endtry
 endfunction
 "------------------------------------------------------
 "" Import from CodeTags.vim
@@ -796,6 +946,7 @@ function! SearchProjectRoot()
     endif
     return ''
 endfunction
+nnoremap <leader>o :call OpenQuickfixInTab()<CR>
 function! SearchProjectFindInput()
     let pattern = input("Find file: ")
     call SearchProjectFind(pattern)
