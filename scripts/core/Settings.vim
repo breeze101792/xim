@@ -82,8 +82,10 @@ exec "set directory=" . get(g:, 'IDE_ENV_CONFIG_PATH', '~/.vim') . "/swp/"
 " set autoread                                    " reload files if changed externally
 
 ""    clipboard options
-set clipboard=unnamed                             " Access system clipboard
-set clipboard+=unnamedplus                        " use systemc clip buffer instead
+" don't change it, since nvim didn't support.
+" set clipboard=unnamed                             " Access system clipboard
+" set clipboard+=unnamedplus                        " use systemc clip buffer instead
+
 set history=1000                                  " Increase the undo limit.
 
 " soft tab

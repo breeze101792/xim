@@ -79,8 +79,7 @@ set number                                        " show line number
 set ignorecase smartcase                          " search with ignore case
 set incsearch                                     " increamental search
 exec "set directory=" . get(g:, 'IDE_ENV_CONFIG_PATH', '~/.vim') . "/swp/"
-set clipboard=unnamed                             " Access system clipboard
-set clipboard+=unnamedplus                        " use systemc clip buffer instead
+set clipboard=autoselectplus                        " some will not have system clipboard.
 set history=1000                                  " Increase the undo limit.
 set expandtab                                     " extend tab (soft tab)
 set tabstop=4                                     " set tab len to 4

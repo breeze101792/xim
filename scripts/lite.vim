@@ -105,11 +105,11 @@ endif
 " augroup END
 "
 " " Call the function after opening a buffer
-" augroup tab_gp
-"     autocmd!
-"     autocmd BufReadPost * call TabsOrSpaces()
-" augroup END
-"
+augroup tab_gp
+    autocmd!
+    autocmd BufReadPost * call TabsOrSpaces()
+augroup END
+
 " augroup syntax_hi_gp
 "     autocmd!
 "     autocmd Syntax * call matchadd(
