@@ -738,7 +738,7 @@ function fEdit()
 
     cd "${var_proj_folder}"
 
-    if test -f "./proj.vim"
+    if test -f "./proj.vim" || test -d "${var_proj_folder}"
     then
         export VIDE_SH_PROJ_DATA_PATH=$(realpath ${var_proj_folder})
     fi

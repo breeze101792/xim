@@ -17,6 +17,15 @@
 " let b:IDE_ENV_GIT_PROJECT_PATH = ""
 " let b:IDE_ENV_PASTE_MODE = ""
 
+" Module Settings
+" ===========================================
+
+" let g:IDE_MDOULE_STATUSLINE = get(g:, 'IDE_MDOULE_STATUSLINE', "n")
+" let g:IDE_MDOULE_HIGHLIGHTWORD = get(g:, 'IDE_MDOULE_HIGHLIGHTWORD', "n")
+" let g:IDE_MDOULE_BOOKMARK = get(g:, 'IDE_MDOULE_BOOKMARK', "n")
+" let g:IDE_MDOULE_SEARCHPROJECT = get(g:, 'IDE_MDOULE_SEARCHPROJECT', "n")
+let g:IDE_MDOULE_CODETAGS = get(g:, 'IDE_MDOULE_CODETAGS', "y")
+
 "" Buffer Functions
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! IDE_EnvSetup_Proj()

@@ -79,7 +79,6 @@ set number                                        " show line number
 set ignorecase smartcase                          " search with ignore case
 set incsearch                                     " increamental search
 exec "set directory=" . get(g:, 'IDE_ENV_CONFIG_PATH', '~/.vim') . "/swp/"
-set clipboard=autoselectplus                        " some will not have system clipboard.
 set history=1000                                  " Increase the undo limit.
 set expandtab                                     " extend tab (soft tab)
 set tabstop=4                                     " set tab len to 4
@@ -315,6 +314,10 @@ set noswapfile
 if exists('&colorcolumn') 
     set colorcolumn=""
 endif
+augroup tab_gp
+    autocmd!
+    autocmd BufReadPost * call TabsOrSpaces()
+augroup END
 noremap <C-_> :SimpleCommentCode<CR>
 map <leader>b <Esc>:buffers<CR>
 nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
@@ -493,12 +496,13 @@ endfunction
 "------------------------------------------------------
 nnoremap <leader>ha :call HighlightWordsAdd(expand('<cword>'))<CR>
 nnoremap <leader>hr :call HighlightWordsRemove(expand('<cword>'))<CR>
-nnoremap <leader>ch :call HighlightedAllWordsToggle()<CR>
 nnoremap <leader>m :call HighlightWordsToggle(expand('<cword>'))<CR>
+nnoremap <leader>ch :call HighlightClearAllWords()<CR>
 command! -nargs=1 HighlightWordsAdd call HighlightWordsAdd(<q-args>)
 command! -nargs=1 HighlightWordsRemove call HighlightWordsRemove(<q-args>)
-command! HighlightedAllWordsToggle call HighlightedAllWordsToggle()
-autocmd WinEnter,BufEnter * :call SyncGlobalHighlights()
+command! HighlightClearAllWords call HighlightClearAllWords()
+command! HighlightSyncGlobal call HighlightSyncGlobal()
+autocmd WinEnter,BufEnter * :call HighlightSyncGlobal()
 let g:highlighted_color_list = [
             \ ['White', 'Red',    '#ffffff', '#ff0000'],
             \ ['Black', 'Yellow', '#000000', '#ffff00'],
@@ -508,8 +512,34 @@ let g:highlighted_color_list = [
             \ ['Black', 'Cyan',   '#000000', '#00ffff'],
             \ ['White', 'Black',  '#ffffff', '#000000'],
             \ ['Black', 'White',  '#000000', '#ffffff'],
+            \ [255 , 208 , '#ffffff' , '#ffa500'] ,
+            \ [232 , 135 , '#000000' , '#8a2be2'] ,
+            \ [255 , 219 , '#ffffff' , '#ff69b4'] ,
+            \ [232 , 44  , '#000000' , '#008080'] ,
+            \ [255 , 82  , '#ffffff' , '#32cd32'] ,
+            \ [232 , 23  , '#000000' , '#000080'] ,
+            \ [255 , 124 , '#ffffff' , '#800000'] ,
+            \ [232 , 140 , '#000000' , '#808000'] ,
+            \ [255 , 245 , '#ffffff' , '#808080'] ,
+            \ [232 , 250 , '#000000' , '#c0c0c0'] ,
+            \ [255 , 171 , '#ffffff' , '#a52a2a'] ,
+            \ [232 , 255 , '#000000' , '#f5f5dc'] ,
+            \ [255 , 117 , '#ffffff' , '#40e0d0'] ,
+            \ [232 , 130 , '#000000' , '#4b0082'] ,
+            \ [255 , 235 , '#ffffff' , '#ee82ee'] ,
+            \ [232 , 220 , '#000000' , '#ffd700'] ,
+            \ [255 , 229 , '#ffffff' , '#dda0dd'] ,
+            \ [232 , 214 , '#000000' , '#ff7f50'] ,
+            \ [255 , 227 , '#ffffff' , '#f4a460'] ,
+            \ [232 , 166 , '#000000' , '#98fb98'] ,
+            \ [255 , 196 , '#ffffff' , '#ff0000'] ,
+            \ [232 , 213 , '#000000' , '#ffbf00'] ,
+            \ [255 , 118 , '#ffffff' , '#4682b4'] ,
+            \ [232 , 179 , '#000000' , '#cd7f32'] ,
             \ ]
-let g:global_highlighted_words = {}
+if ! exists('g:global_highlighted_words')
+    let g:global_highlighted_words = {}
+endif
 let g:highlight_color_index = len(g:global_highlighted_words) % len(g:highlighted_color_list)
 function! HighlightWord(word, color_idx)
     let l:group_name = 'UserHL_' . substitute(a:word, '\W', '_', 'g')
@@ -603,7 +633,7 @@ function! HighlightWordsRemove(...) abort
     endif
   endfor
 endfunction
-function! HighlightedAllWordsToggle() abort
+function! HighlightClearAllWords() abort
   if exists('b:highlighted_words')
     for l:word in keys(b:highlighted_words)
         let l:group_name = 'UserHL_' . substitute(l:word, '\W', '_', 'g')
@@ -617,7 +647,7 @@ function! HighlightedAllWordsToggle() abort
     echo 'No highlights to clear.'
   endif
 endfunction
-function! SyncGlobalHighlights() abort
+function! HighlightSyncGlobal() abort
     if !exists('b:highlighted_words')
         let b:highlighted_words = {}
     endif
@@ -647,21 +677,23 @@ endfunction
 "------------------------------------------------------
 "" Import from Bookmark.vim
 "------------------------------------------------------
-nnoremap mt :call MarkingToggle()<CR>
-nnoremap mp :call MarkJumpToPrev()<CR>
-nnoremap mn :call MarkJumpToNext()<CR>
-nnoremap mm :call MarkToggleLine()<CR>
 nnoremap ml :call MarkJumpToMarkList()<CR>
-command! MarkingToggle call MarkingToggle()
+nnoremap mm :call MarkToggleLine()<CR>
+nnoremap mn :call MarkJumpToNext()<CR>
+nnoremap mp :call MarkJumpToPrev()<CR>
+nnoremap mt :call MarkingToggle()<CR>
 command! MarkJumpToMarkList call MarkJumpToMarkList()
+command! MarkJumpToNext call MarkJumpToNext()
+command! MarkJumpToPrev call MarkJumpToPrev()
+command! MarkToggleLine call MarkToggleLine()
+command! MarkingToggle call MarkingToggle()
 augroup BookmarkSync
     autocmd!
     autocmd WinEnter,BufEnter * call MarkSyncMarks()
 augroup END
 let g:bookmark_marking_enabled = 1
-let b:bookmark_marked_lines = {}
 let g:bookmark_center_jumped_line = 0
-highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
+highlight MarkedLine ctermbg=240 guibg=#585858
 function! MarkingToggle()
     if g:bookmark_marking_enabled
         let g:bookmark_marking_enabled = 0

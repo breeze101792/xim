@@ -4,15 +4,18 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Map shortcut keys
-nnoremap mt :call MarkingToggle()<CR>
-nnoremap mp :call MarkJumpToPrev()<CR>
-nnoremap mn :call MarkJumpToNext()<CR>
-nnoremap mm :call MarkToggleLine()<CR>
 nnoremap ml :call MarkJumpToMarkList()<CR>
+nnoremap mm :call MarkToggleLine()<CR>
+nnoremap mn :call MarkJumpToNext()<CR>
+nnoremap mp :call MarkJumpToPrev()<CR>
+nnoremap mt :call MarkingToggle()<CR>
 
 " Commands
-command! MarkingToggle call MarkingToggle()
 command! MarkJumpToMarkList call MarkJumpToMarkList()
+command! MarkJumpToNext call MarkJumpToNext()
+command! MarkJumpToPrev call MarkJumpToPrev()
+command! MarkToggleLine call MarkToggleLine()
+command! MarkingToggle call MarkingToggle()
 
 " Debuging
 augroup BookmarkSync
@@ -26,13 +29,15 @@ augroup END
 let g:bookmark_marking_enabled = 1
 
  " Use a dictionary to store line numbers and match IDs
-let b:bookmark_marked_lines = {}
+" let b:bookmark_marked_lines = {}
 
 " Center jumped line.
 let g:bookmark_center_jumped_line = 0
 
-" Define highlight group
+" Define highlight group, 232~255 gray scal
 highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
+" highlight MarkedLine ctermbg=236 guibg=#303030
+" highlight MarkedLine ctermbg=240 guibg=#585858
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
@@ -119,12 +124,6 @@ endfunction
 
 " Clear all marks and highlights
 function! ClearAllMarks()
-    " if exists('b:bookmark_marked_lines')
-    "     for l:lnum in keys(b:bookmark_marked_lines)
-    "         let l:matchid = b:bookmark_marked_lines[l:lnum]
-    "         call matchdelete(l:matchid)
-    "     endfor
-    " endif
     if exists('w:match_ids')
         for l:lnum in keys(w:match_ids)
             let l:matchid = w:match_ids[l:lnum]

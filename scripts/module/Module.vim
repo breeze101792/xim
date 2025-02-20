@@ -2,9 +2,11 @@
 " ===========================================
 " Module should not depends on other file.
 
+" let g:IDE_MDOULE_CODETAGS = get(g:, 'IDE_MDOULE_CODETAGS', "n")
 " let g:IDE_MDOULE_STATUSLINE = get(g:, 'IDE_MDOULE_STATUSLINE', "n")
 " let g:IDE_MDOULE_HIGHLIGHTWORD = get(g:, 'IDE_MDOULE_HIGHLIGHTWORD', "n")
 " let g:IDE_MDOULE_BOOKMARK = get(g:, 'IDE_MDOULE_BOOKMARK', "n")
+" let g:IDE_MDOULE_SEARCHPROJECT = get(g:, 'IDE_MDOULE_SEARCHPROJECT', "n")
 
 if get(g:, 'IDE_MDOULE_BOOKMARK', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Bookmark.vim"
@@ -26,5 +28,8 @@ if get(g:, 'IDE_MDOULE_SEARCHPROJECT', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/SearchProject.vim"
 endif
 
+" Module Testing Zoon
+" ===========================================
 " it's for testing.
 " exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Lab.vim"
+" exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/LogAnalysis.vim"

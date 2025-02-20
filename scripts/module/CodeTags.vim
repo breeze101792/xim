@@ -24,9 +24,10 @@ if has('cscope')
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
 
-command! CodeTagGenerateTags call CodeTagGenerateTags()
+" command! CodeTagGenerateTags call CodeTagGenerateTags()
 command! CodeTagLoadTags call CodeTagLoadTags()
 command! CodeTagSetup call CodeTagSetup()
+command! CodeTagUpdateTags call CodeTagUpdateTags()
 
 """"    Variable
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -54,8 +55,30 @@ function! CodeTagGetProjectRoot()
     return ''
 endfunction
 
+" Function to generate source list
+function! CodeTagGenerateSourceList(search_path, src_list_path)
+    call system('find ' . a:search_path . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . a:src_list_path)
+endfunc
+
+" Function to generate source tags
+function! CodeTagGenerateCtags(tag_path, src_list_path)
+    if ! filereadable(a:src_list_path)
+        echoe "Project list file not found.".a:src_list_path
+        return 1
+    endif
+    call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . a:src_list_path . ' -f ' . a:tag_path)
+endfunc
+function! CodeTagGenerateCscope(tag_path, src_list_path)
+    if ! filereadable(a:src_list_path)
+        echoe "Project list file not found.".a:src_list_path
+        return 1
+    endif
+    call system('cscope -c -b -R -q -U -i ' . a:src_list_path . ' -f '. a:tag_path)
+endfunc
+
 " Function to generate ctags and cscope databases
 function! CodeTagGenerateTags()
+    let user_input=0
     let root = CodeTagGetProjectRoot()
     if root == ''
         echo "Error: Could not determine project root"
@@ -78,49 +101,88 @@ function! CodeTagGenerateTags()
         let answer = input("Cscope list already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+            " call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+            call CodeTagGenerateSourceList(root, project_list_file)
         endif
     else
-        call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+        " call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+        call CodeTagGenerateSourceList(root, project_list_file)
     endif
 
     " Generate ctags
     let ctags_file = tags_dir . '/'.g:codetag_ctag_name
     echom "Generate ctags ". ctags_file
-    if filereadable(ctags_file)
+    if filereadable(ctags_file) && l:user_input
         " echo "CTags file already exists. Do you want to rebuild it? (y/n)"
         let answer = input("CTags file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
+            " call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
             " call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+        call CodeTagGenerateCtags(ctags_file, project_list_file)
         endif
     else
-        call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
+        " call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
         " call system('ctags -R --fields=+iaS --extra=+q --language-force=c++ -f ' . ctags_file . ' ' . root)
+        call CodeTagGenerateCtags(ctags_file, project_list_file)
     endif
 
     " Generate cscope
     let cscope_tags = tags_dir . '/'.g:codetag_cscope_name
     echom "Generate cscope ".cscope_tags
-    if filereadable(cscope_tags)
+    if filereadable(cscope_tags) && l:user_input
         " echo "Cscope file already exists. Do you want to rebuild it? (y/n)"
         let answer = input("Cscope file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
             " call system('cscope -cRbq -i ' . project_list_file)
-            call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
+            " call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
+            call CodeTagGenerateCscope(cscope_tags, project_list_file)
         endif
     else
-
-        call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
+        " call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
         " call system('cscope -cRbq -i ' . project_list_file)
+        call CodeTagGenerateCscope(cscope_tags, project_list_file)
     endif
 
-    " if filereadable('./cscope.out')
-    "     call system('mv cscope.out ' . cscope_tags)
-    "     call system('mv cscope*out ' . tags_dir)
-    " endif
+endfunction
+
+" Function to generate ctags and cscope databases
+function! CodeTagUpdateTags()
+    let user_input=0
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+
+    " Create tags directory if it doesn't exist
+    " let tags_dir = root . '/tags'
+    let tags_dir = root . '/' . g:codetag_folder_name
+
+    if !isdirectory(tags_dir)
+        call system('mkdir -p ' . tags_dir)
+    endif
+
+    " Generate project list
+    let project_list_file = tags_dir . '/'.g:codetag_proj_list_name
+    " echom "Generate project srouce code list ".project_list_file
+    if ! filereadable(project_list_file)
+        echom "Generate project srouce code list ".project_list_file
+        call CodeTagGenerateSourceList(root, project_list_file)
+    endif
+
+    " Generate ctags
+    let ctags_file = tags_dir . '/'.g:codetag_ctag_name
+    " echom "Generate ctags ". ctags_file
+    call CodeTagGenerateCtags(ctags_file, project_list_file)
+
+    " Generate cscope
+    let cscope_tags = tags_dir . '/'.g:codetag_cscope_name
+    " echom "Generate cscope ".cscope_tags
+    call CodeTagGenerateCscope(cscope_tags, project_list_file)
+
+    echo "Tag update finished."
 endfunction
 
 " Function to load ctags and cscope
@@ -149,6 +211,7 @@ endfunction
 
 " Main function to setup ctags and cscope
 function! CodeTagSetup()
-    call CodeTagGenerateTags()
-    call CodeTagLoadTags()
+    silent call CodeTagUpdateTags()
+    silent call CodeTagLoadTags()
+    echo "Tag setup finished."
 endfunction
