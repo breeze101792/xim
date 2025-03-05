@@ -90,3 +90,16 @@ nnoremap <C-W>m <C-W>=
 " Type match to reset highlight
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
+
+""""    Compatiability
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Remap Function keys.
+map f1 <F1><CR>
+map f2 <F2><CR>
+map f3 <F3><CR>
+map f4 <F4><CR>
+map f5 <F5><CR>
+map f6 <F6><CR>
+map f7 <F7><CR>
+map f8 <F8><CR>
+map f9 <F9><CR>

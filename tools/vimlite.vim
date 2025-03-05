@@ -183,6 +183,15 @@ nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
+map f1 <F1><CR>
+map f2 <F2><CR>
+map f3 <F3><CR>
+map f4 <F4><CR>
+map f5 <F5><CR>
+map f6 <F6><CR>
+map f7 <F7><CR>
+map f8 <F8><CR>
+map f9 <F9><CR>
 "------------------------------------------------------
 "" Import from Autocmd.vim
 "------------------------------------------------------
@@ -504,38 +513,38 @@ command! HighlightClearAllWords call HighlightClearAllWords()
 command! HighlightSyncGlobal call HighlightSyncGlobal()
 autocmd WinEnter,BufEnter * :call HighlightSyncGlobal()
 let g:highlighted_color_list = [
-            \ ['White', 'Red',    '#ffffff', '#ff0000'],
-            \ ['Black', 'Yellow', '#000000', '#ffff00'],
-            \ ['White', 'Blue',   '#ffffff', '#0000ff'],
-            \ ['Black', 'Green',  '#000000', '#00ff00'],
-            \ ['White', 'Magenta','#ffffff', '#ff00ff'],
             \ ['Black', 'Cyan',   '#000000', '#00ffff'],
-            \ ['White', 'Black',  '#ffffff', '#000000'],
             \ ['Black', 'White',  '#000000', '#ffffff'],
-            \ [255 , 208 , '#ffffff' , '#ffa500'] ,
-            \ [232 , 135 , '#000000' , '#8a2be2'] ,
-            \ [255 , 219 , '#ffffff' , '#ff69b4'] ,
-            \ [232 , 44  , '#000000' , '#008080'] ,
-            \ [255 , 82  , '#ffffff' , '#32cd32'] ,
-            \ [232 , 23  , '#000000' , '#000080'] ,
-            \ [255 , 124 , '#ffffff' , '#800000'] ,
-            \ [232 , 140 , '#000000' , '#808000'] ,
-            \ [255 , 245 , '#ffffff' , '#808080'] ,
-            \ [232 , 250 , '#000000' , '#c0c0c0'] ,
-            \ [255 , 171 , '#ffffff' , '#a52a2a'] ,
-            \ [232 , 255 , '#000000' , '#f5f5dc'] ,
-            \ [255 , 117 , '#ffffff' , '#40e0d0'] ,
-            \ [232 , 130 , '#000000' , '#4b0082'] ,
-            \ [255 , 235 , '#ffffff' , '#ee82ee'] ,
-            \ [232 , 220 , '#000000' , '#ffd700'] ,
-            \ [255 , 229 , '#ffffff' , '#dda0dd'] ,
-            \ [232 , 214 , '#000000' , '#ff7f50'] ,
-            \ [255 , 227 , '#ffffff' , '#f4a460'] ,
+            \ ['Black', 'Yellow', '#000000', '#ffff00'],
+            \ ['White', 'Black',  '#ffffff', '#000000'],
+            \ ['White', 'Blue',   '#ffffff', '#0000ff'],
+            \ ['White', 'Green',  '#ffffff', '#00ff00'],
+            \ ['White', 'Magenta','#ffffff', '#ff00ff'],
+            \ ['White', 'Red',    '#ffffff', '#ff0000'],
+            \ [232 , 117 , '#000000' , '#40e0d0'] ,
             \ [232 , 166 , '#000000' , '#98fb98'] ,
-            \ [255 , 196 , '#ffffff' , '#ff0000'] ,
-            \ [232 , 213 , '#000000' , '#ffbf00'] ,
-            \ [255 , 118 , '#ffffff' , '#4682b4'] ,
             \ [232 , 179 , '#000000' , '#cd7f32'] ,
+            \ [232 , 208 , '#000000' , '#ffa500'] ,
+            \ [232 , 213 , '#000000' , '#ffbf00'] ,
+            \ [232 , 214 , '#000000' , '#ff7f50'] ,
+            \ [232 , 219 , '#000000' , '#ff69b4'] ,
+            \ [232 , 220 , '#000000' , '#ffd700'] ,
+            \ [232 , 227 , '#000000' , '#f4a460'] ,
+            \ [232 , 229 , '#000000' , '#dda0dd'] ,
+            \ [232 , 235 , '#000000' , '#ee82ee'] ,
+            \ [232 , 245 , '#000000' , '#808080'] ,
+            \ [232 , 250 , '#000000' , '#c0c0c0'] ,
+            \ [232 , 255 , '#000000' , '#f5f5dc'] ,
+            \ [232 , 82  , '#000000' , '#32cd32'] ,
+            \ [255 , 118 , '#ffffff' , '#4682b4'] ,
+            \ [255 , 124 , '#ffffff' , '#800000'] ,
+            \ [255 , 130 , '#ffffff' , '#4b0082'] ,
+            \ [255 , 135 , '#ffffff' , '#8a2be2'] ,
+            \ [255 , 140 , '#ffffff' , '#808000'] ,
+            \ [255 , 171 , '#ffffff' , '#a52a2a'] ,
+            \ [255 , 196 , '#ffffff' , '#ff0000'] ,
+            \ [255 , 23  , '#ffffff' , '#000080'] ,
+            \ [255 , 44  , '#ffffff' , '#008080'] ,
             \ ]
 if ! exists('g:global_highlighted_words')
     let g:global_highlighted_words = {}
@@ -557,7 +566,7 @@ function! HighlightWord(word, color_idx)
                 \ ' guifg='   . l:guifg .
                 \ ' guibg='   . l:guibg .
                 \ ' cterm=bold gui=bold'
-    execute 'syntax match ' . l:group_name . ' /\<'. escape(a:word, '/\') . '\>/ containedin=ALL'
+    execute 'syntax match ' . l:group_name . ' /'. escape(a:word, '/\') . '\C/ containedin=ALL'
 endfunction
 function! HighlightWordsToggle(...) abort
   if a:0 == 0
@@ -693,7 +702,7 @@ augroup BookmarkSync
 augroup END
 let g:bookmark_marking_enabled = 1
 let g:bookmark_center_jumped_line = 0
-highlight MarkedLine ctermbg=240 guibg=#585858
+highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
 function! MarkingToggle()
     if g:bookmark_marking_enabled
         let g:bookmark_marking_enabled = 0
@@ -876,9 +885,9 @@ if has('cscope')
     nnoremap <silent>cs :cscope find s <cword><CR>
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
-command! CodeTagGenerateTags call CodeTagGenerateTags()
 command! CodeTagLoadTags call CodeTagLoadTags()
 command! CodeTagSetup call CodeTagSetup()
+command! CodeTagUpdateTags call CodeTagUpdateTags()
 let g:codetag_folder_name='.vimproject'
 let g:codetag_ctag_name='tags'
 let g:codetag_proj_list_name='proj.files'
@@ -894,7 +903,25 @@ function! CodeTagGetProjectRoot()
     endif
     return ''
 endfunction
+function! CodeTagGenerateSourceList(search_path, src_list_path)
+    call system('find ' . a:search_path . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . a:src_list_path)
+endfunc
+function! CodeTagGenerateCtags(tag_path, src_list_path)
+    if ! filereadable(a:src_list_path)
+        echoe "Project list file not found.".a:src_list_path
+        return 1
+    endif
+    call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . a:src_list_path . ' -f ' . a:tag_path)
+endfunc
+function! CodeTagGenerateCscope(tag_path, src_list_path)
+    if ! filereadable(a:src_list_path)
+        echoe "Project list file not found.".a:src_list_path
+        return 1
+    endif
+    call system('cscope -c -b -R -q -U -i ' . a:src_list_path . ' -f '. a:tag_path)
+endfunc
 function! CodeTagGenerateTags()
+    let user_input=0
     let root = CodeTagGetProjectRoot()
     if root == ''
         echo "Error: Could not determine project root"
@@ -910,33 +937,55 @@ function! CodeTagGenerateTags()
         let answer = input("Cscope list already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+            call CodeTagGenerateSourceList(root, project_list_file)
         endif
     else
-        call system('find ' . root . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . project_list_file)
+        call CodeTagGenerateSourceList(root, project_list_file)
     endif
     let ctags_file = tags_dir . '/'.g:codetag_ctag_name
     echom "Generate ctags ". ctags_file
-    if filereadable(ctags_file)
+    if filereadable(ctags_file) && l:user_input
         let answer = input("CTags file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
+        call CodeTagGenerateCtags(ctags_file, project_list_file)
         endif
     else
-        call system('ctags -R --c++-kinds=+p --C-kinds=+p --fields=+iaS --extra=+q -L ' . project_list_file . ' -f ' . ctags_file)
+        call CodeTagGenerateCtags(ctags_file, project_list_file)
     endif
     let cscope_tags = tags_dir . '/'.g:codetag_cscope_name
     echom "Generate cscope ".cscope_tags
-    if filereadable(cscope_tags)
+    if filereadable(cscope_tags) && l:user_input
         let answer = input("Cscope file already exists. Do you want to rebuild it? (y/n)")
         echo ""
         if answer =~ '^[Yy]$'
-            call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
+            call CodeTagGenerateCscope(cscope_tags, project_list_file)
         endif
     else
-        call system('cscope -c -b -R -q -U -i ' . project_list_file . ' -f '. cscope_tags)
+        call CodeTagGenerateCscope(cscope_tags, project_list_file)
     endif
+endfunction
+function! CodeTagUpdateTags()
+    let user_input=0
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+    let tags_dir = root . '/' . g:codetag_folder_name
+    if !isdirectory(tags_dir)
+        call system('mkdir -p ' . tags_dir)
+    endif
+    let project_list_file = tags_dir . '/'.g:codetag_proj_list_name
+    if ! filereadable(project_list_file)
+        echom "Generate project srouce code list ".project_list_file
+        call CodeTagGenerateSourceList(root, project_list_file)
+    endif
+    let ctags_file = tags_dir . '/'.g:codetag_ctag_name
+    call CodeTagGenerateCtags(ctags_file, project_list_file)
+    let cscope_tags = tags_dir . '/'.g:codetag_cscope_name
+    call CodeTagGenerateCscope(cscope_tags, project_list_file)
+    echo "Tag update finished."
 endfunction
 function! CodeTagLoadTags()
     let root = CodeTagGetProjectRoot()
@@ -955,8 +1004,9 @@ function! CodeTagLoadTags()
     endif
 endfunction
 function! CodeTagSetup()
-    call CodeTagGenerateTags()
-    call CodeTagLoadTags()
+    silent call CodeTagUpdateTags()
+    silent call CodeTagLoadTags()
+    echo "Tag setup finished."
 endfunction
 "------------------------------------------------------
 "" Import from SearchProject.vim
