@@ -5,7 +5,7 @@
 [submodule "plugins/supertab"]
 	path = plugins/supertab
 	url = https://github.com/ervandew/supertab.git
-	branch = master
+	branch = main
 [submodule "plugins/tagbar"]
 	path = plugins/tagbar
 	url = https://github.com/majutsushi/tagbar.git
@@ -109,6 +109,10 @@
 	path = plugins/vim-highlighter
 	url = https://github.com/azabiong/vim-highlighter.git
 	branch = main
+[submodule "plugins/gen.nvim"]
+	path = plugins/gen.nvim
+	url = https://github.com/David-Kunz/gen.nvim.git
+	breanch = main
 ## Other modules
 # [submodule "plugins/srcexpl"]
 # 	path = plugins/srcexpl
@@ -122,6 +126,3 @@
 # 	path = plugins/vim-mark
 # 	url = https://github.com/inkarkat/vim-mark.git
 # 	branch = master
-[submodule "plugins/gen.nvim"]
-	path = plugins/gen.nvim
-	url = https://github.com/David-Kunz/gen.nvim.git
