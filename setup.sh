@@ -97,7 +97,13 @@ fSoftLink()
     local var_src_path=$1
     local var_dst_path=$2
 
-    if test -L "${var_dst_path}"
+    if test -L "${var_dst_path}" && ! test -e "${var_dst_path}"
+    then
+        # bad link, update link
+        echo "Link ${var_src_path} to ${var_dst_path}."
+        ln -sf ${var_src_path} ${var_dst_path}
+        return 0
+    elif test -L "${var_dst_path}"
     then
         echo -e "${DEF_COLOR_YELLOW} Ignore links, (${var_src_path} to ${var_dst_path})${DEF_COLOR_NORMAL}"
         return 0
