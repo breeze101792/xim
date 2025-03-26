@@ -91,6 +91,12 @@ nnoremap <C-W>m <C-W>=
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
 
+""""    Toggle
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" This are toggle vim system function only.
+nmap fp :PureToggle<CR>
+nmap fr :Reload<CR>
+
 """"    Compatiability
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Remap Function keys.

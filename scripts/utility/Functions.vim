@@ -55,23 +55,20 @@ endfunc
 " -------------------------------------------
 "  Pure mode
 " -------------------------------------------
-command! PureToggle call PureToggle()
+command! -nargs=? PureToggle call PureToggle(<f-args>)
 
-function! PureToggle()
+function! PureToggle(...)
+    let l:mode = get(a:, 1, -1)
+    " 0 disable.
+    " 1 enable.
+    " 2 means reset.
+    if l:mode == 2
+        let g:pure_toggle_autocmd = 0
+        let l:mode = 0
+    endif
+    "echom 'Mode: '.l:mode. 'Pate:'.&paste. 'narg:'.a:0
 
-    if &paste
-        echo 'Disable Pure mode'
-        " backup vars
-        setlocal nopaste
-        " setlocal cursorline
-        setlocal number
-        setlocal list
-
-        exe "GitGutterEnable"
-        exe "DoMatchParen"
-
-    else
-        echo 'Enable Pure mode'
+    if &paste == 0 && l:mode != 0 || l:mode == 1
         setlocal paste
         " setlocal nocursorline
         setlocal nonumber
@@ -80,6 +77,27 @@ function! PureToggle()
         exe "GitGutterDisable"
         exe "NoMatchParen"
 
+        " when not working it, just disable it.
+        " 0: init, 1: wait for leave, 2: done.
+        if get(g:, 'pure_toggle_autocmd', 0) == 0
+            let g:pure_toggle_autocmd = 1
+            " FIXME, i'll run twice.
+            " autocmd BufLeave,FocusLost,WinLeave <buffer> ++once :silent! PureToggle 2
+            autocmd BufLeave,FocusLost,WinLeave <buffer> ++once :PureToggle 2
+            echo 'Enable Pure mode, with setup autocmd.'
+        else
+            echo 'Enable Pure mode'
+        endif
+    elseif &paste  == 1 || l:mode == 0
+        " backup vars
+        setlocal nopaste
+        " setlocal cursorline
+        setlocal number
+        setlocal list
+
+        exe "GitGutterEnable"
+        exe "DoMatchParen"
+        echo 'Disable Pure mode'
     endif
 endfunc
 " -------------------------------------------
