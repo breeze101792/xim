@@ -9,7 +9,6 @@
 set nocompatible                 " disable vi compatiable
 set shortmess=I                  " Disable screen welcome message, Read :help shortmess for everything else.
 set encoding=utf-8
-set termencoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
 if exists('&autochdir') 
