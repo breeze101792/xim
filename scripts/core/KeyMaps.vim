@@ -55,7 +55,6 @@ nnoremap <leader>sh :tab terminal<CR>
 
 " select all content
 map <C-a> <Esc>ggVG<CR>
-map <leader>a <Esc>ggVG<CR>
 
 " Edit
 nnoremap <S-k> <Esc>dd<Up>P
@@ -91,11 +90,12 @@ nnoremap <C-W>m <C-W>=
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
 
-""""    Toggle
+""""    Toggle/Function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " This are toggle vim system function only.
 nmap fp :PureToggle<CR>
 nmap fr :Reload<CR>
+nmap fa <Esc>ggVG<CR>
 
 """"    Compatiability
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

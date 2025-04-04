@@ -27,7 +27,12 @@ function get_avante()
             ollama = {
                 endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
                 model = vim.g.IDE_CFG_LLM_MODEL,
-            }
+            },
+            --[[
+            hints = {
+                enabled = true,  -- Enable/Disable visual selection tips
+            },
+            --]]
         },
         -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
         build = "make",
@@ -74,6 +79,7 @@ function get_avante()
 end
 function get_gen()
     -- LLM config
+    local vim_plugin_path='~/.vim/plugins/'
     return {
         "gen.nvim", dir = vim_plugin_path .. "gen.nvim", lazy = true, cmd = "Gen",
         opts = {
