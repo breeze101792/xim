@@ -216,12 +216,10 @@ function M.init()
             { "<C-n>", "<Plug>(VM-Find-Under)", desc = "VM-Find-Under", mode = {"n"} },
             { "<C-n>", "<Plug>(VM-Find-Subword-Under)", desc = "VM-Find-Subword-Under", mode = {"v"} },
         },},
-        --[[
         { "supertab"     , dir = vim_plugin_path .. "supertab"  ,
         keys = {
             { "<tab>", "<Plug>SuperTabForward", desc = "SuperTabForward", mode = {"i"} },
         },},
-        --]]
         { "vim-surround" , dir = vim_plugin_path .. "vim-surround",
         keys = {
             { "cs", "<Plug>Csurround", desc = "Csurround", mode = {"n"} },
