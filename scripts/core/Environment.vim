@@ -31,6 +31,13 @@ endif
 let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")
+if g:IDE_ENV_INS == "nvim"
+    " FIXME, nvim seen to have a bug on interpret color, so just invert it to
+    " workaround it.
+    let g:IDE_ENV_COLORSCHEME_TABLINE = get(g:, 'IDE_ENV_COLORSCHEME_TABLINE', "wombat_invert")
+else
+    let g:IDE_ENV_COLORSCHEME_TABLINE = get(g:, 'IDE_ENV_COLORSCHEME_TABLINE', "wombat_lab")
+endif
 
 if g:IDE_ENV_INS == "nvim"
     let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.config/nvim")

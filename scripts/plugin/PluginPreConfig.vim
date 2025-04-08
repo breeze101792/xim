@@ -28,7 +28,7 @@ endif
 """""    lightline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:lightline = {
-            \ 'colorscheme'        : 'wombat_lab',
+            \ 'colorscheme'        : g:IDE_ENV_COLORSCHEME_TABLINE,
             \ 'active'             : {
             \ 'left'               : [['mode', 'paste'], ['readonly', 'filename', 'modified']],
             \ 'right'              : [['lineinfo', 'position'], ['info'], ['CurrentFunction']]
