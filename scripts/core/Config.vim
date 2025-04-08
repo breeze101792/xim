@@ -28,7 +28,7 @@ let g:IDE_CFG_AUTO_TAG_UPDATE                = get(g:, 'IDE_CFG_AUTO_TAG_UPDATE'
 "" LLM
 let g:IDE_CFG_LLM_SERVER                     = get(g:, 'IDE_CFG_LLM_SERVER', "localhost")
 let g:IDE_CFG_LLM_SERVER_PORT                = get(g:, 'IDE_CFG_LLM_SERVER_PORT', "11434")
-let g:IDE_CFG_LLM_MODEL                      = get(g:, 'IDE_CFG_LLM_MODEL', "qwen2.5:7b-instruct-q8_0")
+let g:IDE_CFG_LLM_MODEL                      = get(g:, 'IDE_CFG_LLM_MODEL', "qwen2.5:14b-instruct-q8_0")
 let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante")
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
