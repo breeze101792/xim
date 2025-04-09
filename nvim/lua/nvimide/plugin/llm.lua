@@ -10,6 +10,44 @@ function get_avante()
         event = "VeryLazy",
         version = false, -- Never set this value to "*"! Never!
         opts = {
+            provider = "ort_gemini_25_pro",
+            vendors = {
+                -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
+                ort_gemini_25_pro = {
+                    __inherited_from = 'openai',
+                    disable_tools = true,
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    model = 'google/gemini-2.5-pro-exp-03-25:free',
+                    -- max_completion_tokens = 1000000,
+                    max_completion_tokens = 900000,
+                },
+                ort_deepseek_r1 = {
+                    __inherited_from = 'openai',
+                    disable_tools = true,
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    model = 'deepseek/deepseek-r1:free',
+                    -- max_completion_tokens = 163840,
+                    max_completion_tokens = 160000,
+                },
+                ort_deepseek_v3 = {
+                    __inherited_from = 'openai',
+                    disable_tools = true,
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    model = 'deepseek/deepseek-chat-v3-0324:free',
+                    -- max_completion_tokens = 131072,
+                    max_completion_tokens = 130000,
+                },
+            },
+            ollama = {
+                endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
+                model = vim.g.IDE_CFG_LLM_MODEL,
+            },
             -- add any opts here
             -- for example
             --[[
@@ -23,11 +61,6 @@ function get_avante()
                 --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
             },
             --]]
-            provider = "ollama",
-            ollama = {
-                endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
-                model = vim.g.IDE_CFG_LLM_MODEL,
-            },
             --[[
             hints = {
                 enabled = true,  -- Enable/Disable visual selection tips
