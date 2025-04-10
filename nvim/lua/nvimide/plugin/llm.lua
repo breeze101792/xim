@@ -5,48 +5,140 @@ local LLM = {}
 ----    Plugin
 ----------------------------------------------------------------
 function get_avante()
+    token_reserve = 10000
+    -- FIXME, <leader> just don't work on vim.keymap.set, so i workaround it.
+    leader_key='\\'
+
     return {
         "yetone/avante.nvim",
-        event = "VeryLazy",
+        -- event = "VeryLazy",
+        lazy = false,
+        -- cmd = {"AvanteAsk", "AvanteToggle", "AvanteEdit"},
         version = false, -- Never set this value to "*"! Never!
         opts = {
-            provider = "ort_gemini_25_pro",
+            windows = {
+                ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
+                position = "right",
+                wrap = true, -- similar to vim.o.wrap
+                width = 30, -- default % based on available width in vertical layout
+                height = 30, -- default % based on available height in horizontal layout
+                sidebar_header = {
+                    enabled = true, -- true, false to enable/disable the header
+                    align = "center", -- left, center, right for title
+                    rounded = false,
+                },
+            },
+            hints = {
+                enabled = true,  -- Enable/Disable visual selection tips
+            },
+            mappings = {
+                ---@class AvanteConflictMappings
+                diff = {
+                    ours = "co",
+                    theirs = "ct",
+                    all_theirs = "ca",
+                    both = "cb",
+                    cursor = "cc",
+                    next = "]x",
+                    prev = "[x",
+                },
+                suggestion = {
+                    accept = "<M-l>",
+                    next = "<M-]>",
+                    prev = "<M-[>",
+                    dismiss = "<C-]>",
+                },
+                jump = {
+                    next = "]]",
+                    prev = "[[",
+                },
+                submit = {
+                    normal = "<CR>",
+                    insert = "<C-s>",
+                },
+                cancel = {
+                    normal = { "<C-c>", "<Esc>", "q" },
+                    insert = { "<C-c>" },
+                },
+                -- NOTE: The following will be safely set by avante.nvim
+                ask = leader_key .. "aa",
+                edit = leader_key .. "ae",
+                refresh = leader_key .. "ar",
+                focus = leader_key .. "af",
+                stop = leader_key .. "aS",
+                toggle = {
+                    default = leader_key .. "at",
+                    debug = leader_key .. "ad",
+                    hint = leader_key .. "aH",
+                    suggestion = leader_key .. "as",
+                    repomap = leader_key .. "aR",
+                },
+                sidebar = {
+                    apply_all = "A",
+                    apply_cursor = "a",
+                    retry_user_request = "r",
+                    edit_user_request = "e",
+                    switch_windows = "<Tab>",
+                    reverse_switch_windows = "<S-Tab>",
+                    remove_file = "d",
+                    add_file = "@",
+                    close = { "<Esc>", "q" },
+                    ---@alias AvanteCloseFromInput { normal: string | nil, insert: string | nil }
+                    ---@type AvanteCloseFromInput | nil
+                    close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
+                },
+                files = {
+                    add_current = leader_key .. "ac", -- Add current buffer to selected files
+                    add_all_buffers = leader_key .. "aB", -- Add all buffer files to selected files
+                },
+                select_model = leader_key .. "a?", -- Select model command
+                select_history = leader_key .. "ah", -- Select history command
+            },
+            provider = "ort_deepseek_v3",
             vendors = {
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
+                -- max_completion_tokens => set to max_tokens - 10,000
                 ort_gemini_25_pro = {
                     __inherited_from = 'openai',
-                    disable_tools = true,
                     endpoint = 'https://openrouter.ai/api/v1',
                     api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    enable_cursor_planning_mode = true,
 
                     model = 'google/gemini-2.5-pro-exp-03-25:free',
-                    -- max_completion_tokens = 1000000,
-                    max_completion_tokens = 900000,
-                },
-                ort_deepseek_r1 = {
-                    __inherited_from = 'openai',
-                    disable_tools = true,
-                    endpoint = 'https://openrouter.ai/api/v1',
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    model = 'deepseek/deepseek-r1:free',
-                    -- max_completion_tokens = 163840,
-                    max_completion_tokens = 160000,
+                    max_completion_tokens = 1000000 - token_reserve,
+                    -- max_completion_tokens = 900000,
                 },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
-                    disable_tools = true,
                     endpoint = 'https://openrouter.ai/api/v1',
                     api_key_name = 'OPENROUTER_API_KEY',
 
+                    disable_tools = true,
+                    enable_cursor_planning_mode = true,
+
                     model = 'deepseek/deepseek-chat-v3-0324:free',
-                    -- max_completion_tokens = 131072,
-                    max_completion_tokens = 130000,
+                    max_completion_tokens = 131072 - token_reserve,
+                    -- max_completion_tokens = 120000,
+                },
+                ort_deepseek_r1 = {
+                    __inherited_from = 'openai',
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    enable_cursor_planning_mode = true,
+
+                    model = 'deepseek/deepseek-r1:free',
+                    max_completion_tokens = 163840 - token_reserve,
+                    -- max_completion_tokens = 150000,
                 },
             },
             ollama = {
                 endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
                 model = vim.g.IDE_CFG_LLM_MODEL,
+                enable_cursor_planning_mode = true,
             },
             -- add any opts here
             -- for example
@@ -59,11 +151,6 @@ function get_avante()
                 temperature = 0,
                 max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
                 --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
-            },
-            --]]
-            --[[
-            hints = {
-                enabled = true,  -- Enable/Disable visual selection tips
             },
             --]]
         },

@@ -18,3 +18,12 @@ elseif get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "n") == "n"
 elseif get(g:, 'IDE_CFG_COLORSCHEME_NAME', "") != "idecolor"
     execute "colorscheme " . get(g:, 'IDE_CFG_COLORSCHEME_NAME', "")
 endif
+
+""""    Functions
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+command! LLMToggle call LLMToggle()
+function! LLMToggle()
+    if exists(':AvanteToggle')
+        :AvanteToggle
+    endif
+endfunction

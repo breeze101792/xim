@@ -42,12 +42,8 @@ nmap <F7> :NERDTreeToggle<CR>
 " will be needed first CCTreeTraceForward
 nmap <F8> :CCTreeWindowToggle<CR>
 
-"" function
-nmap <leader>5 :redraw!<CR>
-nmap <leader>6 :TagbarToggle<CR>
-nmap <leader>7 :NERDTreeToggle<CR>
-" nmap <leader>8 :SrcExplToggle<CR>
-nmap <leader>8 :CCTreeWindowToggle<CR>
+" LLM
+nmap <F9> :LLMToggle<CR>
 
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -166,6 +162,12 @@ vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
 " Ale
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
+
+" Avante
+" " other customize shortcut
+nmap <silent> <Leader>aC :AvanteClear<CR>
+nmap <silent> <Leader>ab :AvanteBuild<CR>
+nmap <silent> <Leader>am :AvanteModels<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -4,7 +4,8 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " <leader> : \
-" let mapleader="\"
+" let g:mapleader='\'
+" let g:maplocalleader='\'
 
 " Don't may this keys
 " nnoremap <C-[> " cause esc notworking
@@ -93,9 +94,10 @@ nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
 """"    Toggle/Function
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " This are toggle vim system function only.
-nmap fp :PureToggle<CR>
-nmap fr :Reload<CR>
-nmap fa <Esc>ggVG<CR>
+nmap <silent> <Leader>fp :PureToggle<CR>
+nmap <silent> <Leader>fr :Reload<CR>
+nmap <silent> <Leader>fa <Esc>ggVG<CR>
+nmap <silent> <Leader>fc :LLMToggle<CR>
 
 """"    Compatiability
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
