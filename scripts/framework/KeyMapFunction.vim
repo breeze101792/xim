@@ -26,16 +26,14 @@ vnoremap <leader>b :Beautify<CR>
 
 """"    Function Key
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-" Spell check
-nnoremap <F4> :Spellcheck<CR>
-
+" F2,F3,F4 are reserved.
 " Refresh all
 nmap <F5> :redraw!<CR>
 
-" nmap <F6> :TlistToggle<CR>
+" Tag bar
 nmap <F6> :TagbarToggle<CR>
-" nmap <F6> :NERDTreeToggle<CR>
 
+" file bar
 nmap <F7> :NERDTreeToggle<CR>
 
 " cctree
@@ -43,7 +41,8 @@ nmap <F7> :NERDTreeToggle<CR>
 nmap <F8> :CCTreeWindowToggle<CR>
 
 " LLM
-nmap <F9> :LLMToggle<CR>
+map <F9> <ESC>:LLMToggle<CR>
+imap <F9> <ESC>:LLMToggle<CR>
 
 """"    Plugins map
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
