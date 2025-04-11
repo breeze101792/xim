@@ -27,6 +27,11 @@ let g:IDE_ENV_IDE_TITLE = get(g:, 'IDE_ENV_IDE_TITLE', "VIM")
 let g:IDE_ENV_HEART_BEAT = get(g:, 'IDE_ENV_HEART_BEAT', 30000)
 let g:IDE_ENV_CACHED_COLORSCHEME = get(g:, 'IDE_ENV_CACHED_COLORSCHEME', "autogen")
 if g:IDE_ENV_INS == "nvim"
+    let g:IDE_ENV_COLORSCHEME_TABLINE = get(g:, 'IDE_ENV_COLORSCHEME_TABLINE', "wombat_invert")
+else
+    let g:IDE_ENV_COLORSCHEME_TABLINE = get(g:, 'IDE_ENV_COLORSCHEME_TABLINE', "wombat_lab")
+endif
+if g:IDE_ENV_INS == "nvim"
     let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.config/nvim")
 else
     let g:IDE_ENV_ROOT_PATH = get(g:, 'IDE_ENV_ROOT_PATH', $HOME."/.vim")
@@ -51,7 +56,6 @@ let g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD=100 * 1000 * 1000
 set nocompatible                 " disable vi compatiable
 set shortmess=I                  " Disable screen welcome message, Read :help shortmess for everything else.
 set encoding=utf-8
-set termencoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
 if exists('&autochdir') 
@@ -163,7 +167,6 @@ nnoremap qq :q!<CR>
 nnoremap qa :qa<CR>
 nnoremap <leader>sh :tab terminal<CR>
 map <C-a> <Esc>ggVG<CR>
-map <leader>a <Esc>ggVG<CR>
 nnoremap <S-k> <Esc>dd<Up>P
 nnoremap <S-j> <Esc>dd<Down>P
 nnoremap <leader><CR> o<Esc>
@@ -183,15 +186,19 @@ nnoremap <C-W>M <C-W>\| <C-W>_
 nnoremap <C-W>m <C-W>=
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <silent> <Leader>v :execute 'match Search /\%'.virtcol('.').'v/'<CR>
-map f1 <F1><CR>
-map f2 <F2><CR>
-map f3 <F3><CR>
-map f4 <F4><CR>
-map f5 <F5><CR>
-map f6 <F6><CR>
-map f7 <F7><CR>
-map f8 <F8><CR>
-map f9 <F9><CR>
+nmap <silent> <Leader>fp :PureToggle<CR>
+nmap <silent> <Leader>fr :Reload<CR>
+nmap <silent> <Leader>fa <Esc>ggVG<CR>
+nmap <silent> <Leader>fc :LLMToggle<CR>
+map <silent> <Leader>f1 <F1><CR>
+map <silent> <Leader>f2 <F2><CR>
+map <silent> <Leader>f3 <F3><CR>
+map <silent> <Leader>f4 <F4><CR>
+map <silent> <Leader>f5 <F5><CR>
+map <silent> <Leader>f6 <F6><CR>
+map <silent> <Leader>f7 <F7><CR>
+map <silent> <Leader>f8 <F8><CR>
+map <silent> <Leader>f9 <F9><CR>
 "------------------------------------------------------
 "" Import from Autocmd.vim
 "------------------------------------------------------

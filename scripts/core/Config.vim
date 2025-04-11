@@ -18,7 +18,6 @@ let g:IDE_CFG_SESSION_AUTOSAVE               = get(g:, 'IDE_CFG_SESSION_AUTOSAVE
 " color theme
 let g:IDE_CFG_CACHED_COLORSCHEME             = get(g:, 'IDE_CFG_CACHED_COLORSCHEME', "y")
 " lazy will preload this, so set it to be ""
-" let g:IDE_CFG_COLORSCHEME_NAME             = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "autogen")
 let g:IDE_CFG_COLORSCHEME_NAME               = get(g:, 'IDE_CFG_COLORSCHEME_NAME', "idecolor")
 
 "" Backgorund worker

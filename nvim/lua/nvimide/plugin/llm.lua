@@ -103,12 +103,23 @@ function get_avante()
                     endpoint = 'https://openrouter.ai/api/v1',
                     api_key_name = 'OPENROUTER_API_KEY',
 
-                    disable_tools = true,
+                    -- disable_tools = true,
                     enable_cursor_planning_mode = true,
 
                     model = 'google/gemini-2.5-pro-exp-03-25:free',
                     max_completion_tokens = 1000000 - token_reserve,
                     -- max_completion_tokens = 900000,
+                },
+                ort_qwen25_vl_72b = {
+                    __inherited_from = 'openai',
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    enable_cursor_planning_mode = true,
+
+                    model = 'qwen/qwen2.5-vl-72b-instruct:free',
+                    max_completion_tokens = 131072 - token_reserve,
                 },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',

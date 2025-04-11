@@ -281,10 +281,12 @@ function fBackup()
     fPrintHeader ${FUNCNAME[0]}
     local var_backup_file=$@
 
-    if [ -e "${var_backup_file}" ]
+    if [ -e "${var_backup_file}" ] && test -n "${PATH_VIM_BACKUP}"
     then
         test -d ${PATH_VIM_BACKUP} || mkdir -p ${PATH_VIM_BACKUP}
         cp -rf ${var_backup_file} ${PATH_VIM_BACKUP}
+    else
+        echo "${var_backup_file} not backup."
     fi
 }
 
@@ -299,7 +301,7 @@ function fSetupCusConfig()
         # return 0
         fBackup "${path_central_cache}/ConfigCustomize.vim"
     fi
-    
+
     touch ${path_central_cache}/ConfigCustomize.vim
     for each_config in $(cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep let |tr -s ' ' | cut -d ':' -f 2 | cut -d '=' -f 1 | sort | uniq)
     do
@@ -309,8 +311,9 @@ function fSetupCusConfig()
             echo " - Skip config ${each_config}, already exist"
         else
             echo " - Adding config ${each_config}"
-            cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${path_central_cache}/ConfigCustomize.vim
-            cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${path_central_cache}/ConfigCustomize.vim
+            # cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${path_central_cache}/ConfigCustomize.vim
+            # cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${path_central_cache}/ConfigCustomize.vim
+            cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\".*\"" | sed 's/get.* "/"/g' | sed 's/")/"/g' >> ${path_central_cache}/ConfigCustomize.vim
         fi
     done
 }
