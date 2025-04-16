@@ -82,12 +82,9 @@ let g:lightline = {
     " \   'noet': 'error',
     " \ },
 
-if get(g:, 'IDE_CFG_SPECIAL_CHARS', "n") == "y"
-    let g:lightline.separator = { 'left': '', 'right': '' }
-    let g:lightline.subseparator = {'left': '', 'right': '' }
-else
-    let g:lightline.subseparator = {'left': '|', 'right': '|' }
-endif
+" let g:lightline.separator = { 'left': '', 'right': '' }
+" let g:lightline.subseparator = {'left': '', 'right': '' }
+let g:lightline.subseparator = {'left': '|', 'right': '|' }
 
 function! FileNameShort(name)
     let len_limit=32
