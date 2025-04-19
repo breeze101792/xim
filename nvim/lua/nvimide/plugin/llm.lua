@@ -94,22 +94,17 @@ function get_avante()
                 select_model = leader_key .. "a?", -- Select model command
                 select_history = leader_key .. "ah", -- Select history command
             },
-            provider = "ort_deepseek_v3",
+            provider = "google_gemini_25_pro",
             vendors = {
+                google_gemini_25_pro = {
+                    __inherited_from = 'gemini',
+
+                    model = "gemini-2.5-pro-exp-03-25",
+                    temperature = 0,
+                    max_tokens = 1000000 - token_reserve,
+                },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
-                ort_gemini_25_pro = {
-                    __inherited_from = 'openai',
-                    endpoint = 'https://openrouter.ai/api/v1',
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    -- disable_tools = true,
-                    enable_cursor_planning_mode = true,
-
-                    model = 'google/gemini-2.5-pro-exp-03-25:free',
-                    max_completion_tokens = 1000000 - token_reserve,
-                    -- max_completion_tokens = 900000,
-                },
                 ort_qwen25_vl_72b = {
                     __inherited_from = 'openai',
                     endpoint = 'https://openrouter.ai/api/v1',
@@ -162,6 +157,15 @@ function get_avante()
                 temperature = 0,
                 max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
                 --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
+            },
+            --]]
+            --[[
+            gemini = {
+                -- @see https://ai.google.dev/gemini-api/docs/models/gemini
+                model = "gemini-2.5-pro-exp-03-25",
+                temperature = 0,
+                max_tokens = 1000000 - token_reserve,
+                -- max_completion_tokens = 1000000 - token_reserve,
             },
             --]]
         },
