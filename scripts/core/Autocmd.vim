@@ -51,6 +51,6 @@ augroup syntax_hi_gp
                 \ )
     autocmd Syntax * call matchadd(
                 \ 'Todo',
-                \ '\v\W\zs<(BUG)>'
+                \ '\v\W\zs<(BUG|IDEA)>'
                 \ )
 augroup END
