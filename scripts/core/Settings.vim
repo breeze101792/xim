@@ -11,9 +11,10 @@ set shortmess=I                  " Disable screen welcome message, Read :help sh
 set encoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
-if exists('&autochdir') 
-    set autochdir
-endif
+" don't use this for AI system
+" if exists('&autochdir')
+"     set autochdir
+" endif
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
 
