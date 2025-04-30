@@ -94,8 +94,50 @@ function get_avante()
                 select_model = leader_key .. "a?", -- Select model command
                 select_history = leader_key .. "ah", -- Select history command
             },
+            -- add any opts here
+            -- for example
+            ollama = {
+                endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
+                enable_cursor_planning_mode = true,
+                model = vim.g.IDE_CFG_LLM_MODEL,
+            },
+            --[[
+            provider = "openai",
+            openai = {
+                endpoint = "https://api.openai.com/v1",
+                model = "gpt-4o", -- your desired model (or use gpt-4o, etc.)
+                timeout = 30000, -- Timeout in milliseconds, increase this for reasoning models
+                temperature = 0,
+                max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
+                --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
+            },
+            --]]
+            --[[
+            gemini = {
+                -- @see https://ai.google.dev/gemini-api/docs/models/gemini
+                model = "gemini-2.5-pro-exp-03-25",
+                temperature = 0,
+                max_tokens = 1000000 - token_reserve,
+                -- max_completion_tokens = 1000000 - token_reserve,
+            },
+            --]]
             provider = "google_gemini_25_pro",
             vendors = {
+                ollama_qwen3_14b_q8 = {
+                    __inherited_from = 'ollama',
+
+                    model = "qwen3:14b-q8_0",
+                },
+                ollama_qwen3_14b = {
+                    __inherited_from = 'ollama',
+
+                    model = "qwen3:14b",
+                },
+                ollama_qwen3_7b_q8 = {
+                    __inherited_from = 'ollama',
+
+                    model = "qwen3:7b-q8_0",
+                },
                 google_gemini_25_pro = {
                     __inherited_from = 'gemini',
 
@@ -103,9 +145,18 @@ function get_avante()
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
+                -- for second google account
+                google_gemini_25_pro_2 = {
+                    __inherited_from = 'gemini',
+                    api_key_name = 'GEMINI_API_KEY_2',
+
+                    model = "gemini-2.5-pro-exp-03-25",
+                    temperature = 0,
+                    max_tokens = 1000000 - token_reserve,
+                },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
-                ort_qwen25_vl_72b = {
+                ort_qwen3_235b_a22b = {
                     __inherited_from = 'openai',
                     endpoint = 'https://openrouter.ai/api/v1',
                     api_key_name = 'OPENROUTER_API_KEY',
@@ -113,8 +164,8 @@ function get_avante()
                     disable_tools = true,
                     enable_cursor_planning_mode = true,
 
-                    model = 'qwen/qwen2.5-vl-72b-instruct:free',
-                    max_completion_tokens = 131072 - token_reserve,
+                    model = 'qwen/qwen3-235b-a22b:free',
+                    max_completion_tokens = 40960 - token_reserve,
                 },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
@@ -141,33 +192,6 @@ function get_avante()
                     -- max_completion_tokens = 150000,
                 },
             },
-            ollama = {
-                endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
-                model = vim.g.IDE_CFG_LLM_MODEL,
-                enable_cursor_planning_mode = true,
-            },
-            -- add any opts here
-            -- for example
-            --[[
-            provider = "openai",
-            openai = {
-                endpoint = "https://api.openai.com/v1",
-                model = "gpt-4o", -- your desired model (or use gpt-4o, etc.)
-                timeout = 30000, -- Timeout in milliseconds, increase this for reasoning models
-                temperature = 0,
-                max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
-                --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
-            },
-            --]]
-            --[[
-            gemini = {
-                -- @see https://ai.google.dev/gemini-api/docs/models/gemini
-                model = "gemini-2.5-pro-exp-03-25",
-                temperature = 0,
-                max_tokens = 1000000 - token_reserve,
-                -- max_completion_tokens = 1000000 - token_reserve,
-            },
-            --]]
         },
         -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
         build = "make",
