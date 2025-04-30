@@ -136,7 +136,7 @@ function get_avante()
                 ollama_qwen3_7b_q8 = {
                     __inherited_from = 'ollama',
 
-                    model = "qwen3:7b-q8_0",
+                    model = "qwen3:8b-q8_0",
                 },
                 google_gemini_25_pro = {
                     __inherited_from = 'gemini',
