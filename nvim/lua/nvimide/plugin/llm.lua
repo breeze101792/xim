@@ -14,8 +14,12 @@ function get_avante()
         -- event = "VeryLazy",
         lazy = false,
         -- cmd = {"AvanteAsk", "AvanteToggle", "AvanteEdit"},
-        version = false, -- Never set this value to "*"! Never!
+        -- use autotag, instead.
+        -- version = "v0.0.23", -- Never set this value to "*"! Never!
         opts = {
+            autotag = {
+                enable = true,
+            },
             windows = {
                 ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
                 position = "right",
