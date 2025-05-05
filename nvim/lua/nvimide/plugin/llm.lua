@@ -14,10 +14,11 @@ function get_avante()
         -- event = "VeryLazy",
         lazy = false,
         -- cmd = {"AvanteAsk", "AvanteToggle", "AvanteEdit"},
-        -- version = false, -- Never set this value to "*"! Never!
-        version = "*", -- Never set this value to "*"! Never!
+        -- version = "*", -- Never set this value to "*"! Never!
+        version = false, -- Never set this value to "*"! Never!
         -- use the settings above to autotag, don't know why that didn't recomment it.
         -- tag = "v0.0.23",
+        commit = "f9025ff", -- support ollama
         opts = {
             windows = {
                 ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
@@ -140,6 +141,11 @@ function get_avante()
                     __inherited_from = 'ollama',
 
                     model = "qwen3:8b-q8_0",
+                },
+                ollama_qwen3_06b_q8 = {
+                    __inherited_from = 'ollama',
+
+                    model = "qwen3:0.6b-q8_0",
                 },
                 google_gemini_25_pro = {
                     __inherited_from = 'gemini',
