@@ -125,7 +125,7 @@ function get_avante()
                 -- max_completion_tokens = 1000000 - token_reserve,
             },
             --]]
-            provider = "google_gemini_25_pro",
+            provider = "ort_google_gemini_25_pro",
             vendors = {
                 ollama_qwen3_14b_q8 = {
                     __inherited_from = 'ollama',
@@ -165,6 +165,17 @@ function get_avante()
                 },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
+                ort_google_gemini_25_pro = {
+                    __inherited_from = 'openai',
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    -- disable_tools = true,
+                    enable_cursor_planning_mode = true,
+
+                    model = 'google/gemini-2.5-pro-exp-03-25',
+                    max_tokens = 1000000 - token_reserve,
+                },
                 ort_qwen3_235b_a22b = {
                     __inherited_from = 'openai',
                     endpoint = 'https://openrouter.ai/api/v1',
