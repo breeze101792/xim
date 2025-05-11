@@ -86,7 +86,8 @@ function get_avante()
                     reverse_switch_windows = "<S-Tab>",
                     remove_file = "d",
                     add_file = "@",
-                    close = { "<Esc>", "q" },
+                    -- close = { "<Esc>", "q" },
+                    close = {"q" },
                     ---@alias AvanteCloseFromInput { normal: string | nil, insert: string | nil }
                     ---@type AvanteCloseFromInput | nil
                     close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
@@ -125,7 +126,7 @@ function get_avante()
                 -- max_completion_tokens = 1000000 - token_reserve,
             },
             --]]
-            provider = "ort_google_gemini_25_pro",
+            provider = "google_gemini_25_pro",
             vendors = {
                 ollama_qwen3_14b_q8 = {
                     __inherited_from = 'ollama',

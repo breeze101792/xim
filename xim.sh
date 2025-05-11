@@ -304,14 +304,15 @@ function fUpdate()
         printf "${DEF_COLOR_RED}Fail to generate tag${DEF_COLOR_NORMAL}\n"
     elif test -f ${var_tmp_folder}/${var_tags_file} && test -f ${var_tmp_folder}/${var_cscope_file}; then
         printf "${DEF_COLOR_GREEN}Tag generate successfully.${DEF_COLOR_NORMAL}\n"
-
-        # only remove when fully success.
-        if test -d ${var_tmp_folder}
-        then
-            rm -rf ${var_tmp_folder} 2> /dev/null
-        fi
     else
         printf "${DEF_COLOR_YELLOW}Tag generate not successfully.${DEF_COLOR_NORMAL}\n"
+    fi
+
+    # Always attempt to remove the temporary directory after use
+    # It's important to clean up tmp_db_* directories regardless of tagging success
+    if test -d "${var_tmp_folder}"
+    then
+        rm -rf "${var_tmp_folder}" 2> /dev/null
     fi
 
     cd ${cpath}
