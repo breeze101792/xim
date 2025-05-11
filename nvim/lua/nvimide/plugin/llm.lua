@@ -18,8 +18,26 @@ function get_avante()
         version = false, -- Never set this value to "*"! Never!
         -- use the settings above to autotag, don't know why that didn't recomment it.
         -- tag = "v0.0.23",
-        commit = "f9025ff", -- support ollama
+        -- NOTE. test after fill it.
+        -- commit = "f9025ff", -- support ollama
+        commit = "adae032f5fbc611d59545792d3c5bb1c9ddc3fdb", -- test for newer version on 0511
         opts = {
+            behaviour = {
+                auto_apply_diff_after_generation = true,
+                --[[
+                auto_focus_sidebar = true,
+                auto_suggestions = false, -- Experimental stage
+                auto_suggestions_respect_ignore = false,
+                auto_set_highlight_group = true,
+                auto_set_keymaps = true,
+                jump_result_buffer_on_finish = false,
+                support_paste_from_clipboard = false,
+                minimize_diff = true,
+                enable_token_counting = true,
+                use_cwd_as_project_root = false,
+                auto_focus_on_diff_view = false,
+                --]]
+            },
             windows = {
                 ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
                 position = "right",
@@ -30,6 +48,13 @@ function get_avante()
                     enabled = true, -- true, false to enable/disable the header
                     align = "center", -- left, center, right for title
                     rounded = false,
+                },
+                edit = {
+                    start_insert = false, -- Start insert mode when opening the edit window
+                },
+                ask = {
+                    floating = false, -- Open the 'AvanteAsk' prompt in a floating window
+                    start_insert = false, -- Start insert mode when opening the ask window
                 },
             },
             hints = {
