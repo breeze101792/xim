@@ -19,8 +19,8 @@ function get_avante()
         -- use the settings above to autotag, don't know why that didn't recomment it.
         -- tag = "v0.0.23",
         -- NOTE. test after fill it.
-        -- commit = "f9025ff", -- support ollama
-        commit = "adae032f5fbc611d59545792d3c5bb1c9ddc3fdb", -- test for newer version on 0511
+        commit = "f9025ff", -- support ollama
+        -- commit = "adae032f5fbc611d59545792d3c5bb1c9ddc3fdb", -- test for newer version on 0511
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
@@ -151,67 +151,38 @@ function get_avante()
                 -- max_completion_tokens = 1000000 - token_reserve,
             },
             --]]
-            provider = "google_gemini_25_pro",
+            provider = "google_gemini_25_flash",
             vendors = {
-                ollama_qwen3_14b_q8 = {
-                    __inherited_from = 'ollama',
-
-                    model = "qwen3:14b-q8_0",
-                },
-                ollama_qwen3_14b = {
-                    __inherited_from = 'ollama',
-
-                    model = "qwen3:14b",
-                },
-                ollama_qwen3_7b_q8 = {
-                    __inherited_from = 'ollama',
-
-                    model = "qwen3:8b-q8_0",
-                },
-                ollama_qwen3_06b_q8 = {
-                    __inherited_from = 'ollama',
-
-                    model = "qwen3:0.6b-q8_0",
-                },
-                google_gemini_25_pro = {
+                google_gemini_25_flash = {
                     __inherited_from = 'gemini',
 
-                    model = "gemini-2.5-pro-exp-03-25",
+                    disable_tools = true,
+                    model = "gemini-2.5-flash-preview-04-17",
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
                 -- for second google account
-                google_gemini_25_pro_2 = {
+                google_gemini_25_flash_2 = {
                     __inherited_from = 'gemini',
                     api_key_name = 'GEMINI_API_KEY_2',
 
-                    model = "gemini-2.5-pro-exp-03-25",
+                    model = "gemini-2.5-flash-preview-04-17",
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
+                -- OpenWRT --
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
-                ort_google_gemini_25_pro = {
+                paid_ort_google_gemini_25_flash_preview = {
                     __inherited_from = 'openai',
                     endpoint = 'https://openrouter.ai/api/v1',
                     api_key_name = 'OPENROUTER_API_KEY',
 
                     -- disable_tools = true,
-                    enable_cursor_planning_mode = true,
+                    -- enable_cursor_planning_mode = true,
 
-                    model = 'google/gemini-2.5-pro-exp-03-25',
-                    max_tokens = 1000000 - token_reserve,
-                },
-                ort_qwen3_235b_a22b = {
-                    __inherited_from = 'openai',
-                    endpoint = 'https://openrouter.ai/api/v1',
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    enable_cursor_planning_mode = true,
-
-                    model = 'qwen/qwen3-235b-a22b:free',
-                    max_completion_tokens = 40960 - token_reserve,
+                    model = 'google/gemini-2.5-flash-preview',
+                    max_tokens = 1048576 - token_reserve,
                 },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
@@ -219,7 +190,7 @@ function get_avante()
                     api_key_name = 'OPENROUTER_API_KEY',
 
                     disable_tools = true,
-                    enable_cursor_planning_mode = true,
+                    -- enable_cursor_planning_mode = true,
 
                     model = 'deepseek/deepseek-chat-v3-0324:free',
                     max_completion_tokens = 131072 - token_reserve,
@@ -231,11 +202,31 @@ function get_avante()
                     api_key_name = 'OPENROUTER_API_KEY',
 
                     disable_tools = true,
-                    enable_cursor_planning_mode = true,
+                    -- enable_cursor_planning_mode = true,
 
                     model = 'deepseek/deepseek-r1:free',
                     max_completion_tokens = 163840 - token_reserve,
                     -- max_completion_tokens = 150000,
+                },
+                -- use-less
+                ort_qwen3_235b_a22b = {
+                    __inherited_from = 'openai',
+                    endpoint = 'https://openrouter.ai/api/v1',
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    -- enable_cursor_planning_mode = true,
+
+                    model = 'qwen/qwen3-235b-a22b:free',
+                    max_completion_tokens = 40960 - token_reserve,
+                },
+                -- Ollama --
+                ollama_qwen25_coder_14b_q6 = {
+                    __inherited_from = 'ollama',
+
+                    -- disable_tools = true,
+                    enable_cursor_planning_mode = true,
+                    model = "qwen2.5-coder:14b-instruct-q6_K",
                 },
             },
         },
