@@ -127,7 +127,7 @@ function get_avante()
             -- add any opts here
             -- for example
             ollama = {
-                endpoint = "http://" .. vim.g.IDE_CFG_LLM_SERVER .. ":" .. vim.g.IDE_CFG_LLM_SERVER_PORT .. "/",
+                endpoint = vim.g.IDE_CFG_LLM_OLLAMA_URL,
                 enable_cursor_planning_mode = true,
                 model = vim.g.IDE_CFG_LLM_MODEL,
             },
@@ -151,8 +151,18 @@ function get_avante()
                 -- max_completion_tokens = 1000000 - token_reserve,
             },
             --]]
-            provider = "google_gemini_25_flash",
+            provider = vim.g.IDE_CFG_LLM_PROVIDER,
             vendors = {
+                LLMLocal = {
+                    __inherited_from = 'openai',
+
+                    endpoint = vim.g.IDE_CFG_LLM_OPENAPI_URL,
+                    api_key_name = '',
+
+                    model = vim.g.IDE_CFG_LLM_OPENAPI_MODEL,
+                    temperature = 0,
+                    max_tokens = 1000000 - token_reserve,
+                },
                 google_gemini_25_flash = {
                     __inherited_from = 'gemini',
 

@@ -25,10 +25,17 @@ let g:IDE_CFG_BACKGROUND_WORKER              = get(g:, 'IDE_CFG_BACKGROUND_WORKE
 let g:IDE_CFG_AUTO_TAG_UPDATE                = get(g:, 'IDE_CFG_AUTO_TAG_UPDATE', "y")
 
 "" LLM
-let g:IDE_CFG_LLM_SERVER                     = get(g:, 'IDE_CFG_LLM_SERVER', "localhost")
-let g:IDE_CFG_LLM_SERVER_PORT                = get(g:, 'IDE_CFG_LLM_SERVER_PORT', "11434")
-let g:IDE_CFG_LLM_MODEL                      = get(g:, 'IDE_CFG_LLM_MODEL', "qwen2.5:14b-instruct-q8_0")
 let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante")
+let g:IDE_CFG_LLM_PROVIDER                   = get(g:, 'IDE_CFG_LLM_PROVIDER', "LLMLocal")
+
+" openai service.
+let g:IDE_CFG_LLM_OPENAPI_URL                = get(g:, 'IDE_CFG_LLM_OPENAPI_URL', "http://localhost:1337/v1")
+let g:IDE_CFG_LLM_OPENAPI_MODEL              = get(g:, 'IDE_CFG_LLM_OPENAPI_MODEL', "gpt-4.1")
+
+" ollama service.
+let g:IDE_CFG_LLM_OLLAMA_URL                 = get(g:, 'IDE_CFG_LLM_OLLAMA_URL', "http://localhost:11343/")
+let g:IDE_CFG_LLM_OLLAMA_MODEL               = get(g:, 'IDE_CFG_LLM_MODEL', "qwen2.5:14b-instruct-q8_0")
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Shell vim env                             """"
