@@ -58,9 +58,6 @@ set shortmess=I                  " Disable screen welcome message, Read :help sh
 set encoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
-if exists('&autochdir') 
-    set autochdir
-endif
 set showtabline=2
 set hidden                       " can put buffer to the background without writing
 set lazyredraw                   " don't update the display while executing macros
@@ -219,7 +216,7 @@ augroup syntax_hi_gp
                 \ )
     autocmd Syntax * call matchadd(
                 \ 'Todo',
-                \ '\v\W\zs<(BUG)>'
+                \ '\v\W\zs<(BUG|IDEA)>'
                 \ )
 augroup END
 "------------------------------------------------------

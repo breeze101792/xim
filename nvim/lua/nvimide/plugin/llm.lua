@@ -181,14 +181,27 @@ function get_avante()
                     max_tokens = 1000000 - token_reserve,
                 },
                 -- OpenWRT --
+                openwrt = {
+                    __inherited_from = 'openai',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    -- for compatiable, disable tool
+                    disable_tools = true,
+                    -- enable_cursor_planning_mode = true,
+
+                    model = vim.g.IDE_CFG_LLM_OPENWRT_MODEL,
+                    -- max_tokens = 1000000 - token_reserve,
+                },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
                 paid_ort_google_gemini_25_flash_preview = {
                     __inherited_from = 'openai',
-                    endpoint = 'https://openrouter.ai/api/v1',
+                    -- endpoint = 'https://openrouter.ai/api/v1',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
-                    -- disable_tools = true,
+                    disable_tools = true,
                     -- enable_cursor_planning_mode = true,
 
                     model = 'google/gemini-2.5-flash-preview',
@@ -196,7 +209,8 @@ function get_avante()
                 },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
-                    endpoint = 'https://openrouter.ai/api/v1',
+                    -- endpoint = 'https://openrouter.ai/api/v1',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
                     disable_tools = true,
@@ -208,7 +222,8 @@ function get_avante()
                 },
                 ort_deepseek_r1 = {
                     __inherited_from = 'openai',
-                    endpoint = 'https://openrouter.ai/api/v1',
+                    -- endpoint = 'https://openrouter.ai/api/v1',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
                     disable_tools = true,
