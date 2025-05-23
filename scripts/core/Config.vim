@@ -28,9 +28,13 @@ let g:IDE_CFG_AUTO_TAG_UPDATE                = get(g:, 'IDE_CFG_AUTO_TAG_UPDATE'
 let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante")
 let g:IDE_CFG_LLM_PROVIDER                   = get(g:, 'IDE_CFG_LLM_PROVIDER', "LLMLocal")
 
-" openrouter service.jjj
+" gemini service.
+" let g:IDE_CFG_LLM_GEMINI_URL                = get(g:, 'IDE_CFG_LLM_GEMINI_URL', "http://localhost:1337/v1/")
+let g:IDE_CFG_LLM_GEMINI_MODEL              = get(g:, 'IDE_CFG_LLM_GEMINI_MODEL', "gemini-2.5-flash-preview-05-20")
+
+" openrouter service.
 let g:IDE_CFG_LLM_OPENWRT_URL                 = get(g:, 'IDE_CFG_LLM_OPENWRT_URL', "https://openrouter.ai/api/v1/")
-let g:IDE_CFG_LLM_OPENWRT_MODEL               = get(g:, 'IDE_CFG_LLM_OPENWRT_MODEL', "deepseek/deepseek-chat-v3-0324:free")
+let g:IDE_CFG_LLM_OPENWRT_MODEL               = get(g:, 'IDE_CFG_LLM_OPENWRT_MODEL', "google/gemini-2.0-flash-exp:free")
 
 " openai service.
 let g:IDE_CFG_LLM_OPENAPI_URL                = get(g:, 'IDE_CFG_LLM_OPENAPI_URL', "http://localhost:1337/v1/")

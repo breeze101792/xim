@@ -152,6 +152,7 @@ function get_avante()
             },
             --]]
             provider = vim.g.IDE_CFG_LLM_PROVIDER,
+
             vendors = {
                 LLMLocal = {
                     __inherited_from = 'openai',
@@ -163,20 +164,23 @@ function get_avante()
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
-                google_gemini_25_flash = {
+                google_gemini = {
                     __inherited_from = 'gemini',
 
+                    model = vim.g.IDE_CFG_LLM_GEMINI_MODEL,
                     disable_tools = true,
-                    model = "gemini-2.5-flash-preview-04-17",
+
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
                 -- for second google account
-                google_gemini_25_flash_2 = {
+                google_gemini_2 = {
                     __inherited_from = 'gemini',
                     api_key_name = 'GEMINI_API_KEY_2',
 
-                    model = "gemini-2.5-flash-preview-04-17",
+                    model = vim.g.IDE_CFG_LLM_GEMINI_MODEL,
+                    disable_tools = true,
+
                     temperature = 0,
                     max_tokens = 1000000 - token_reserve,
                 },
@@ -197,7 +201,6 @@ function get_avante()
                 -- max_completion_tokens => set to max_tokens - 10,000
                 paid_ort_google_gemini_25_flash_preview = {
                     __inherited_from = 'openai',
-                    -- endpoint = 'https://openrouter.ai/api/v1',
                     endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
@@ -207,9 +210,20 @@ function get_avante()
                     model = 'google/gemini-2.5-flash-preview',
                     max_tokens = 1048576 - token_reserve,
                 },
+                ort_google_gemini_20_flash = {
+                    __inherited_from = 'openai',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    -- enable_cursor_planning_mode = true,
+
+                    model = 'google/gemini-2.0-flash-exp:free',
+                    max_tokens = 1048576 - token_reserve,
+                    -- max_completion_tokens = 120000,
+                },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
-                    -- endpoint = 'https://openrouter.ai/api/v1',
                     endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
@@ -222,7 +236,6 @@ function get_avante()
                 },
                 ort_deepseek_r1 = {
                     __inherited_from = 'openai',
-                    -- endpoint = 'https://openrouter.ai/api/v1',
                     endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
                     api_key_name = 'OPENROUTER_API_KEY',
 
