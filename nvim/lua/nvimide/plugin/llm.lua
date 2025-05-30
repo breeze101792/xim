@@ -129,7 +129,7 @@ function get_avante()
             ollama = {
                 endpoint = vim.g.IDE_CFG_LLM_OLLAMA_URL,
                 enable_cursor_planning_mode = true,
-                model = vim.g.IDE_CFG_LLM_MODEL,
+                model = vim.g.IDE_CFG_LLM_OLLAMA_MODEL,
             },
             --[[
             provider = "openai",

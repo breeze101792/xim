@@ -41,7 +41,7 @@ let g:IDE_CFG_LLM_OPENAPI_URL                = get(g:, 'IDE_CFG_LLM_OPENAPI_URL'
 let g:IDE_CFG_LLM_OPENAPI_MODEL              = get(g:, 'IDE_CFG_LLM_OPENAPI_MODEL', "gpt-4.1")
 
 " ollama service.
-let g:IDE_CFG_LLM_OLLAMA_URL                 = get(g:, 'IDE_CFG_LLM_OLLAMA_URL', "http://localhost:11343/")
+let g:IDE_CFG_LLM_OLLAMA_URL                 = get(g:, 'IDE_CFG_LLM_OLLAMA_URL', "http://localhost:11434/")
 let g:IDE_CFG_LLM_OLLAMA_MODEL               = get(g:, 'IDE_CFG_LLM_OLLAMA_MODEL', "qwen2.5:14b-instruct-q8_0")
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
