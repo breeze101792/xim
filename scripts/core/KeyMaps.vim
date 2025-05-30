@@ -77,7 +77,9 @@ map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
-map <C-o> <Esc>:tabnew<SPACE>
+if exists('&autochdir') && &autochdir
+    map <C-o> <Esc>:tabnew<SPACE>
+endif
 
 " Add hilighted word with " or '
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl

@@ -24,6 +24,11 @@ nmap <Leader>h :HexToggle<CR>
 " Beautify, currently only support shell
 vnoremap <leader>b :Beautify<CR>
 
+" only apply if autochdir is disabled.
+if !(exists('&autochdir') && &autochdir) && exists('*OpenFileFromCurrentDir')
+    map <C-o> <Esc>:silent call OpenFileFromCurrentDir()<CR>
+endif
+
 """"    Function Key
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " F2,F3,F4 are reserved.

@@ -242,7 +242,8 @@ function get_avante()
                     disable_tools = true,
                     -- enable_cursor_planning_mode = true,
 
-                    model = 'deepseek/deepseek-r1:free',
+                    -- model = 'deepseek/deepseek-r1:free',
+                    model = 'deepseek/deepseek-r1-0528:free',
                     max_completion_tokens = 163840 - token_reserve,
                     -- max_completion_tokens = 150000,
                 },

@@ -46,6 +46,10 @@ if exists('&colorcolumn')
     set colorcolumn=""
 endif
 
+if exists('&autochdir')
+    set autochdir
+endif
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    KeyMap
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

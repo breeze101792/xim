@@ -215,3 +215,11 @@ function! GetFileSize()
 
 endfunction
 command! GetFileSize call GetFileSize()
+" -------------------------------------------
+"  OpenFileFromCurrentDir
+" -------------------------------------------
+function! OpenFileFromCurrentDir()
+  let l:dir = expand('%:p:h') . '/'
+  call feedkeys(":tabnew " . fnameescape(l:dir), 'n')
+endfunction
+command! OpenFileFromCurrentDir call OpenFileFromCurrentDir()
