@@ -278,8 +278,8 @@ let g:ctrlp_extensions = ['tag']
 " FIXME, on repo, xargs realpath will slow down commands
 let g:ctrlp_user_command = {
             \    'types': {
-            \        1: ['.vimproject' , "test -f .vimproject/proj.files && cat .vimproject/proj.files || find %s -type f"] ,
-            \        2: ['vimproj' , "test -f vimproj/proj.files && cat vimproj/proj.files || find %s -type f"] ,
+            \        1: ['.vimproject/proj.files' , "test -f .vimproject/proj.files && cat .vimproject/proj.files || find %s -type f"] ,
+            \        2: ['vimproj/proj.files' , "test -f vimproj/proj.files && cat vimproj/proj.files || find %s -type f"] ,
             \        3: ['.repo' , "repo forall -j 4 -c 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard | xargs realpath '"] ,
             \        4: ['.git'  , 'cd $(git rev-parse --show-toplevel) && git ls-files -co --exclude-standard '] ,
             \    },

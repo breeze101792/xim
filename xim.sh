@@ -482,14 +482,14 @@ function fInit()
             ## Searcing srouce file
             printf "${DEF_COLOR_GREEN}Searching folder: ${DEF_COLOR_NORMAL}"
             echo -e "$tmp_path"
-            find_cmd="find ${tmp_path} \( -type f ${file_ext[@]} \) -not \( ${file_exclude[@]} \) ${path_exclude[@]} | xargs realpath -q >> \"${var_list_file}\""
+            find_cmd="find ${tmp_path} \( -type f ${file_ext[@]} \) -not \( ${file_exclude[@]} \) ${path_exclude[@]} | xargs realpath >> \"${var_list_file}\""
             echo ${find_cmd}
             eval "${find_cmd}"
 
             ## Search inlcude
             if [ "${flag_header}" = "y" ]
             then
-                find_cmd="find ${tmp_path} \( -type d ${header_rule[@]} \) ${path_exclude[@]} | xargs realpath -q >> \"${var_list_header_file}\""
+                find_cmd="find ${tmp_path} \( -type d ${header_rule[@]} \) ${path_exclude[@]} | xargs realpath >> \"${var_list_header_file}\""
                 echo ${find_cmd}
                 eval "${find_cmd}"
             fi
@@ -498,9 +498,21 @@ function fInit()
 
     ## Remove duplication
     local tmp_file="${var_proj_folder}/tmp.files"
-    # resort file list
-    cat "${var_list_file}" | sort | uniq > "${tmp_file}"
-    mv "${tmp_file}" "${var_list_file}"
+
+    if test -f "${var_list_file}"; then
+        # resort file list
+        if [ $(cat "${var_list_file}" | wc -l) = 0 ]; then
+            # remove empty file.
+            # empty file will fail ctrlp search.
+            rm "${var_list_file}"
+        else
+            # re sort
+            cat "${var_list_file}" | sort | uniq > "${tmp_file}"
+            mv "${tmp_file}" "${var_list_file}"
+        fi
+    else
+        echo "[sort] proj.file not found."
+    fi
 
     # update vim script file
     if [ "${flag_header}" = "y" ] && test -f ${var_list_header_file}
@@ -513,7 +525,11 @@ function fInit()
 
     test -f "${var_config_file}" || touch ${var_config_file}
 
-    fUpdate
+    if test -f "${var_list_file}" ; then
+        fUpdate
+    else
+        echo "Empty proj.file, ignore update."
+    fi
     cd ${var_cpath}
     echo Vim project create under project:${var_proj_path}
 }
