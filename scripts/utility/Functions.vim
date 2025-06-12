@@ -213,10 +213,15 @@ endfun
 
 command! -nargs=? RenameFile :call RenameFile(<q-args>)
 function! RenameFile(new_name)
-    let old_name = expand('%')
-    " let new_name = input('New file name: ', expand('%'), 'file')
-    if a:new_name != '' && a:new_name != old_name
-        exec ':saveas ' . a:new_name
+    let old_name = expand('%:p') " Get absolute path of current file
+    " Construct the absolute path for the new file name.
+    " This ensures that if a:new_name is relative, it's relative to the original file's directory.
+    let new_full_path = fnamemodify(fnamemodify(old_name, ':h') . '/' . a:new_name, ':p')
+
+    if a:new_name != '' && new_full_path != old_name
+        " Save the current buffer to the new absolute path
+        exec ':saveas ' . new_full_path
+        " Rename the original file to a backup name
         exec ':silent !mv ' . old_name . ' ' . old_name.strftime("_RN_%Y%m%d_%I%M%S")
         redraw!
     endif

@@ -15,6 +15,10 @@ set fileencodings=utf-8
 if exists('&autochdir')
     set autochdir
 endif
+" for some reson, we would like to enable 24-bit RGB (truecolor) support.
+if has('termguicolors')
+  set termguicolors
+endif
 set showtabline=2
 " set t_ti= t_te=                " leave content when vim exit
 
