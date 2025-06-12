@@ -65,6 +65,108 @@ function! TabGroupGetPath(...)
     return session_path
 endfunction
 
+function! TabGroupPrivate_Load(group_name)
+    let group_name = a:group_name
+
+    let session_path=TabGroupGetPath(a:group_name)
+
+    " Session path
+    let session_file=session_path."/session.vim"
+
+    if empty(glob(session_path)) || !isdirectory(session_path)
+        echom "Folder not found. Session: ". session_path
+        return v:false
+    endif
+
+    " Close all existing tabs and buffers before loading the new session
+    silent! %bd!
+    tabonly!
+
+    if !empty(glob(session_file))
+        silent! exec 'source ' . session_file
+        return v:true
+    else
+        echom "Session load failed. file not found."
+        return v:false
+    endif
+endfunction
+function! TabGroupPrivate_Store(group_name)
+    let group_name = a:group_name
+
+    let session_path=TabGroupGetPath(group_name)
+
+    if empty(glob(session_path))
+        call system('mkdir -p ' . session_path)
+    endif
+
+    " Session path
+    let session_file=session_path."/session.vim"
+
+    " Vars
+    let current_buffer_name=expand('%:p')
+    let buf_cnt=0
+    let tab_cnt=0
+
+    " Buf variable
+    let bufcount = bufnr("$")
+    if bufcount == 1 && group_name == 'default'
+        echo "Igreno save tab with default group."
+        return v:true
+    endif
+
+    call writefile(['" Vim session file'], session_file, "")
+    call writefile(['" Session open buffer'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+
+    for each_buf in getbufinfo()
+        " echom each_buf.name . '-' . each_buf.lnum
+        if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
+            call writefile(['badd +'. each_buf.lnum . " " . each_buf.name], session_file, "a")
+            let buf_cnt = buf_cnt + 1
+        endif
+    endfor
+
+    " opened tab
+    " FIXME, No win support.
+    let tabcount = tabpagenr("$")
+    let current_tab_idx = tabpagenr()
+
+    let tabidx = 1
+    call writefile(['" Session opened tab'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    while tabidx <= tabcount
+        let tmp_buf_idx = tabpagebuflist(tabidx)[0]
+        let currtabname = expand('#' . tmp_buf_idx . ':p')
+
+        " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
+        if !empty(glob(currtabname)) && buflisted(currtabname) == 1
+            " FIXME, do it on acturally tab.
+            exec 'tabn '.tabidx
+            " echo 'tabn '.tabidx
+            if tab_cnt == 0
+                " so we don't have to close the first tab.
+                call writefile(['edit +'. line('.') . ' ' . currtabname], session_file, "a")
+            else
+                call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
+            endif
+            if current_tab_idx == tabidx
+                call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
+            endif
+
+            let tab_cnt = tab_cnt + 1
+        endif
+        let tabidx = tabidx + 1
+    endwhile
+    exec 'tabn '.current_tab_idx
+
+    call writefile(['" Restore settings'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    call writefile(['"Open buffer:'. bufname("%")], session_file, "a")
+    call writefile(["exe 'tabn ' . session_previous_tabnr" ], session_file, "a")
+
+    return v:true
+endfunction
+
 "  TabGroup Public
 " -------------------------------------------
 command! TabGroupOpenList call TabGroupOpenList()
@@ -186,75 +288,14 @@ function! TabGroupStore(...)
         let group_name=a:1
     endif
 
-    let session_path=TabGroupGetPath(group_name)
-
-    if empty(glob(session_path))
-        call system('mkdir -p ' . session_path)
+    if TabGroupPrivate_Store(group_name) == v:true
+        let g:tabgroup_current_group_name = group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        echo 'Group ' . group_name . ' Stored finished., Tab:' . tab_cnt . ', Buf:' . buf_cnt. ", File: ". session_path
+    else
+        echoe 'Group ' . group_name . ' Stored fail.'
+        return v:false
     endif
-
-    " Session path
-    let session_file=session_path."/session.vim"
-
-    " Vars
-    let current_buffer_name=expand('%:p')
-    let buf_cnt=0
-    let tab_cnt=0
-
-    " Buf variable
-    let bufcount = bufnr("$")
-    if bufcount == 1 && group_name == 'default'
-        echo "Igreno save tab with default group."
-        return 0
-    endif
-
-    call writefile(['" Vim session file'], session_file, "")
-    call writefile(['" Session open buffer'], session_file, "a")
-    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-
-    for each_buf in getbufinfo()
-        " echom each_buf.name . '-' . each_buf.lnum
-        if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
-            call writefile(['badd +'. each_buf.lnum . " " . each_buf.name], session_file, "a")
-            let buf_cnt = buf_cnt + 1
-        endif
-    endfor
-
-    " opened tab
-    " FIXME, No win support.
-    let tabcount = tabpagenr("$")
-    let current_tab_idx = tabpagenr()
-
-    let tabidx = 1
-    call writefile(['" Session opened tab'], session_file, "a")
-    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-    while tabidx <= tabcount
-        let tmp_buf_idx = tabpagebuflist(tabidx)[0]
-        let currtabname = expand('#' . tmp_buf_idx . ':p')
-
-        " echom 'Tab:'.currtabname.'-'.bufloaded(currtabname).'-'.bufexists(currtabname).'-'.buflisted(currtabname)
-        if !empty(glob(currtabname)) && buflisted(currtabname) == 1
-            " FIXME, do it on acturally tab.
-            exec 'tabn '.tabidx
-            " echo 'tabn '.tabidx
-            call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
-            if current_tab_idx == tabidx
-                call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
-            endif
-
-            let tab_cnt = tab_cnt + 1
-        endif
-        let tabidx = tabidx + 1
-    endwhile
-    exec 'tabn '.current_tab_idx
-
-    call writefile(['" Restore settings'], session_file, "a")
-    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
-    call writefile(['"Open buffer:'. bufname("%")], session_file, "a")
-    call writefile(["exe 'tabn ' . session_previous_tabnr" ], session_file, "a")
-
-    let g:tabgroup_current_group_name = group_name
-    call TabGroupTitle(g:tabgroup_current_group_name)
-    echo 'Group ' . group_name . ' Stored finished., Tab:' . tab_cnt . ', Buf:' . buf_cnt. ", File: ". session_path
 endfunction
 
 command! -nargs=*  TabGroupLoad call TabGroupLoad(<f-args>)
@@ -271,40 +312,22 @@ function! TabGroupLoad(...)
     " before we load group, we store it first. 
     silent! call TabGroupStore()
 
-    let session_path=TabGroupGetPath(group_name)
-
-    " Session path
-    let session_file=session_path."/session.vim"
-
-    if empty(glob(session_path)) || !isdirectory(session_path)
-        echom "Folder not found. Session: ". session_path
-        return
-    endif
-
-    " Close all existing tabs and buffers before loading the new session
-    silent! %bd!
-    tabonly!
-
-    if !empty(glob(session_file))
-        silent! exec 'source ' . session_file
-
-        if bufcount > 1
-            tabc 1
-        endif
+    if TabGroupPrivate_Load(group_name)
+        let g:tabgroup_current_group_name = group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        echo 'Group ' . group_name . ' loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$")
+        return v:true
     else
-        echom "Session load failed. file not found."
+        echoe 'Group ' . group_name . ' loade fail.'
+        return v:false
     endif
-
-    let g:tabgroup_current_group_name = group_name
-    call TabGroupTitle(g:tabgroup_current_group_name)
-    echo 'Group ' . group_name . ' loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$"). " Session:" . session_file
 endfunction
 
 command! -nargs=1  TabGroupDelete call TabGroupDelete(<f-args>)
 function! TabGroupDelete(group_name)
     if a:group_name == 'default'
         echo 'Can not remove default group.'
-        return 0
+        return v:true
     endif
 
     let session_path=TabGroupGetPath(a:group_name)
@@ -315,34 +338,16 @@ function! TabGroupDelete(group_name)
     endif
 
     let l:group_name='default'
-    let session_path=TabGroupGetPath(l:group_name)
 
-    " Session path
-    let session_file=session_path."/session.vim"
-
-    if empty(glob(session_path)) || !isdirectory(session_path)
-        echom "Folder not found. Session: ". session_path
-        return
-    endif
-
-    " Close all existing tabs and buffers before loading the new session
-    silent! %bd!
-    tabonly!
-
-    if !empty(glob(session_file))
-        silent! exec 'source ' . session_file
-
-        let bufcount = bufnr("$")
-        if bufcount > 1
-            tabc 1
-        endif
+    if TabGroupPrivate_Store(group_name) == v:true
+        let g:tabgroup_current_group_name = l:group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        echo 'Group ' . l:group_name . ' loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$")
     else
-        echom "Session load failed. file not found."
+        echoe 'Group ' . group_name . ' Stored fail.'
+        return v:false
     endif
 
-    let g:tabgroup_current_group_name = l:group_name
-    call TabGroupTitle(g:tabgroup_current_group_name)
-    echo 'Group ' . l:group_name . ' loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$"). " Session:" . session_file
 endfunction
 
 " -------------------------------------------
