@@ -43,6 +43,13 @@ function get_avante_v0024()
             -- add any opts here
             mappings = {
                 -- NOTE: The following will be safely set by avante.nvim
+                --[[
+                -- NOTE: other keybinding could be found on scripts/framework/KeyMapFunction.vim
+                    nmap <silent> <Leader>aC :AvanteClear<CR>
+                    nmap <silent> <Leader>ab :AvanteBuild<CR>
+                    nmap <silent> <Leader>am :AvanteModels<CR>
+                    nmap <silent> <Leader>an :AvanteNewChat<CR>
+                --]]
                 ask = leader_key .. "aa",
                 edit = leader_key .. "ae",
                 refresh = leader_key .. "ar",
@@ -66,6 +73,8 @@ function get_avante_v0024()
                 },
             },
             windows = {
+                ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
+                position = "bottom",
                 sidebar_header = {
                     enabled = true, -- true, false to enable/disable the header
                     align = "center", -- left, center, right for title

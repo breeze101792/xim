@@ -58,6 +58,12 @@ set shortmess=I                  " Disable screen welcome message, Read :help sh
 set encoding=utf-8
 set formatoptions+=mM
 set fileencodings=utf-8
+if exists('&autochdir')
+    set autochdir
+endif
+if has('termguicolors')
+  set termguicolors
+endif
 set showtabline=2
 set hidden                       " can put buffer to the background without writing
 set lazyredraw                   " don't update the display while executing macros
@@ -176,7 +182,9 @@ map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>
 map <S-Right> <Esc>:tabmove +1 <CR>
-map <C-o> <Esc>:tabnew<SPACE>
+if exists('&autochdir') && &autochdir
+    map <C-o> <Esc>:tabnew<SPACE>
+endif
 nnoremap "" viw<esc>a"<esc>hbi"<esc>wwl
 nnoremap '' viw<esc>a'<esc>hbi'<esc>wwl
 nnoremap <C-W>M <C-W>\| <C-W>_
@@ -326,6 +334,9 @@ set listchars=tab:>-,trail:~,extends:>,precedes:<
 set noswapfile
 if exists('&colorcolumn') 
     set colorcolumn=""
+endif
+if exists('&autochdir')
+    set autochdir
 endif
 augroup tab_gp
     autocmd!
@@ -1031,7 +1042,6 @@ function! SearchProjectRoot()
     endif
     return ''
 endfunction
-nnoremap <leader>o :call OpenQuickfixInTab()<CR>
 function! SearchProjectFindInput()
     let pattern = input("Find file: ")
     call SearchProjectFind(pattern)

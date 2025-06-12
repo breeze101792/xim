@@ -34,9 +34,6 @@ function! SearchProjectRoot()
     return ''
 endfunction
 
-" Map the function to a key combination (e.g., <leader>o)
-nnoremap <leader>o :call OpenQuickfixInTab()<CR>
-
 function! SearchProjectFindInput()
     let pattern = input("Find file: ")
     call SearchProjectFind(pattern)

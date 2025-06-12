@@ -172,6 +172,7 @@ nmap <silent> <C-j> <Plug>(ale_next_wrap)
 nmap <silent> <Leader>aC :AvanteClear<CR>
 nmap <silent> <Leader>ab :AvanteBuild<CR>
 nmap <silent> <Leader>am :AvanteModels<CR>
+nmap <silent> <Leader>an :AvanteNewChat<CR>
 
 " Patch
 """""""""""""""""""""""""""""""""""""""""""""""""""""

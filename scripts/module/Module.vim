@@ -7,6 +7,7 @@
 " let g:IDE_MDOULE_HIGHLIGHTWORD = get(g:, 'IDE_MDOULE_HIGHLIGHTWORD', "n")
 " let g:IDE_MDOULE_BOOKMARK = get(g:, 'IDE_MDOULE_BOOKMARK', "n")
 " let g:IDE_MDOULE_SEARCHPROJECT = get(g:, 'IDE_MDOULE_SEARCHPROJECT', "n")
+" let g:IDE_MDOULE_TABGROUP = get(g:, 'IDE_MDOULE_TABGROUP', "n")
 
 if get(g:, 'IDE_MDOULE_BOOKMARK', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Bookmark.vim"
@@ -27,6 +28,11 @@ endif
 if get(g:, 'IDE_MDOULE_SEARCHPROJECT', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/SearchProject.vim"
 endif
+
+if get(g:, 'IDE_MDOULE_TABGROUP', 'n') == 'y'
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/TabGroup.vim"
+endif
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/TabGroup.vim"
 
 " Module Testing Zoon
 " ===========================================

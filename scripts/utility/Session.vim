@@ -174,7 +174,6 @@ function! SessionStoreBookmark(...)
         let session_path=SessionGetPath()
     endif
 
-    let session_file=session_path."/session.vim"
     let session_bookmark_file=session_path."/bookmark.vim"
 
     if empty(glob(session_path))
@@ -195,7 +194,6 @@ function! SessionLoadBookmark(...)
         let session_path=SessionGetPath()
     endif
 
-    let session_file=session_path."/session.vim"
     let session_bookmark_file=session_path."/bookmark.vim"
 
     if !empty(glob(session_bookmark_file))
@@ -216,7 +214,6 @@ function! SessionStoreHighlight(...)
         let session_path=SessionGetPath()
     endif
 
-    let session_file=session_path."/session.vim"
     let session_highlight=session_path."/highlight.hl"
 
     if empty(glob(session_path))
@@ -237,7 +234,6 @@ function! SessionLoadHighlight(...)
         let session_path=SessionGetPath()
     endif
 
-    let session_file=session_path."/session.vim"
     let session_highlight=session_path."/highlight.hl"
 
     if !empty(glob(session_highlight))
