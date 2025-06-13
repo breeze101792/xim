@@ -1118,13 +1118,20 @@ let g:tabgroup_default_group_name="_entry_"
 let g:tabgroup_default_session_path=expand('~')."/.vim/session/tabgroup"
 let g:tabgroup_project_folder_name='.vimproject'
 let g:tabgroup_current_group_name=g:tabgroup_default_group_name
-function! SearchLoclistEntryWithText(text)
+function! TabGroup_SearchLoclistEntryWithText(text)
     let loclist = getloclist(0)
     for idx in range(len(loclist))
         if loclist[idx].text ==# a:text
             return idx + 1
         endif
     endfor
+endfunction
+function! TabGroup_IsLegalName(group_name)
+    if a:group_name =~# '[a-zA-Z0-9_]'
+        return v:false
+    else
+        return v:true
+    endif
 endfunction
 function! TabGroupGetProjectRootPath()
     let current_dir = getcwd()
@@ -1179,13 +1186,13 @@ function! TabGroupPrivate_Load(group_name)
 endfunction
 function! TabGroupPrivate_Store(group_name)
     let group_name = a:group_name
-    if group_name =~# '[^a-zA-Z0-9_]'
+    if TabGroup_IsLegalName(group_name)
         echom "Error: Tab group name can only contain alphanumeric characters (a-zA-Z0-9)."
         return v:false
     endif
     let session_path=TabGroupGetPath(group_name)
     if empty(glob(session_path))
-        call system('mkdir -p ' . session_path)
+        call system('mkdir -p "' . session_path . '"')
     endif
     let session_file=session_path."/session.vim"
     let current_buffer_name=expand('%:p')
@@ -1272,6 +1279,7 @@ function! TabGroupOpenList()
     endif
     nnoremap <buffer> <CR> :call TabGroupSelectUnderCursor_Load()<CR>
     nnoremap <buffer> d :call TabGroupSelectUnderCursor_Delete()<CR>
+    nnoremap <buffer> <esc> :quit<CR>
 endfunction
 function! TabGroupSelectUnderCursor_Load()
     let lnum = line('.') - 1
@@ -1299,7 +1307,7 @@ function! TabGroupSelectUnderCursor_Delete()
         call remove(loclist, lnum)
         call setloclist(0, loclist, 'r')
         if flag_back_to_entry
-            let new_idx = SearchLoclistEntryWithText(g:tabgroup_default_group_name)
+            let new_idx = TabGroup_SearchLoclistEntryWithText(g:tabgroup_default_group_name)
             execute new_idx
         endif
     endif
@@ -1318,13 +1326,13 @@ function! TabGroupNew(...)
         if l:group_name == ''
             return 0
         endif
-        if group_name =~# '[^a-zA-Z0-9]'
+        if TabGroup_IsLegalName(l:group_name)
             echom "Error: Tab group name can only contain alphanumeric characters (a-zA-Z0-9)."
             return 0
         endif
     endif
-    if group_name == g:tabgroup_current_group_name
-        echom "Ignore loading the same group(" . group_name . ")"
+    if l:group_name == g:tabgroup_current_group_name
+        echom "Ignore loading the same group(" . l:group_name . ")"
         return 0
     endif
     if l:group_name == g:tabgroup_current_group_name
@@ -1339,7 +1347,7 @@ function! TabGroupNew(...)
         silent! %bd!
         silent! tabonly!
         echo "\n"
-        call TabGroupStore(group_name)
+        call TabGroupStore(l:group_name)
     endif
 endfunction
 function! TabGroupAutoSave()
