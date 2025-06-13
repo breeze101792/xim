@@ -402,6 +402,7 @@ function fRelease_lite()
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/Bookmark.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/CodeTags.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/SearchProject.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/TabGroup.vim")
 
     test -f ${var_lite_path} && rm ${var_lite_path}
 
@@ -427,7 +428,7 @@ function fRelease_lite()
         echo "\"\" End of Importing."
         echo '"------------------------------------------------------'
     } > ${var_lite_path}
-    echo "Lite release finished."
+    echo "Lite release finished. file path: ${var_lite_path}"
 }
 function fSetup_lite()
 {

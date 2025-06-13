@@ -321,7 +321,7 @@ let g:IDE_ENV_OS = "Linux"
 let g:IDE_ENV_INS = "vim"
 let g:IDE_ENV_IDE_TITLE = "LITE"
 try
-    colorscheme industry
+    colorscheme desert
 catch
     echom 'colorscheme industry not found.'
 endtry
@@ -1104,6 +1104,328 @@ function! SearchProjectGrep(pattern)
         echo "No results found"
     endif
 endfunction
+"------------------------------------------------------
+"" Import from TabGroup.vim
+"------------------------------------------------------
+augroup AutoTabGroup
+    autocmd!
+    autocmd VimLeave * :silent! call TabGroupAutoSave()
+augroup END
+nmap <silent> tl :TabGroupOpenList<CR>
+nmap <silent> tn :TabGroupNew<CR>
+nmap <silent> ts :TabGroupStore<CR>
+let g:tabgroup_default_group_name="_entry_"
+let g:tabgroup_default_session_path=expand('~')."/.vim/session/tabgroup"
+let g:tabgroup_project_folder_name='.vimproject'
+let g:tabgroup_current_group_name=g:tabgroup_default_group_name
+function! SearchLoclistEntryWithText(text)
+    let loclist = getloclist(0)
+    for idx in range(len(loclist))
+        if loclist[idx].text ==# a:text
+            return idx + 1
+        endif
+    endfor
+endfunction
+function! TabGroupGetProjectRootPath()
+    let current_dir = getcwd()
+    let project_path = ""
+    let l:project_markers = [g:tabgroup_project_folder_name]
+    while current_dir != '/' && !empty(current_dir)
+        for marker in l:project_markers
+            if isdirectory(current_dir . '/' . marker)
+                let project_path = current_dir
+                break
+            endif
+        endfor
+        if !empty(project_path)
+            break " Found a marker, exit the while loop
+        endif
+        let current_dir = fnamemodify(current_dir, ':h') " Go up one directory
+    endwhile
+    return project_path
+endfunction
+function! TabGroupGetPath(...)
+    let l:group_name = g:tabgroup_current_group_name
+    if a:0 == 1
+        let l:group_name = a:1
+    endif
+    let project_root_path=TabGroupGetProjectRootPath()
+    let session_path=""
+    if project_root_path == ""
+        let session_path=g:tabgroup_default_session_path . '/' .l:group_name
+    else
+        let l:tab_group_root_path=project_root_path . '/' . g:tabgroup_project_folder_name . '/tabgroup'
+        let session_path=l:tab_group_root_path . '/' .l:group_name
+    endif
+    return session_path
+endfunction
+function! TabGroupPrivate_Load(group_name)
+    let group_name = a:group_name
+    let session_path=TabGroupGetPath(a:group_name)
+    let session_file=session_path."/session.vim"
+    if empty(glob(session_path)) || !isdirectory(session_path)
+        echom "Folder not found. Session: ". session_path
+        return v:false
+    endif
+    silent! %bd!
+    silent! tabonly!
+    if !empty(glob(session_file))
+        silent! exec 'source ' . session_file
+        return v:true
+    else
+        echom "Session load failed. file not found.". session_file
+        return v:false
+    endif
+endfunction
+function! TabGroupPrivate_Store(group_name)
+    let group_name = a:group_name
+    if group_name =~# '[^a-zA-Z0-9_]'
+        echom "Error: Tab group name can only contain alphanumeric characters (a-zA-Z0-9)."
+        return v:false
+    endif
+    let session_path=TabGroupGetPath(group_name)
+    if empty(glob(session_path))
+        call system('mkdir -p ' . session_path)
+    endif
+    let session_file=session_path."/session.vim"
+    let current_buffer_name=expand('%:p')
+    let buf_cnt=0
+    let tab_cnt=0
+    let bufcount = bufnr("$")
+    if bufcount == 1 && group_name == g:tabgroup_default_group_name
+        echo "Igreno save tab with " . g:tabgroup_default_group_name ." group."
+        return v:true
+    endif
+    call writefile(['" Vim session file'], session_file, "")
+    call writefile(['" Session open buffer'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    for each_buf in getbufinfo()
+        if !empty(glob(each_buf.name)) && buflisted(each_buf.name) == 1
+            call writefile(['badd +'. each_buf.lnum . " " . each_buf.name], session_file, "a")
+            let buf_cnt = buf_cnt + 1
+        endif
+    endfor
+    let tabcount = tabpagenr("$")
+    let current_tab_idx = tabpagenr()
+    let tabidx = 1
+    call writefile(['" Session opened tab'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    while tabidx <= tabcount
+        let tmp_buf_idx = tabpagebuflist(tabidx)[0]
+        let currtabname = expand('#' . tmp_buf_idx . ':p')
+        if !empty(glob(currtabname)) && buflisted(currtabname) == 1
+            exec 'tabn '.tabidx
+            if tab_cnt == 0
+                call writefile(['edit +'. line('.') . ' ' . currtabname], session_file, "a")
+            else
+                call writefile(['tabnew +'. line('.') . ' ' . currtabname], session_file, "a")
+            endif
+            if current_tab_idx == tabidx
+                call writefile(["let session_previous_tabnr=tabpagenr('$')"], session_file, "a")
+            endif
+            let tab_cnt = tab_cnt + 1
+        endif
+        let tabidx = tabidx + 1
+    endwhile
+    exec 'tabn '.current_tab_idx
+    call writefile(['" Restore settings'], session_file, "a")
+    call writefile(['""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""'], session_file, "a")
+    call writefile(['"Open buffer:'. bufname("%")], session_file, "a")
+    call writefile(["exe 'tabn ' . session_previous_tabnr" ], session_file, "a")
+    return v:true
+endfunction
+command! TabGroupOpenList call TabGroupOpenList()
+function! TabGroupOpenList()
+    let session_root_path = TabGroupGetPath('')
+    if empty(glob(session_root_path)) || !isdirectory(session_root_path)
+        echom "No tab groups root path found: " . session_root_path
+        return 0
+    endif
+    let group_dir_paths = glob(session_root_path . '/*', 1, 1)
+    let group_names = []
+    for dir_path in group_dir_paths
+        if isdirectory(dir_path)
+            let group_name = fnamemodify(dir_path, ':t') " Get just the directory name
+            call add(group_names, group_name)
+        endif
+    endfor
+    if empty(group_names)
+        echom "No tab groups found in: " . session_root_path
+        return
+    endif
+    let loc_list = []
+    let current_group_idx = -1
+    call add(loc_list, {'text': ' -- Tab Group Selector -- ||', 'lnum': 0, 'valid': 0}) " Mark current group with lnum 1
+    for i in range(len(group_names))
+        let group_name = group_names[i]
+        if group_name == g:tabgroup_current_group_name
+            let current_group_idx = i
+            call add(loc_list, {'text': group_name, 'lnum': 1, 'valid': 1}) " Mark current group with lnum 1
+        else
+            call add(loc_list, {'text': group_name, 'lnum': 0, 'valid': 0})
+        endif
+    endfor
+    call setloclist(0, loc_list, 'r')
+    lopen
+    if current_group_idx != -1
+        call cursor(current_group_idx + 1 + 1, 1)
+    endif
+    nnoremap <buffer> <CR> :call TabGroupSelectUnderCursor_Load()<CR>
+    nnoremap <buffer> d :call TabGroupSelectUnderCursor_Delete()<CR>
+endfunction
+function! TabGroupSelectUnderCursor_Load()
+    let lnum = line('.') - 1
+    if lnum == 0
+        return
+    else
+        let group_name = getloclist(0)[lnum].text
+        lclose
+        call TabGroupLoad(group_name)
+    endif
+endfunction
+function! TabGroupSelectUnderCursor_Delete()
+    let lnum = line('.') - 1
+    let loclist = getloclist(0)
+    if lnum <= 0 || lnum >= len(loclist)
+        return
+    endif
+    let group_name = loclist[lnum].text
+    if group_name == g:tabgroup_current_group_name
+        let flag_back_to_entry = v:true
+    else
+        let flag_back_to_entry = v:true
+    endif
+    if TabGroupDelete(group_name)
+        call remove(loclist, lnum)
+        call setloclist(0, loclist, 'r')
+        if flag_back_to_entry
+            let new_idx = SearchLoclistEntryWithText(g:tabgroup_default_group_name)
+            execute new_idx
+        endif
+    endif
+    if len(loclist) <= 1
+        lclose
+    endif
+endfunction
+command! -nargs=*  TabGroupNew call TabGroupNew(<f-args>)
+function! TabGroupNew(...)
+    let l:group_name = ""
+    if a:0 == 1
+        let l:group_name = a:1
+    else
+        let l:group_name = input("Enter a new group name: ")
+        echo "\n"
+        if l:group_name == ''
+            return 0
+        endif
+        if group_name =~# '[^a-zA-Z0-9]'
+            echom "Error: Tab group name can only contain alphanumeric characters (a-zA-Z0-9)."
+            return 0
+        endif
+    endif
+    if group_name == g:tabgroup_current_group_name
+        echom "Ignore loading the same group(" . group_name . ")"
+        return 0
+    endif
+    if l:group_name == g:tabgroup_current_group_name
+        return 0
+    endif
+    let session_path=TabGroupGetPath(l:group_name)
+    if ! empty(glob(session_path))
+        echom "Tab group '" . l:group_name . "' already exists at: " . session_path
+        return 0 " Return 0 to indicate it wasn't a new creation
+    else
+        silent! call TabGroupAutoSave()
+        silent! %bd!
+        silent! tabonly!
+        echo "\n"
+        call TabGroupStore(group_name)
+    endif
+endfunction
+function! TabGroupAutoSave()
+    let l:group_name = g:tabgroup_current_group_name
+    if l:group_name == ""
+        let l:group_name = g:tabgroup_default_group_name
+    endif
+    if TabGroupPrivate_Store(l:group_name) == v:true
+        let g:tabgroup_current_group_name = l:group_name
+    else
+        echoe 'Group ' . l:group_name . ' Stored fail.'
+        return v:false
+    endif
+endfunction
+command! -nargs=*  TabGroupStore call TabGroupStore(<f-args>)
+function! TabGroupStore(...)
+    let l:group_name = ""
+    if a:0 == 1
+        let l:group_name = a:1
+    else
+        let l:group_name = input("Enter a name for storing current group: ")
+        echo "\n"
+        if l:group_name == ''
+            return 0
+        endif
+    endif
+    if TabGroupPrivate_Store(l:group_name) == v:true
+        let g:tabgroup_current_group_name = l:group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        echo 'Group ' . l:group_name . ' Stored finished. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$")
+    else
+        echoe 'Group ' . l:group_name . ' Stored fail.'
+        return v:false
+    endif
+endfunction
+command! -nargs=*  TabGroupLoad call TabGroupLoad(<f-args>)
+function! TabGroupLoad(...)
+    let group_name = g:tabgroup_current_group_name
+    if a:0 == 1
+        let group_name=a:1
+    endif
+    if group_name == g:tabgroup_current_group_name
+        echom "Ignore loading the same group(" . group_name . ")"
+        return 0
+    endif
+    call TabGroupAutoSave()
+    if TabGroupPrivate_Load(group_name)
+        let g:tabgroup_current_group_name = group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        echo 'Group ' . group_name . ' loaded. Tab:' . tabpagenr("$") . ', Buf:'.bufnr("$")
+        return v:true
+    else
+        echoe 'Group ' . group_name . ' loade fail.'
+        call TabGroupPrivate_Load(g:tabgroup_current_group_name)
+        return v:false
+    endif
+endfunction
+command! -nargs=1  TabGroupDelete call TabGroupDelete(<f-args>)
+function! TabGroupDelete(group_name)
+    if a:group_name == g:tabgroup_default_group_name
+        echo 'Can not remove '.g:tabgroup_default_group_name.' group.'
+        return v:false
+    endif
+    let session_path=TabGroupGetPath(a:group_name)
+    if ! empty(glob(session_path))
+        call system('rm -r ' . session_path)
+        echo 'Remove ' . a:group_name . ' group on '. session_path
+    endif
+    let l:group_name=g:tabgroup_default_group_name
+    if TabGroupPrivate_Store(group_name) == v:true
+        let g:tabgroup_current_group_name = l:group_name
+        call TabGroupTitle(g:tabgroup_current_group_name)
+        return v:true
+    else
+        echoe 'Group ' . group_name . ' store failed.'
+        return v:false
+    endif
+endfunction
+function! TabGroupTitle(title_name)
+    let g:IDE_ENV_IDE_TITLE=a:title_name
+    if version >= 802
+        redrawtabline
+    else
+        redraw!
+    endif
+endfunc
 "------------------------------------------------------
 "" End of Importing.
 "------------------------------------------------------

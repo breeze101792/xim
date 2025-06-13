@@ -26,7 +26,7 @@ let g:IDE_ENV_IDE_TITLE = "LITE"
 """"    Lite setting
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 try
-    colorscheme industry
+    colorscheme desert
 catch
     echom 'colorscheme industry not found.'
 endtry
