@@ -403,6 +403,7 @@ function fRelease_lite()
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/CodeTags.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/SearchProject.vim")
     var_file_list+=("${PATH_IDE_ROOT}/scripts/module/TabGroup.vim")
+    var_file_list+=("${PATH_IDE_ROOT}/scripts/module/ProjectManager.vim")
 
     test -f ${var_lite_path} && rm ${var_lite_path}
 

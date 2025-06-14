@@ -410,6 +410,7 @@ function fInit()
                 printf "%s %s\n" "pvinit"
                 printf "%s %s\n" "SYNOPSIS"
                 printf "    %s %s\n" "pvinit [Options] [Dirs]"
+                printf "    %s %s\n" "If dirs not set, it'll create a empty project."
                 printf "%s %s\n" "Options"
                 printf "    %- 32s %s\n" "-a|--append" "append more fire in file list"
                 printf "    %- 32s %s\n" "-e|--extension" "add file extension on search"
@@ -428,12 +429,14 @@ function fInit()
         esac
         shift 1
     done
+
     # prechecking
-    if test -z ${src_path}
-    then
-        echo "Please enter folder name"
-        return -1
-    fi
+    # start a empty project, better for latter setup.
+    # if test -z ${src_path}
+    # then
+    #     echo "Please enter folder name"
+    #     return -1
+    # fi
 
     # path checking
     if ! fFileRoot ${var_proj_folder}

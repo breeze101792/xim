@@ -1,8 +1,15 @@
 " Plugins Functions
 " ===========================================
-let g:IDE_MDOULE_STATUSLINE = 'n'
-let g:IDE_MDOULE_HIGHLIGHTWORD = 'n'
-let g:IDE_MDOULE_BOOKMARK = 'n'
+" enable module current didn't have plugin support.
+let g:IDE_MDOULE_TABGROUP       = 'y'
+let g:IDE_MDOULE_PROJECTMANAGER = 'y'
+
+" default disable whil we have plugin alternative
+let g:IDE_MDOULE_STATUSLINE     = 'n'
+let g:IDE_MDOULE_HIGHLIGHTWORD  = 'n'
+let g:IDE_MDOULE_BOOKMARK       = 'n'
+let g:IDE_MDOULE_CODETAGS       = 'n'
+let g:IDE_MDOULE_SEARCHPROJECT  = 'n'
 
 " -------------------------------------------
 "  Highlighter Toggle #Plugins

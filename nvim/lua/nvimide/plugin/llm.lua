@@ -11,8 +11,9 @@ function get_avante_v0024()
 
     return {
         "yetone/avante.nvim",
-        -- event = "VeryLazy",
-        lazy = false,
+        event = "VeryLazy",
+        cmd = {"AvanteToggle", "AvanteEdit", "AvanteEdit", "AvanteModels", "AvanteChat", "AvanteNewChat", "AvanteNewModels"},
+        -- lazy = false,
         -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
         tag = "v0.0.24",

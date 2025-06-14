@@ -1,6 +1,7 @@
 " Module Settings
 " ===========================================
 " Module should not depends on other file.
+" it's better that we modulize all functions.
 
 " let g:IDE_MDOULE_CODETAGS = get(g:, 'IDE_MDOULE_CODETAGS', "n")
 " let g:IDE_MDOULE_STATUSLINE = get(g:, 'IDE_MDOULE_STATUSLINE', "n")
@@ -8,6 +9,7 @@
 " let g:IDE_MDOULE_BOOKMARK = get(g:, 'IDE_MDOULE_BOOKMARK', "n")
 " let g:IDE_MDOULE_SEARCHPROJECT = get(g:, 'IDE_MDOULE_SEARCHPROJECT', "n")
 " let g:IDE_MDOULE_TABGROUP = get(g:, 'IDE_MDOULE_TABGROUP', "n")
+" let g:IDE_MDOULE_PROJECTMANAGER = get(g:, 'IDE_MDOULE_PROJECTMANAGER', "n")
 
 if get(g:, 'IDE_MDOULE_BOOKMARK', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Bookmark.vim"
@@ -32,7 +34,10 @@ endif
 if get(g:, 'IDE_MDOULE_TABGROUP', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/TabGroup.vim"
 endif
-    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/TabGroup.vim"
+
+if get(g:, 'IDE_MDOULE_PROJECTMANAGER', 'n') == 'y'
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/ProjectManager.vim"
+endif
 
 " Module Testing Zoon
 " ===========================================
