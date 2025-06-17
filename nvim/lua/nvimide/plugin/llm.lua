@@ -74,7 +74,7 @@ function get_avante_v0024()
             },
             windows = {
                 ---@alias AvantePosition "right" | "left" | "top" | "bottom" | "smart"
-                position = "bottom",
+                position = "smart",
                 sidebar_header = {
                     enabled = true, -- true, false to enable/disable the header
                     align = "center", -- left, center, right for title
@@ -88,7 +88,7 @@ function get_avante_v0024()
                 },
             },
             -- for example
-            provider = "gemini",
+            provider = vim.g.IDE_CFG_LLM_PROVIDER,
             providers = {
                 gemini = {
                     __inherited_from = 'gemini',
@@ -101,6 +101,18 @@ function get_avante_v0024()
                         temperature = 0,
                         max_tokens = 1000000 - token_reserve,
                     },
+                },
+                google_gemini = {
+                    __inherited_from = 'gemini',
+                    api_key_name = 'GEMINI_API_KEY_2',
+
+                    model = vim.g.IDE_CFG_LLM_GEMINI_MODEL,
+                    extra_request_body = {
+                        generationConfig = {
+                            temperature = 0,
+                        },
+                        max_tokens = 1000000 - token_reserve,
+                    }
                 },
                 -- for second google account
                 google_gemini_2 = {
