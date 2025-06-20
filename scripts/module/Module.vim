@@ -10,6 +10,7 @@
 " let g:IDE_MDOULE_SEARCHPROJECT = get(g:, 'IDE_MDOULE_SEARCHPROJECT', "n")
 " let g:IDE_MDOULE_TABGROUP = get(g:, 'IDE_MDOULE_TABGROUP', "n")
 " let g:IDE_MDOULE_PROJECTMANAGER = get(g:, 'IDE_MDOULE_PROJECTMANAGER', "n")
+" let g:IDE_MDOULE_MULTIPLECURSORS = get(g:, 'IDE_MDOULE_MULTIPLECURSORS', "n")
 
 if get(g:, 'IDE_MDOULE_BOOKMARK', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Bookmark.vim"
@@ -37,6 +38,10 @@ endif
 
 if get(g:, 'IDE_MDOULE_PROJECTMANAGER', 'n') == 'y'
     exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/ProjectManager.vim"
+endif
+
+if get(g:, 'IDE_MDOULE_MULTIPLECURSORS', 'n') == 'y'
+    exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/MultipleCursors.vim"
 endif
 
 " Module Testing Zoon

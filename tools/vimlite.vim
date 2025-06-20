@@ -1368,9 +1368,9 @@ function! TabGroupOpenList()
         let group_name = group_names[i]
         if group_name == g:tabgroup_current_group_name
             let current_group_idx = i
-            call add(loc_list, {'text': group_name, 'lnum': 1, 'valid': 1}) " Mark current group with lnum 1
+            call add(loc_list, {'text': group_name, 'lnum': 2, 'valid': 1}) " Mark current group with lnum 1
         else
-            call add(loc_list, {'text': group_name, 'lnum': 0, 'valid': 0})
+            call add(loc_list, {'text': group_name, 'lnum': 1, 'valid': 0})
         endif
     endfor
     call setloclist(0, loc_list, 'r')
@@ -1500,6 +1500,10 @@ endfunc
 "------------------------------------------------------
 "" Import from ProjectManager.vim
 "------------------------------------------------------
+augroup ProjectManagerGroup
+    autocmd!
+    autocmd VimEnter * :silent! call ProjectManagerReload()
+augroup END
 let g:projectmanager_project_folder_name='.vimproject'
 let g:projectmanager_project_config_name='proj.vim'
 let g:projectmanager_project_markers=[g:projectmanager_project_folder_name, '.repo', '.git']
@@ -1558,6 +1562,284 @@ function! ProjectManagerEditConfig()
         execute 'edit ' . l:project_config_file
     endif
 endfunc
+command! ProjectManagerReload call ProjectManagerReload()
+function! ProjectManagerReload()
+    let l:project_root = ProjectManager_GetProjectRootPath()
+    let l:project_config_dir = l:project_root . '/' . g:projectmanager_project_folder_name
+    let l:project_config_file = l:project_config_dir . '/' . g:projectmanager_project_config_name
+    if !filereadable(l:project_config_file)
+        echo "Project config file does not exist or is not readable: " . l:project_config_file
+        return
+    else
+        silent! exec 'source ' . l:project_config_file
+    endif
+endfunc
+"------------------------------------------------------
+"" Import from MultipleCursors.vim
+"------------------------------------------------------
+if exists("g:loaded_batch_replace")
+    finish
+endif
+let g:loaded_batch_replace = 1
+let g:batch_replace_select_key = '<C-n>'
+let g:batch_replace_ignore_key = '<C-i>'
+let g:batch_replace_finish_key = '<CR>' " New: Key to finish selection and perform replacement
+let g:batch_replace_next_key_no_select = '<Leader>mn' " New: Key to go to next match without selecting
+let g:batch_replace_prev_key_no_select = '<Leader>mp' " New: Key to go to previous match without selecting
+let g:batch_replace_cancel_key = '<ESC>' " New: Key to cancel the current session
+let g:batch_replace_debug = 0 " Set to 1 to enable debug messages, 0 to disable
+let s:matches = []
+let s:approved_matches = [] " Stores positions that the user agrees to replace
+let s:approved_highlight_ids = [] " Stores highlight IDs for approved matches
+let s:match_word = ''
+let s:current_match_idx = -1
+let s:current_match_highlight_id = -1 " ID for the single currently highlighted match
+let s:active_session = 0 " Flag to indicate if a session is active
+highlight default link BatchReplace Search
+function! s:ClearState()
+    if g:batch_replace_debug | echomsg "DEBUG: s:ClearState() called" | endif
+    if s:current_match_highlight_id != -1
+        try | call matchdelete(s:current_match_highlight_id) | catch | endtry
+        let s:current_match_highlight_id = -1
+    endif
+    for l:id in s:approved_highlight_ids
+        try | call matchdelete(l:id) | catch | endtry
+    endfor
+    let s:approved_highlight_ids = []
+    call clearmatches('BatchReplace') " Clear any remaining highlights for this group
+    let s:matches = []
+    let s:approved_matches = []
+    let s:match_word = ''
+    let s:current_match_idx = -1
+    let s:active_session = 0
+    echohl None
+    echo ""
+endfunction
+function! s:EnterSelectionMode()
+    if g:batch_replace_debug | echomsg "DEBUG: s:EnterSelectionMode() called" | endif
+    execute 'nnoremap <silent><buffer>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+    execute 'nnoremap <silent><buffer>' g:batch_replace_ignore_key ':call <SID>BatchReplaceHandler("skip")<CR>'
+    execute 'nnoremap <silent><buffer>' g:batch_replace_finish_key ':call <SID>BatchReplaceHandler("finish")<CR>'
+    execute 'nnoremap <silent><buffer>' g:batch_replace_next_key_no_select ':call <SID>BatchReplaceHandler("next_no_select")<CR>'
+    execute 'nnoremap <silent><buffer>' g:batch_replace_prev_key_no_select ':call <SID>BatchReplaceHandler("prev_no_select")<CR>'
+    execute 'nnoremap <silent><buffer>' g:batch_replace_cancel_key ':call <SID>BatchReplaceHandler("cancel")<CR>'
+    execute 'vnoremap <silent><buffer>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+endfunction
+function! s:ExitSelectionMode()
+    if g:batch_replace_debug | echomsg "DEBUG: s:ExitSelectionMode() called" | endif
+    silent! execute 'nunmap <buffer>' g:batch_replace_select_key
+    silent! execute 'nunmap <buffer>' g:batch_replace_ignore_key
+    silent! execute 'nunmap <buffer>' g:batch_replace_finish_key
+    silent! execute 'nunmap <buffer>' g:batch_replace_next_key_no_select
+    silent! execute 'nunmap <buffer>' g:batch_replace_prev_key_no_select
+    silent! execute 'nunmap <buffer>' g:batch_replace_cancel_key
+    silent! execute 'vunmap <buffer>' g:batch_replace_select_key
+endfunction
+function! s:GetSearchWord()
+    if g:batch_replace_debug | echomsg "DEBUG: s:GetSearchWord() called" | endif
+    let l:original_visual_mode = visualmode()
+    if l:original_visual_mode != ''
+        let l:old_reg = getreg('"')
+        let l:old_reg_type = getregtype('"')
+        normal! gvy
+        let l:word = getreg('"')
+        call setreg('"', l:old_reg, l:old_reg_type)
+        if l:original_visual_mode ==# 'v'
+            normal! gv
+        elseif l:original_visual_mode ==# 'V'
+            normal! gv
+        else
+            execute "normal! gv"
+        endif
+    else
+        let l:word = expand('<cword>')
+    endif
+    if g:batch_replace_debug | echomsg "DEBUG: Original word: " . l:word | endif
+    let l:escaped_word = escape(l:word, '.*[]^%$\/')
+    if g:batch_replace_debug | echomsg "DEBUG: Escaped word: " . l:escaped_word | endif
+    return l:escaped_word
+endfunction
+function! s:FindAllMatches(word)
+    if g:batch_replace_debug | echomsg "DEBUG: s:FindAllMatches() called with word: " . a:word | endif
+    if empty(a:word)
+        if g:batch_replace_debug | echomsg "DEBUG: Word is empty, returning empty matches." | endif
+        return []
+    endif
+    let l:all_matches = []
+    let l:flags = '' " Start search without special flags, then use 'W' for subsequent searches
+    let l:cursor_pos = getcurpos()
+    call setpos('.', [0, 1, 1, 0]) " Start search from the beginning of the buffer
+    let l:search_pattern = '\V\c' . a:word
+    if g:batch_replace_debug | echomsg "DEBUG: Search pattern: " . l:search_pattern | endif
+    while 1
+        let l:match_pos = searchpos(l:search_pattern, l:flags)
+        if g:batch_replace_debug | echomsg "DEBUG: Found match at: " . string(l:match_pos) | endif
+        if l:match_pos == [0, 0]
+            break
+        endif
+        call add(l:all_matches, l:match_pos)
+        let l:flags = 'W' " Continue search from current position without wrapping
+    endwhile
+    call setpos('.', l:cursor_pos) " Restore original cursor position
+    if g:batch_replace_debug | echomsg "DEBUG: Total matches found: " . len(l:all_matches) | endif
+    return l:all_matches
+endfunction
+function! s:FindStartingMatchIndex(matches, cursor_pos)
+    if g:batch_replace_debug | echomsg "DEBUG: s:FindStartingMatchIndex() called. Cursor: " . string(a:cursor_pos) | endif
+    let l:cursor_line = a:cursor_pos[1]
+    let l:cursor_col = a:cursor_pos[2]
+    for l:i in range(len(a:matches))
+        let l:match_line = a:matches[l:i][0]
+        let l:match_col = a:matches[l:i][1]
+        if l:match_line > l:cursor_line
+            return l:i
+        elseif l:match_line == l:cursor_line
+            if l:match_col >= l:cursor_col || (l:match_col < l:cursor_col && l:cursor_col < (l:match_col + len(s:match_word)))
+                return l:i
+            endif
+        endif
+    endfor
+    return 0
+endfunction
+function! s:HighlightNextMatch()
+    if g:batch_replace_debug | echomsg "DEBUG: s:HighlightNextMatch() called. Current index: " . s:current_match_idx . ", Total matches: " . len(s:matches) | endif
+    
+        let s:current_match_idx += 1
+        if s:current_match_idx >= len(s:matches)
+            let s:current_match_idx = 0 " Wrap around to the first match
+        endif
+    
+    let l:current_pos = s:matches[s:current_match_idx]
+    if g:batch_replace_debug | echomsg "DEBUG: Highlighting match at position: " . string(l:current_pos) | endif
+    call cursor(l:current_pos[0], l:current_pos[1])
+    if s:current_match_highlight_id != -1
+        call matchdelete(s:current_match_highlight_id)
+    endif
+    let l:len = len(s:match_word)
+    let s:current_match_highlight_id = matchaddpos('BatchReplace', [[l:current_pos[0], l:current_pos[1], l:len]])
+    echohl Question | echo "Replace this instance? (Select: " . g:batch_replace_select_key . " / Skip: " . g:batch_replace_ignore_key . " / Next: " . g:batch_replace_next_key_no_select . " / Prev: " . g:batch_replace_prev_key_no_select . " / Finish: " . g:batch_replace_finish_key . " / Cancel: " . g:batch_replace_cancel_key . ")" | echohl None
+endfunction
+function! s:HighlightPreviousMatch()
+    if g:batch_replace_debug | echomsg "DEBUG: s:HighlightPreviousMatch() called. Current index: " . s:current_match_idx . ", Total matches: " . len(s:matches) | endif
+    
+        let s:current_match_idx -= 1
+        if s:current_match_idx < 0
+            let s:current_match_idx = len(s:matches) - 1 " Wrap around to the last match
+        endif
+    
+    let l:current_pos = s:matches[s:current_match_idx]
+    if g:batch_replace_debug | echomsg "DEBUG: Highlighting match at position: " . string(l:current_pos) | endif
+    call cursor(l:current_pos[0], l:current_pos[1])
+    if s:current_match_highlight_id != -1
+        call matchdelete(s:current_match_highlight_id)
+    endif
+    let l:len = len(s:match_word)
+    let s:current_match_highlight_id = matchaddpos('BatchReplace', [[l:current_pos[0], l:current_pos[1], l:len]])
+    echohl Question | echo "Replace this instance? (Select: " . g:batch_replace_select_key . " / Skip: " . g:batch_replace_ignore_key . " / Next: " . g:batch_replace_next_key_no_select . " / Prev: " . g:batch_replace_prev_key_no_select . " / Finish: " . g:batch_replace_finish_key . " / Cancel: " . g:batch_replace_cancel_key . ")" | echohl None
+endfunction
+function! s:BatchReplaceHandler(action)
+    if g:batch_replace_debug | echomsg "DEBUG: s:BatchReplaceHandler() called with action: " . a:action | endif
+    if s:active_session == 0
+        if g:batch_replace_debug | echomsg "DEBUG: Starting new session." | endif
+        call s:ClearState()
+        let s:match_word = s:GetSearchWord()
+        if empty(s:match_word)
+            echohl WarningMsg | echo "No word under cursor or selected." | echohl None
+            if g:batch_replace_debug | echomsg "DEBUG: No word found, returning." | endif
+            return
+        endif
+        let s:matches = s:FindAllMatches(s:match_word)
+        if empty(s:matches)
+            echohl WarningMsg | echo "No matches found for: " . s:match_word | echohl None
+            if g:batch_replace_debug | echomsg "DEBUG: No matches found for '" . s:match_word . "', returning." | endif
+            return
+        endif
+        let s:active_session = 1
+        call s:EnterSelectionMode() " Enter the custom mode
+        if g:batch_replace_debug | echomsg "DEBUG: Session activated. Found " . len(s:matches) . " matches." | endif
+        let l:cursor_pos = getcurpos()
+        let l:initial_cursor_match_idx = s:FindStartingMatchIndex(s:matches, l:cursor_pos)
+        if l:initial_cursor_match_idx == 0
+            let s:current_match_idx = len(s:matches) - 1 " Wrap around to the last match
+        else
+            let s:current_match_idx = l:initial_cursor_match_idx - 1
+        endif
+        call s:HighlightNextMatch()
+    else
+        if g:batch_replace_debug | echomsg "DEBUG: Continuing existing session." | endif
+        if a:action == 'select'
+            if g:batch_replace_debug | echomsg "DEBUG: Selected current match: " . string(s:matches[s:current_match_idx]) | endif
+            call add(s:approved_matches, s:matches[s:current_match_idx])
+            let l:pos_to_highlight = s:matches[s:current_match_idx]
+            let l:len = len(s:match_word)
+            let l:id = matchaddpos('BatchReplace', [[l:pos_to_highlight[0], l:pos_to_highlight[1], l:len]])
+            call add(s:approved_highlight_ids, l:id)
+            call s:HighlightNextMatch()
+        elseif a:action == 'skip'
+            if g:batch_replace_debug | echomsg "DEBUG: Skipped current match: " . string(s:matches[s:current_match_idx]) | endif
+            call s:HighlightNextMatch()
+        elseif a:action == 'finish'
+            if g:batch_replace_debug | echomsg "DEBUG: User explicitly finished selection." | endif
+            if s:current_match_idx != -1 && s:current_match_idx < len(s:matches)
+                let l:current_match_pos = s:matches[s:current_match_idx]
+                if index(s:approved_matches, l:current_match_pos) == -1
+                    if g:batch_replace_debug | echomsg "DEBUG: Automatically selecting current match on finish: " . string(l:current_match_pos) | endif
+                    call add(s:approved_matches, l:current_match_pos)
+                    let l:len = len(s:match_word)
+                    let l:id = matchaddpos('BatchReplace', [[l:current_match_pos[0], l:current_match_pos[1], l:len]])
+                    call add(s:approved_highlight_ids, l:id)
+                endif
+            endif
+            call s:PerformReplace()
+            call s:ExitSelectionMode()
+        elseif a:action == 'next_no_select'
+            if g:batch_replace_debug | echomsg "DEBUG: Moving to next match without selection." | endif
+            call s:HighlightNextMatch()
+        elseif a:action == 'prev_no_select'
+            if g:batch_replace_debug | echomsg "DEBUG: Moving to previous match without selection." | endif
+            call s:HighlightPreviousMatch()
+        elseif a:action == 'cancel'
+            if g:batch_replace_debug | echomsg "DEBUG: User cancelled the session." | endif
+            call s:ClearState()
+            call s:ExitSelectionMode()
+            echohl WarningMsg | echo "Batch replacement cancelled." | echohl None
+        endif
+    endif
+endfunction
+function! s:PerformReplace()
+    if g:batch_replace_debug | echomsg "DEBUG: s:PerformReplace() called." | endif
+    if empty(s:approved_matches)
+        echohl WarningMsg | echo "No instances selected for replacement." | echohl None
+        call s:ClearState()
+        if g:batch_replace_debug | echomsg "DEBUG: No approved matches, returning." | endif
+        return
+    endif
+    let l:replacement = input('Replace ' . len(s:approved_matches) . ' instance(s) with: ')
+    if empty(l:replacement)
+        echohl WarningMsg | echo "Replacement cancelled." | echohl None
+        call s:ClearState()
+        if g:batch_replace_debug | echomsg "DEBUG: Replacement cancelled by user." | endif
+        return
+    endif
+    if g:batch_replace_debug | echomsg "DEBUG: Replacement word: " . l:replacement | endif
+    let l:replaced_count = 0
+    for l:pos in reverse(s:approved_matches)
+        let l:lnum = l:pos[0]
+        let l:col = l:pos[1]
+        let l:line = getline(l:lnum)
+        if g:batch_replace_debug | echomsg "DEBUG: Replacing at line " . l:lnum . ", col " . l:col . ", original line: " . l:line | endif
+        let l:prefix = strpart(l:line, 0, l:col - 1)
+        let l:suffix = strpart(l:line, l:col - 1 + len(s:match_word))
+        call setline(l:lnum, l:prefix . l:replacement . l:suffix)
+        let l:replaced_count += 1
+        if g:batch_replace_debug | echomsg "DEBUG: Line after replacement: " . getline(l:lnum) | endif
+    endfor
+    call s:ClearState()
+    echohl MoreMsg | echo " " . l:replaced_count . " instance(s) replaced." | echohl None
+    if g:batch_replace_debug | echomsg "DEBUG: Replacement finished. " . l:replaced_count . " instances replaced." | endif
+endfunction
+execute 'vnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+execute 'nnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
 "------------------------------------------------------
 "" End of Importing.
 "------------------------------------------------------
