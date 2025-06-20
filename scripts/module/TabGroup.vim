@@ -377,11 +377,12 @@ function! TabGroupOpenList()
     call add(loc_list, {'text': ' -- Tab Group Selector -- ||', 'lnum': 0, 'valid': 0}) " Mark current group with lnum 1
     for i in range(len(group_names))
         let group_name = group_names[i]
+        " lnum 2 => foreground, 1 => background.
         if group_name == g:tabgroup_current_group_name
             let current_group_idx = i
-            call add(loc_list, {'text': group_name, 'lnum': 1, 'valid': 1}) " Mark current group with lnum 1
+            call add(loc_list, {'text': group_name, 'lnum': 2, 'valid': 1}) " Mark current group with lnum 1
         else
-            call add(loc_list, {'text': group_name, 'lnum': 0, 'valid': 0})
+            call add(loc_list, {'text': group_name, 'lnum': 1, 'valid': 0})
         endif
     endfor
 
