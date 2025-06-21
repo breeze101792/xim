@@ -25,20 +25,20 @@ if exists("g:loaded_batch_replace")
 endif
 let g:loaded_batch_replace = 1
 
-" --- Customization ---
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Settings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:batch_replace_select_key = '<C-n>'
 let g:batch_replace_ignore_key = '<C-i>'
-" let g:batch_replace_visual_key = '<Leader>mv'
-" let g:batch_replace_finish_key = '<Leader>mr' " New: Key to finish selection and perform replacement
 let g:batch_replace_finish_key = '<CR>' " New: Key to finish selection and perform replacement
 let g:batch_replace_next_key_no_select = '<Leader>mn' " New: Key to go to next match without selecting
 let g:batch_replace_prev_key_no_select = '<Leader>mp' " New: Key to go to previous match without selecting
-" let g:batch_replace_cancel_key = '<Leader>mq' " New: Key to cancel the current session
 let g:batch_replace_cancel_key = '<ESC>' " New: Key to cancel the current session
 let g:batch_replace_debug = 0 " Set to 1 to enable debug messages, 0 to disable
 
-" --- Script Implementation ---
-
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Variable
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Script-local variables to store state
 let s:matches = []
 let s:approved_matches = [] " Stores positions that the user agrees to replace
@@ -51,6 +51,17 @@ let s:active_session = 0 " Flag to indicate if a session is active
 " Highlight group for selected matches
 highlight default link BatchReplace Search
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Key Mappings
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" These global mappings act as entry points. Once a session starts,
+" buffer-local mappings defined in s:EnterSelectionMode() will take precedence.
+execute 'vnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+execute 'nnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Function
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Function to clear the current replacement state
 function! s:ClearState()
     if g:batch_replace_debug | echomsg "DEBUG: s:ClearState() called" | endif
@@ -380,10 +391,3 @@ function! s:PerformReplace()
     echohl MoreMsg | echo " " . l:replaced_count . " instance(s) replaced." | echohl None
     if g:batch_replace_debug | echomsg "DEBUG: Replacement finished. " . l:replaced_count . " instances replaced." | endif
 endfunction
-
-" --- Key Mappings ---
-" These global mappings act as entry points. Once a session starts,
-" buffer-local mappings defined in s:EnterSelectionMode() will take precedence.
-execute 'vnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
-execute 'nnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
-
