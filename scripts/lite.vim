@@ -196,6 +196,87 @@ function! PureToggle()
         setlocal nolist
     endif
 endfunc
+" -------------------------------------------
+"  Display FunctionName
+" -------------------------------------------
+"  FIXME, this is manual sync from Library.vim
+" This mapping assigns a variable to be the name of the function found by
+" GetCurrentFunction() then echoes it back so it isn't erased if Vim shifts your
+" location on screen returning to the line you started from in GetCurrentFunction()
+" map \func :let name = GetCurrentFunction()<CR> :echo name<CR>
+
+" Dictionary mapping filetypes to their function definition patterns.
+" Each pattern uses \zs and \ze to mark the start and end of the function name.
+let s:function_patterns = {
+    \ 'python': [
+    \   '^\s*\(async\s\+\)\?def\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'c': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'cpp': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'sh': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*()',
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*{', 
+    \   '^\s*\zs\(\w\+\)\ze\s*()',            
+    \ ],
+    \ 'lua': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*(',
+    \   '^\s*local\s\+function\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'vim': [
+    \   '^\s*fu\%[nction]!\?\s\+\(s:\)\?\zs\(\w\+\)\ze\s*()',
+    \ ],
+\}
+
+command! GetCurrentFunction call GetCurrentFunction()
+" GetCurrentFunction: Returns the name of the function enclosing the cursor.
+" Supports sh, python, c, lua, and vim. Extensible via s:function_patterns.
+function! GetCurrentFunction()
+    let l:pos = getpos('.')          " Save cursor position
+    let l:view = winsaveview()       " Save window view
+    let l:filetype = &filetype
+    let l:patterns = get(s:function_patterns, l:filetype, [])
+
+    if empty(l:patterns)
+        call cursor(l:pos)
+        call winrestview(l:view)
+        return ""
+    endif
+
+    " Go to the start of the current code block.
+    " This helps in finding the enclosing function by moving to the block's beginning.
+    try
+        normal! [{
+    catch /E/
+        " If [{ fails (e.g., at start of file or not in a block), stay at current position.
+    endtry
+
+    let l:start_line = line('.')
+
+    " Search backwards from the start of the current block for a function definition
+    for l:line_num in reverse(range(1, l:start_line))
+        let l:line_content = getline(l:line_num)
+        for l:pattern in l:patterns
+            let l:match = matchstr(l:line_content, l:pattern)
+            if !empty(l:match)
+                call cursor(l:pos)
+                call winrestview(l:view)
+                return l:match
+            endif
+        endfor
+    endfor
+
+    call cursor(l:pos)
+    call winrestview(l:view)
+    return ""
+endfun
+
+let g:StatusLine_extra_info_function = function('GetCurrentFunction')
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

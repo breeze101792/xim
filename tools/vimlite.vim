@@ -383,9 +383,67 @@ function! PureToggle()
         setlocal nolist
     endif
 endfunc
+let s:function_patterns = {
+    \ 'python': [
+    \   '^\s*\(async\s\+\)\?def\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'c': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'cpp': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'sh': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*()',
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*{', 
+    \   '^\s*\zs\(\w\+\)\ze\s*()',            
+    \ ],
+    \ 'lua': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*(',
+    \   '^\s*local\s\+function\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'vim': [
+    \   '^\s*fu\%[nction]!\?\s\+\(s:\)\?\zs\(\w\+\)\ze\s*()',
+    \ ],
+\}
+command! GetCurrentFunction call GetCurrentFunction()
+function! GetCurrentFunction()
+    let l:pos = getpos('.')          " Save cursor position
+    let l:view = winsaveview()       " Save window view
+    let l:filetype = &filetype
+    let l:patterns = get(s:function_patterns, l:filetype, [])
+    if empty(l:patterns)
+        call cursor(l:pos)
+        call winrestview(l:view)
+        return ""
+    endif
+    try
+        normal! [{
+    catch /E/
+    endtry
+    let l:start_line = line('.')
+    for l:line_num in reverse(range(1, l:start_line))
+        let l:line_content = getline(l:line_num)
+        for l:pattern in l:patterns
+            let l:match = matchstr(l:line_content, l:pattern)
+            if !empty(l:match)
+                call cursor(l:pos)
+                call winrestview(l:view)
+                return l:match
+            endif
+        endfor
+    endfor
+    call cursor(l:pos)
+    call winrestview(l:view)
+    return ""
+endfun
+let g:StatusLine_extra_info_function = function('GetCurrentFunction')
 "------------------------------------------------------
 "" Import from StatusLine.vim
 "------------------------------------------------------
+let g:StatusLine_extra_info_function = get(g:, 'StatusLine_extra_info_function', '')
 function! StatusLineGetCurrentMode()
     let l:mode = mode()
     let l:mode_name = ''
@@ -451,6 +509,9 @@ set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current m
 set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
 set statusline+=%8*\ %=                                    " Space
+if g:StatusLine_extra_info_function != ''
+    set statusline+=%8*\ %{g:StatusLine_extra_info_function()}\                     " Col, Rownumber/total (%)
+endif
 set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat
 set statusline+=%1*\ %2l:%-2c\ %{StatusLineGetFilePositon()}\                     " Col, Rownumber/total (%)
@@ -1596,6 +1657,8 @@ let s:current_match_idx = -1
 let s:current_match_highlight_id = -1 " ID for the single currently highlighted match
 let s:active_session = 0 " Flag to indicate if a session is active
 highlight default link BatchReplace Search
+execute 'vnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
+execute 'nnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
 function! s:ClearState()
     if g:batch_replace_debug | echomsg "DEBUG: s:ClearState() called" | endif
     if s:current_match_highlight_id != -1
@@ -1838,8 +1901,6 @@ function! s:PerformReplace()
     echohl MoreMsg | echo " " . l:replaced_count . " instance(s) replaced." | echohl None
     if g:batch_replace_debug | echomsg "DEBUG: Replacement finished. " . l:replaced_count . " instances replaced." | endif
 endfunction
-execute 'vnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
-execute 'nnoremap <silent>' g:batch_replace_select_key ':call <SID>BatchReplaceHandler("select")<CR>'
 "------------------------------------------------------
 "" End of Importing.
 "------------------------------------------------------

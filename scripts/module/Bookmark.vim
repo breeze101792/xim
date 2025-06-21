@@ -35,9 +35,9 @@ let g:bookmark_marking_enabled = 1
 let g:bookmark_center_jumped_line = 0
 
 " Define highlight group, 232~255 gray scal
-highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
-" highlight MarkedLine ctermbg=236 guibg=#303030
-" highlight MarkedLine ctermbg=240 guibg=#585858
+highlight BookMarkLine cterm=bold ctermbg=240 gui=bold guibg=#585858
+" highlight BookMarkLine ctermbg=236 guibg=#303030
+" highlight BookMarkLine ctermbg=240 guibg=#585858
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
@@ -67,7 +67,7 @@ function! MarkLine()
     let l:lnum = line('.')
     if !has_key(b:bookmark_marked_lines, l:lnum)
         " Highlight the current line
-        let l:matchid = matchadd('MarkedLine', '\%' . l:lnum . 'l')
+        let l:matchid = matchadd('BookMarkLine', '\%' . l:lnum . 'l')
         " Store line number and match ID
         let b:bookmark_marked_lines[l:lnum] = l:matchid
         " Record matched id
@@ -228,7 +228,7 @@ function! MarkSyncMarks()
         " Check If id exist.
         if !exists('w:match_ids') || !has_key(w:match_ids, l:lnum)
             " echom "Add ID:".matchid
-            call matchadd('MarkedLine', '\%' . l:lnum . 'l', 10, l:matchid)
+            call matchadd('BookMarkLine', '\%' . l:lnum . 'l', 10, l:matchid)
             " Record matched id
             if !exists('w:match_ids')
                 let w:match_ids = {}

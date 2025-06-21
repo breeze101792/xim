@@ -7,6 +7,7 @@
 " -------------------------------------------
 " Status line override
 " Tabline override
+let g:StatusLine_extra_info_function = get(g:, 'StatusLine_extra_info_function', '')
 
 " -------------------------------------------
 "  Status line override
@@ -99,6 +100,10 @@ set statusline+=%*
 set statusline+=%8*\ %=                                    " Space
 
 " Right
+" add extra info if exist.
+if g:StatusLine_extra_info_function != ''
+    set statusline+=%8*\ %{g:StatusLine_extra_info_function()}\                     " Col, Rownumber/total (%)
+endif
 " set statusline+=%5*\ %{&filetype} " FileType
 set statusline+=%5*\ %{(&filetype!=''?&filetype:'None')}   " FileType
 set statusline+=%5*\ \[%{(&fenc!=''?&fenc:&enc)}\|%{&ff}]\ " Encoding & Fileformat

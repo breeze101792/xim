@@ -114,8 +114,11 @@ function! IDE_UpdateEnv_CursorHold()
         " catch
         "     let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
         endtry
-    " else
-    "     let b:IDE_ENV_CURRENT_FUNC = CurrentFunction()
+    elseif &filetype == 'c' || &filetype == 'cpp' || &filetype == 'sh' || &filetype == 'lua' || &filetype == 'python' || &filetype == 'vim'
+        " Only call GetCurrentFunction for specific file types
+        let b:IDE_ENV_CURRENT_FUNC = GetCurrentFunction()
+    else
+        let b:IDE_ENV_CURRENT_FUNC = ''
     endif
 
     if exists('*lightline#update')

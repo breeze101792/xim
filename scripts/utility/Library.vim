@@ -54,56 +54,84 @@ function! VisualSelection()
     " echo join(lines, "\n")
     return join(lines, "\n")
 endfunction
-
 " -------------------------------------------
 "  Display FunctionName
 " -------------------------------------------
-"this mapping assigns a variable to be the name of the function found by
-"FunctionName() then echoes it back so it isn't erased if Vim shifts your
-"location on screen returning to the line you started from in FunctionName()
-" map \func :let name = FunctionName()<CR> :echo name<CR>
+" This mapping assigns a variable to be the name of the function found by
+" GetCurrentFunction() then echoes it back so it isn't erased if Vim shifts your
+" location on screen returning to the line you started from in GetCurrentFunction()
+" map \func :let name = GetCurrentFunction()<CR> :echo name<CR>
+
+" Dictionary mapping filetypes to their function definition patterns.
+" Each pattern uses \zs and \ze to mark the start and end of the function name.
+let s:function_patterns = {
+    \ 'python': [
+    \   '^\s*\(async\s\+\)\?def\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'c': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'cpp': [
+    \   '^\s*\(\h\w*\s\+\)\+\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \   '^\s*\zs\(\h\w*\)\ze\s*([^)]*)\s*{',
+    \ ],
+    \ 'sh': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*()',
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*{', 
+    \   '^\s*\zs\(\w\+\)\ze\s*()',            
+    \ ],
+    \ 'lua': [
+    \   '^\s*function\s\+\zs\(\w\+\)\ze\s*(',
+    \   '^\s*local\s\+function\s\+\zs\(\w\+\)\ze\s*(',
+    \ ],
+    \ 'vim': [
+    \   '^\s*fu\%[nction]!\?\s\+\(s:\)\?\zs\(\w\+\)\ze\s*()',
+    \ ],
+\}
 
 command! GetCurrentFunction call GetCurrentFunction()
+" GetCurrentFunction: Returns the name of the function enclosing the cursor.
+" Supports sh, python, c, lua, and vim. Extensible via s:function_patterns.
 function! GetCurrentFunction()
-    let strList = ["while", "foreach", "ifelse", "if else", "for", "if", "else", "try", "catch", "case", "switch"]
-    let counter = 0
-    let max_find = 5
-    let foundcontrol = 1
-    let position = ""
-    let pos=getpos(".")          " This saves the cursor position
-    let view=winsaveview()       " This saves the window view
-    while (foundcontrol)
-        let counter = counter + 1
-        if counter > max_find
-            call cursor(pos)
-            call winrestview(view)
-            return ""
-        endif
-        let foundcontrol = 0
-        normal [{
-        call search('\S','bW')
-        let tempchar = getline(".")[col(".") - 1]
-        if (match(tempchar, ")") >=0 )
-            normal %
-            call search('\S','bW')
-        endif
-        let tempstring = getline(".")
-        for item in strList
-            if( match(tempstring,item) >= 0 )
-                let position = item . " - " . position
-                let foundcontrol = 1
-                break
+    let l:pos = getpos('.')          " Save cursor position
+    let l:view = winsaveview()       " Save window view
+    let l:filetype = &filetype
+    let l:patterns = get(s:function_patterns, l:filetype, [])
+
+    if empty(l:patterns)
+        call cursor(l:pos)
+        call winrestview(l:view)
+        " return "[Unsupported Filetype: " . l:filetype . "]"
+        return ""
+    endif
+
+    " Go to the start of the current code block.
+    " This helps in finding the enclosing function by moving to the block's beginning.
+    try
+        normal! [{
+    catch /E/
+        " If [{ fails (e.g., at start of file or not in a block), stay at current position.
+    endtry
+
+    let l:start_line = line('.')
+
+    " Search backwards from the start of the current block for a function definition
+    for l:line_num in reverse(range(1, l:start_line))
+        let l:line_content = getline(l:line_num)
+        for l:pattern in l:patterns
+            let l:match = matchstr(l:line_content, l:pattern)
+            if !empty(l:match)
+                call cursor(l:pos)
+                call winrestview(l:view)
+                return l:match
             endif
         endfor
-        if(foundcontrol == 0)
-            call cursor(pos)
-            call winrestview(view)
-            return tempstring.position
-        endif
-    endwhile
-    call cursor(pos)
-    call winrestview(view)
-    return tempstring.position
+    endfor
+
+    call cursor(l:pos)
+    call winrestview(l:view)
+    return ""
 endfun
 
 " -------------------------------------------
@@ -171,25 +199,19 @@ endfunc
 "  Largefile
 " -------------------------------------------
 function! LargeFileMode()
-    " if getfsize(@%) > g:IDE_ENV_DEF_FILE_SIZE_THRESHOLD
-        setlocal syntax=OFF
-        setlocal nowrap
-        setlocal nofoldenable
-        setlocal nohlsearch
+    setlocal syntax=OFF
+    setlocal nowrap
+    setlocal nofoldenable
+    setlocal nohlsearch
 
-        " Set options:
-        "   eventignore+=FileType (no syntax highlighting etc
-        "   assumes FileType always on)
-        "   noswapfile (save copy of file)
-        "   bufhidden=unload (save memory when other file is viewed)
-        "   buftype=nowritefile (is read-only)
-        "   undolevels=-1 (no undo possible)
-        setlocal noswapfile bufhidden=unload buftype=nowrite undolevels=-1
-
-    "     set eventignore+=FileType
-    " else
-    "     set eventignore-=FileType
-    " endif
+    " Set options:
+    "   eventignore+=FileType (no syntax highlighting etc
+    "   assumes FileType always on)
+    "   noswapfile (save copy of file)
+    "   bufhidden=unload (save memory when other file is viewed)
+    "   buftype=nowritefile (is read-only)
+    "   undolevels=-1 (no undo possible)
+    setlocal noswapfile bufhidden=unload buftype=nowrite undolevels=-1
 endfunc
 " -------------------------------------------
 "  GetFileSize
