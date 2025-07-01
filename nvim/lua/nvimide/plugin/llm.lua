@@ -104,9 +104,9 @@ function get_avante_v0024()
                 },
                 google_gemini = {
                     __inherited_from = 'gemini',
-                    api_key_name = 'GEMINI_API_KEY_2',
+                    api_key_name = 'GEMINI_API_KEY',
 
-                    model = vim.g.IDE_CFG_LLM_GEMINI_MODEL,
+                    model = 'gemini-2.5-pro',
                     extra_request_body = {
                         generationConfig = {
                             temperature = 0,
@@ -119,7 +119,7 @@ function get_avante_v0024()
                     __inherited_from = 'gemini',
                     api_key_name = 'GEMINI_API_KEY_2',
 
-                    model = vim.g.IDE_CFG_LLM_GEMINI_MODEL,
+                    model = 'gemini-2.5-pro',
                     extra_request_body = {
                         generationConfig = {
                             temperature = 0,
