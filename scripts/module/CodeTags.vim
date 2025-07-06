@@ -24,9 +24,9 @@ if has('cscope')
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
 
-" command! CodeTagGenerateTags call CodeTagGenerateTags()
-command! CodeTagLoadTags call CodeTagLoadTags()
 command! CodeTagSetup call CodeTagSetup()
+command! CodeTagLoadTags call CodeTagLoadTags()
+command! CodeTagUpdateList call CodeTagUpdateList()
 command! CodeTagUpdateTags call CodeTagUpdateTags()
 
 """"    Variable
@@ -35,6 +35,7 @@ let g:codetag_folder_name='.vimproject'
 let g:codetag_ctag_name='tags'
 let g:codetag_proj_list_name='proj.files'
 let g:codetag_cscope_name='cscope.db'
+let g:codetag_source_extensions=['*.c', '*.cpp', '*.h', '*.hpp', '*.py', '*.sh', '*.lua']
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Function
@@ -57,7 +58,12 @@ endfunction
 
 " Function to generate source list
 function! CodeTagGenerateSourceList(search_path, src_list_path)
-    call system('find ' . a:search_path . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . a:src_list_path)
+    let name_conditions = []
+    for ext in g:codetag_source_extensions
+        call add(name_conditions, '-name "' . ext . '"')
+    endfor
+    let find_command = 'find ' . a:search_path . ' ' . join(name_conditions, ' -o ') . ' > ' . a:src_list_path
+    call system(find_command)
 endfunc
 
 " Function to generate source tags
@@ -147,6 +153,34 @@ function! CodeTagGenerateTags()
 
 endfunction
 
+" Function to generate source list
+function! CodeTagUpdateList()
+    let user_input=0
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+
+    " Create tags directory if it doesn't exist
+    " let tags_dir = root . '/tags'
+    let tags_dir = root . '/' . g:codetag_folder_name
+
+    if !isdirectory(tags_dir)
+        call system('mkdir -p ' . tags_dir)
+    endif
+
+    " Generate project list
+    let project_list_file = tags_dir . '/'.g:codetag_proj_list_name
+    " echom "Generate project srouce code list ".project_list_file
+    if ! filereadable(project_list_file)
+        echom "Generate project srouce code list ".project_list_file
+        call CodeTagGenerateSourceList(root, project_list_file)
+    endif
+
+    echo "Source list update finished."
+endfunction
+
 " Function to generate ctags and cscope databases
 function! CodeTagUpdateTags()
     let user_input=0
@@ -211,6 +245,7 @@ endfunction
 
 " Main function to setup ctags and cscope
 function! CodeTagSetup()
+    silent call CodeTagUpdateList()
     silent call CodeTagUpdateTags()
     silent call CodeTagLoadTags()
     echo "Tag setup finished."

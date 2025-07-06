@@ -25,27 +25,49 @@ let g:projectmanager_current_project_root=''
 "  Private Functions
 " -------------------------------------------
 function! ProjectManager_GetProjectRootPath()
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: starting"
+    endif
     " Search for .git/.repo/.vimproject for root path and return it.
-    let current_dir = getcwd()
+    let l:start_dir = getcwd()
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: start_dir=" . l:start_dir
+    endif
     let project_path = ""
 
     " Define a list of project root markers
     let l:project_markers = g:projectmanager_project_markers
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: project_markers=" . string(l:project_markers)
+    endif
 
     " Loop upwards until we find a marker or reach the root
     for marker in l:project_markers
+        if get(g:, 'projectmanager_debug', 0)
+            echom "ProjectManager_GetProjectRootPath: checking marker=" . marker
+        endif
+        let current_dir = l:start_dir
         while current_dir != '/' && !empty(current_dir)
+            if get(g:, 'projectmanager_debug', 0)
+                echom "ProjectManager_GetProjectRootPath: checking dir=" . current_dir . " for marker " . marker
+            endif
             if isdirectory(current_dir . '/' . marker)
                 let project_path = current_dir
+                if get(g:, 'projectmanager_debug', 0)
+                    echom "ProjectManager_GetProjectRootPath: found project_path=" . project_path
+                endif
                 break
-            endif
-            if !empty(project_path)
-                break " Found a marker, exit the while loop
             endif
             let current_dir = fnamemodify(current_dir, ':h') " Go up one directory
         endwhile
+        if !empty(project_path)
+            break " Found a marker, exit the for loop
+        endif
     endfor
 
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: returning project_path=" . project_path
+    endif
     return project_path
 endfunction
 
@@ -57,7 +79,7 @@ function! ProjectManagerInit()
     let l:project_root = ProjectManager_GetProjectRootPath()
 
     if empty(l:project_root)
-        echom "No project root found."
+        echom "No project root found.". l:project_root
         return
     endif
 
@@ -70,7 +92,7 @@ function! ProjectManagerInit()
     else
         " Project config directory does not exist, create it
         call mkdir(l:project_config_dir, "p")
-        echom "Created project config directory: " . l:project_config_dir
+        " echom "Created project config directory: " . l:project_config_dir
     endif
 
     let l:project_config_file = l:project_config_dir . '/' . g:projectmanager_project_config_name
@@ -78,13 +100,13 @@ function! ProjectManagerInit()
     if !filereadable(l:project_config_file)
         " Project config file does not exist, create it
         call writefile([], l:project_config_file)
-        echom "Created project config file: " . l:project_config_file
+        " echom "Created project config file: " . l:project_config_file
     else
         " Project config file already exists, do nothing
         echom "Project config file already exists: " . l:project_config_file
     endif
 
-    echom "Project: " . l:project_root
+    echom "Init project on " . l:project_root
 endfunc
 
 command! ProjectManagerEditConfig call ProjectManagerEditConfig()
