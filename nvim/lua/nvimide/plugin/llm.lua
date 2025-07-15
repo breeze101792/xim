@@ -216,6 +216,13 @@ function get_avante_v0024()
                     model = "qwen2.5-coder:14b-instruct-q6_K",
                 },
 
+                -- NOTE. disable it to avoid gcloud command not found.
+                vertex = {
+                    __inherited_from = 'gemini',
+                },
+                vertex_claude = {
+                    __inherited_from = 'gemini',
+                },
             },
         },
         -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
