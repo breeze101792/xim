@@ -15,11 +15,12 @@ function get_avante_v0024()
         -- lazy = false,
         -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
-        tag = "v0.0.25",
+        -- tag = "v0.0.25",
+        tag = "v0.0.27",
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
-                auto_focus_on_diff_view = true,
+                auto_focus_on_diff_view = false,
                 -- use_cwd_as_project_root = true,
                 -- enable_token_counting = false,
                 --[[
