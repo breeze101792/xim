@@ -503,8 +503,7 @@ hi! User5 ctermfg=007 ctermbg=008
 hi! User7 ctermfg=007 ctermbg=240
 hi! User8 ctermfg=007 ctermbg=236
 hi! User9 ctermfg=015 ctermbg=232
-set! statusline=
-set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
+set statusline=%{StatusLineUpdateColor()}                 " Changing the statusline color
 set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
 set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
@@ -778,7 +777,7 @@ augroup BookmarkSync
 augroup END
 let g:bookmark_marking_enabled = 1
 let g:bookmark_center_jumped_line = 0
-highlight MarkedLine cterm=bold ctermbg=DarkGrey gui=bold guibg=DarkGrey
+highlight BookMarkLine cterm=bold ctermbg=240 gui=bold guibg=#585858
 function! MarkingToggle()
     if g:bookmark_marking_enabled
         let g:bookmark_marking_enabled = 0
@@ -799,7 +798,7 @@ function! MarkLine()
     endif
     let l:lnum = line('.')
     if !has_key(b:bookmark_marked_lines, l:lnum)
-        let l:matchid = matchadd('MarkedLine', '\%' . l:lnum . 'l')
+        let l:matchid = matchadd('BookMarkLine', '\%' . l:lnum . 'l')
         let b:bookmark_marked_lines[l:lnum] = l:matchid
         if !exists('w:match_ids')
             let w:match_ids = {}
@@ -930,7 +929,7 @@ function! MarkSyncMarks()
     for l:lnum in keys(b:bookmark_marked_lines)
         let l:matchid = b:bookmark_marked_lines[l:lnum]
         if !exists('w:match_ids') || !has_key(w:match_ids, l:lnum)
-            call matchadd('MarkedLine', '\%' . l:lnum . 'l', 10, l:matchid)
+            call matchadd('BookMarkLine', '\%' . l:lnum . 'l', 10, l:matchid)
             if !exists('w:match_ids')
                 let w:match_ids = {}
             endif
@@ -961,13 +960,15 @@ if has('cscope')
     nnoremap <silent>cs :cscope find s <cword><CR>
     nnoremap <silent>ct :cscope find t <cword><CR>
 endif
-command! CodeTagLoadTags call CodeTagLoadTags()
 command! CodeTagSetup call CodeTagSetup()
+command! CodeTagLoadTags call CodeTagLoadTags()
+command! CodeTagUpdateList call CodeTagUpdateList()
 command! CodeTagUpdateTags call CodeTagUpdateTags()
 let g:codetag_folder_name='.vimproject'
 let g:codetag_ctag_name='tags'
 let g:codetag_proj_list_name='proj.files'
 let g:codetag_cscope_name='cscope.db'
+let g:codetag_source_extensions=['*.c', '*.cpp', '*.h', '*.hpp', '*.py', '*.sh', '*.lua']
 function! CodeTagGetProjectRoot()
     let git_root = system('git rev-parse --show-toplevel 2>/dev/null')
     if git_root != ''
@@ -980,7 +981,12 @@ function! CodeTagGetProjectRoot()
     return ''
 endfunction
 function! CodeTagGenerateSourceList(search_path, src_list_path)
-    call system('find ' . a:search_path . ' -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" > ' . a:src_list_path)
+    let name_conditions = []
+    for ext in g:codetag_source_extensions
+        call add(name_conditions, '-name "' . ext . '"')
+    endfor
+    let find_command = 'find ' . a:search_path . ' ' . join(name_conditions, ' -o ') . ' > ' . a:src_list_path
+    call system(find_command)
 endfunc
 function! CodeTagGenerateCtags(tag_path, src_list_path)
     if ! filereadable(a:src_list_path)
@@ -1041,6 +1047,24 @@ function! CodeTagGenerateTags()
         call CodeTagGenerateCscope(cscope_tags, project_list_file)
     endif
 endfunction
+function! CodeTagUpdateList()
+    let user_input=0
+    let root = CodeTagGetProjectRoot()
+    if root == ''
+        echo "Error: Could not determine project root"
+        return
+    endif
+    let tags_dir = root . '/' . g:codetag_folder_name
+    if !isdirectory(tags_dir)
+        call system('mkdir -p ' . tags_dir)
+    endif
+    let project_list_file = tags_dir . '/'.g:codetag_proj_list_name
+    if ! filereadable(project_list_file)
+        echom "Generate project srouce code list ".project_list_file
+        call CodeTagGenerateSourceList(root, project_list_file)
+    endif
+    echo "Source list update finished."
+endfunction
 function! CodeTagUpdateTags()
     let user_input=0
     let root = CodeTagGetProjectRoot()
@@ -1080,6 +1104,7 @@ function! CodeTagLoadTags()
     endif
 endfunction
 function! CodeTagSetup()
+    silent call CodeTagUpdateList()
     silent call CodeTagUpdateTags()
     silent call CodeTagLoadTags()
     echo "Tag setup finished."
@@ -1570,28 +1595,50 @@ let g:projectmanager_project_config_name='proj.vim'
 let g:projectmanager_project_markers=[g:projectmanager_project_folder_name, '.repo', '.git']
 let g:projectmanager_current_project_root=''
 function! ProjectManager_GetProjectRootPath()
-    let current_dir = getcwd()
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: starting"
+    endif
+    let l:start_dir = getcwd()
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: start_dir=" . l:start_dir
+    endif
     let project_path = ""
     let l:project_markers = g:projectmanager_project_markers
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: project_markers=" . string(l:project_markers)
+    endif
     for marker in l:project_markers
+        if get(g:, 'projectmanager_debug', 0)
+            echom "ProjectManager_GetProjectRootPath: checking marker=" . marker
+        endif
+        let current_dir = l:start_dir
         while current_dir != '/' && !empty(current_dir)
+            if get(g:, 'projectmanager_debug', 0)
+                echom "ProjectManager_GetProjectRootPath: checking dir=" . current_dir . " for marker " . marker
+            endif
             if isdirectory(current_dir . '/' . marker)
                 let project_path = current_dir
+                if get(g:, 'projectmanager_debug', 0)
+                    echom "ProjectManager_GetProjectRootPath: found project_path=" . project_path
+                endif
                 break
-            endif
-            if !empty(project_path)
-                break " Found a marker, exit the while loop
             endif
             let current_dir = fnamemodify(current_dir, ':h') " Go up one directory
         endwhile
+        if !empty(project_path)
+            break " Found a marker, exit the for loop
+        endif
     endfor
+    if get(g:, 'projectmanager_debug', 0)
+        echom "ProjectManager_GetProjectRootPath: returning project_path=" . project_path
+    endif
     return project_path
 endfunction
 command! ProjectManagerInit call ProjectManagerInit()
 function! ProjectManagerInit()
     let l:project_root = ProjectManager_GetProjectRootPath()
     if empty(l:project_root)
-        echom "No project root found."
+        echom "No project root found.". l:project_root
         return
     endif
     let l:project_config_dir = l:project_root . '/' . g:projectmanager_project_folder_name
@@ -1600,16 +1647,14 @@ function! ProjectManagerInit()
         return
     else
         call mkdir(l:project_config_dir, "p")
-        echom "Created project config directory: " . l:project_config_dir
     endif
     let l:project_config_file = l:project_config_dir . '/' . g:projectmanager_project_config_name
     if !filereadable(l:project_config_file)
         call writefile([], l:project_config_file)
-        echom "Created project config file: " . l:project_config_file
     else
         echom "Project config file already exists: " . l:project_config_file
     endif
-    echom "Project: " . l:project_root
+    echom "Init project on " . l:project_root
 endfunc
 command! ProjectManagerEditConfig call ProjectManagerEditConfig()
 function! ProjectManagerEditConfig()

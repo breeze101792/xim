@@ -91,9 +91,10 @@ hi! User7 ctermfg=007 ctermbg=240
 hi! User8 ctermfg=007 ctermbg=236
 hi! User9 ctermfg=015 ctermbg=232
 
-set! statusline=
+" some version not allow to set null for it
+" set! statusline=
 " Left
-set statusline+=%{StatusLineUpdateColor()}                 " Changing the statusline color
+set statusline=%{StatusLineUpdateColor()}                 " Changing the statusline color
 set statusline+=%1*\ %{toupper(StatusLineGetCurrentMode())}          " Current mode
 set statusline+=%8*\ %<%F\ %{StatusLineGetReadOnly()}\ %m\ %w\       " File+path
 set statusline+=%*
