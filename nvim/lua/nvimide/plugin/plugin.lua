@@ -115,7 +115,7 @@ end
 local impl_tab_completion = function(impl)
     local vim_plugin_path = options.plugin_path
     if impl == "coc" then
-        return { "coc"     , dir = vim_plugin_path .. "coc.nvim"}
+        return { "coc"     , dir = vim_plugin_path .. "coc.nvim" , event = "VeryLazy"}
     elseif impl == "supertab" then
         return { "supertab"     , dir = vim_plugin_path .. "supertab"  ,
         keys = {
