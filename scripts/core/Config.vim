@@ -29,7 +29,7 @@ let g:IDE_CFG_IMPL_COMPLETION                = get(g:, 'IDE_CFG_IMPL_COMPLETION'
 
 "" LLM
 "" FIXME, remove IDE_CFG_LLM_IMPL, it's for legacy name.
-let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante")
+let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante") " deprecated
 let g:IDE_CFG_IMPL_LLM                       = get(g:, 'IDE_CFG_IMPL_LLM', g:IDE_CFG_LLM_IMPL)
 let g:IDE_CFG_LLM_PROVIDER                   = get(g:, 'IDE_CFG_LLM_PROVIDER', "LLMLocal")
 

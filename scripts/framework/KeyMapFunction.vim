@@ -100,7 +100,7 @@ nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
 " nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
 " nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
 
-if g:IDE_CFG_IMPL_COMPLETION == "nvim"
+if g:IDE_CFG_IMPL_COMPLETION == "coc"
     " coc
     " ctrl-j, next Snippet
     " Tab key to select completion (replaces SuperTab)
@@ -137,8 +137,7 @@ if g:IDE_CFG_IMPL_COMPLETION == "nvim"
 
     " Toggle Inlay Hints (Parameter type hints)
     nmap <leader>i :CocCommand document.toggleInlayHint<CR>
-else
-
+elseif g:IDE_CFG_IMPL_COMPLETION == "supertab"
     " supertab
     imap <script> <Plug>SuperTabForward <c-r>=SuperTab('n')<cr>
     imap <script> <Plug>SuperTabBackward <c-r>=SuperTab('p')<cr>

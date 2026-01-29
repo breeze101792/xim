@@ -107,7 +107,19 @@ function get_avante()
                         max_tokens = 1000000 - token_reserve,
                     },
                 },
-                google_gemini = {
+                google_gemini_flash_3 = {
+                    __inherited_from = 'gemini',
+                    api_key_name = 'GEMINI_API_KEY',
+
+                    model = 'gemini-3-flash-preview',
+                    extra_request_body = {
+                        generationConfig = {
+                            temperature = 0,
+                        },
+                        max_tokens = 1000000 - token_reserve,
+                    }
+                },
+                google_gemini_pro_2_5 = {
                     __inherited_from = 'gemini',
                     api_key_name = 'GEMINI_API_KEY',
 
@@ -120,7 +132,7 @@ function get_avante()
                     }
                 },
                 -- for second google account
-                google_gemini_2 = {
+                google_gemini_pro_2_5 = {
                     __inherited_from = 'gemini',
                     api_key_name = 'GEMINI_API_KEY_2',
 
@@ -160,29 +172,6 @@ function get_avante()
                 },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
-                paid_ort_google_gemini_25_flash_preview = {
-                    __inherited_from = 'openai',
-                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    -- enable_cursor_planning_mode = true,
-
-                    model = 'google/gemini-2.5-flash-preview',
-                    max_tokens = 1048576 - token_reserve,
-                },
-                ort_google_gemini_20_flash = {
-                    __inherited_from = 'openai',
-                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    -- enable_cursor_planning_mode = true,
-
-                    model = 'google/gemini-2.0-flash-exp:free',
-                    max_tokens = 1048576 - token_reserve,
-                    -- max_completion_tokens = 120000,
-                },
                 ort_deepseek_v3 = {
                     __inherited_from = 'openai',
                     endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,

@@ -731,6 +731,9 @@ function! IdeInfo()
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_IMPL_LLM '               , g:IDE_CFG_IMPL_LLM)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_IMPL_COMPLETION '        , g:IDE_CFG_IMPL_COMPLETION)
 
+    let msg=msg . sep . printf('')
+    let msg=msg . sep . printf('%s: %s', 'Note', 'Use reload command if value not expected on neovim.')
+
     echo msg
 endfunc
 

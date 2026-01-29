@@ -115,7 +115,7 @@ end
 local impl_tab_completion = function(impl)
     local vim_plugin_path = options.plugin_path
     if impl == "coc" then
-        return { "coc"     , dir = vim_plugin_path .. "coc.nvim", lazy = false }
+        return { "coc"     , dir = vim_plugin_path .. "coc.nvim"}
     elseif impl == "supertab" then
         return { "supertab"     , dir = vim_plugin_path .. "supertab"  ,
         keys = {
@@ -253,7 +253,7 @@ function M.init()
 
     ----    Plugins Impls
     ----------------------------------------------------------------
-    table.insert(lazy_plugin, impl_tab_completion(vim.g.IDE_CFG_COMPLETION_IMPL))
+    table.insert(lazy_plugin, impl_tab_completion(vim.g.IDE_CFG_IMPL_COMPLETION))
 
     local llm = require('nvimide.plugin.llm')
     table.insert(lazy_plugin, llm.get_impl(vim.g.IDE_CFG_IMPL_LLM))
