@@ -453,6 +453,29 @@ let g:qfenter_keymap.hopen = ['h']
 let g:qfenter_keymap.topen = ['t']
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Coc.nvim
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" let coc use clangd
+let g:coc_global_extensions = ['coc-clangd']
+
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+function! ShowDocumentation()
+  if CocAction('hasProvider', 'hover')
+    call CocActionAsync('doHover')
+  else
+    call feedkeys('K', 'in')
+  endif
+endfunction
+
+" [Parameter Hint] Trigger settings
+" When entering function parameters (e.g., after typing a left parenthesis), use a floating window to show the Signature
+autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    pathogen
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load pathogen

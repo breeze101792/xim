@@ -287,6 +287,27 @@ function! s:CMIf(content)
     call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
     call append('.', l:text)
 endfunction
+" -------------------------------------------
+"  C Macro Include
+" -------------------------------------------
+command! -nargs=? CMInclude :call <SID>CMInclude(<q-args>)
+function! s:CMInclude(content)
+    let l:indent = repeat(' ', indent('.'))
+    let l:tmpl=a:content
+    if l:tmpl == ""
+        let l:tmpl="EXAMPLE_H"
+    endif
+
+    let l:text = [
+                \ "#ifndef <TMPL>",
+                \ "#define <TMPL>",
+                \ "",
+                \ "#endif //<TMPL>",
+                \ ""
+                \ ]
+    call map(l:text, {k, v -> l:indent . substitute(v, '\C<TMPL>', l:tmpl, 'g')})
+    call append('.', l:text)
+endfunction
 " ===========================================
 " Python Function
 " ===========================================

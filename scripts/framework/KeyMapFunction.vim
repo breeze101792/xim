@@ -100,6 +100,52 @@ nnoremap <silent>gn :lua vim.lsp.diagnostic.goto_next()<CR>
 " nnoremap <silent>gs :lua vim.lsp.buf.signature_help()<CR>
 " nnoremap <silent>gf :lua vim.lsp.buf.format()<CR>
 
+if g:IDE_CFG_IMPL_COMPLETION == "nvim"
+    " coc
+    " ctrl-j, next Snippet
+    " Tab key to select completion (replaces SuperTab)
+    inoremap <silent><expr> <TAB>
+                \ coc#pum#visible() ? coc#pum#next(1) :
+                \ CheckBackspace() ? "\<Tab>" :
+                \ coc#refresh()
+    inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+    " Enter to confirm completion
+    inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
+
+    " Manually trigger parameter hints (press Ctrl+f)
+    inoremap <silent> <C-f> <C-r>=CocActionAsync('showSignatureHelp')<CR>
+
+    " Diagnostic navigation (if there are red errors, press [g and ]g to jump)
+    nmap <silent> [g <Plug>(coc-diagnostic-prev)
+    nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+    " Code navigation (Go to definition)
+    " nmap <silent> gd <Plug>(coc-definition)
+    " nmap <silent> gy <Plug>(coc-type-definition)
+
+    nnoremap <silent> K :call ShowDocumentation()<CR>
+
+    " Refactor (Rename) - Variable renaming tool
+    nmap <leader>rn <Plug>(coc-rename)
+
+    " Format - Keep code clean
+    " nmap <leader>f  <Plug>(coc-format)
+
+    " Quick Fix - e.g. automatically add missing #include
+    " nmap <leader>qf  <Plug>(coc-fix-current)
+
+    " Toggle Inlay Hints (Parameter type hints)
+    nmap <leader>i :CocCommand document.toggleInlayHint<CR>
+else
+
+    " supertab
+    imap <script> <Plug>SuperTabForward <c-r>=SuperTab('n')<cr>
+    imap <script> <Plug>SuperTabBackward <c-r>=SuperTab('p')<cr>
+    imap <silent> <tab> <Plug>SuperTabForward
+endif
+
+
 " " srcexpl
 " nnoremap <silent><Leader>t :SrcExplRefresh<CR>
 
@@ -140,11 +186,6 @@ nnoremap <silent>tf :CCTreeTraceForward<CR>
 nnoremap <silent>tr :CCTreeTraceReverse<CR>
 " Load db from cscope
 nnoremap <silent>ts :CCTreeSetup<CR>
-
-" supertab
-" imap <script> <Plug>SuperTabForward <c-r>=SuperTab('n')<cr>
-" imap <script> <Plug>SuperTabBackward <c-r>=SuperTab('p')<cr>
-" imap <silent> <tab> <Plug>SuperTabForward
 
 " vim easy-grep
 " map <silent> <Leader>vo <plug>EgMapGrepOptions

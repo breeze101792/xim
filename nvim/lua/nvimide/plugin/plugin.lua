@@ -5,11 +5,12 @@ M.version = "0.1"
 
 ---@class NvimideOptions
 local defaults = {
+    plugin_path = "~/.vim/plugins/",
 }
 
 
 ---@type NvimideOptions
-local options
+local options = defaults
 ----------------------------------------------------------------
 ----    Utility
 ----------------------------------------------------------------
@@ -108,6 +109,22 @@ local lspui = function(opts)
         float={border=_border}
     }
 end
+----------------------------------------------------------------
+----    Plugins
+----------------------------------------------------------------
+local impl_tab_completion = function(impl)
+    local vim_plugin_path = options.plugin_path
+    if impl == "coc" then
+        return { "coc"     , dir = vim_plugin_path .. "coc.nvim", lazy = false }
+    elseif impl == "supertab" then
+        return { "supertab"     , dir = vim_plugin_path .. "supertab"  ,
+        keys = {
+            { "<tab>", "<Plug>SuperTabForward", desc = "SuperTabForward", mode = {"i"} },
+        },}
+    else
+        return nil
+    end
+end
 
 ----------------------------------------------------------------
 ----    Main
@@ -145,7 +162,7 @@ end
 ----------------------------------------------------------------
 function M.init()
     -- TODO, Add support for lazy.nvim loading
-    local vim_plugin_path='~/.vim/plugins/'
+    local vim_plugin_path = options.plugin_path
 
     -- vim.opt.runtimepath:prepend(vim_plugin_path .. "lazy.nvim")
     vim.opt.runtimepath:append(vim_plugin_path .. "lazy.nvim")
@@ -216,10 +233,6 @@ function M.init()
             { "<C-n>", "<Plug>(VM-Find-Under)", desc = "VM-Find-Under", mode = {"n"} },
             { "<C-n>", "<Plug>(VM-Find-Subword-Under)", desc = "VM-Find-Subword-Under", mode = {"v"} },
         },},
-        { "supertab"     , dir = vim_plugin_path .. "supertab"  ,
-        keys = {
-            { "<tab>", "<Plug>SuperTabForward", desc = "SuperTabForward", mode = {"i"} },
-        },},
         { "vim-surround" , dir = vim_plugin_path .. "vim-surround",
         keys = {
             { "cs", "<Plug>Csurround", desc = "Csurround", mode = {"n"} },
@@ -237,10 +250,16 @@ function M.init()
         -- Others
         -- { "srcexpl"         , dir = vim_plugin_path .. "srcexpl"         , lazy = true , cmd = {"SrcExplRefresh"        , "SrcExplToggle"} } ,
     }
+
+    ----    Plugins Impls
+    ----------------------------------------------------------------
+    table.insert(lazy_plugin, impl_tab_completion(vim.g.IDE_CFG_COMPLETION_IMPL))
+
     local llm = require('nvimide.plugin.llm')
+    table.insert(lazy_plugin, llm.get_impl(vim.g.IDE_CFG_IMPL_LLM))
 
-    table.insert(lazy_plugin,llm.get_impl(vim.g.IDE_CFG_LLM_IMPL))
-
+    ----    Plugins Opions
+    ----------------------------------------------------------------
     local lazy_opts = {
         defaults = {
             -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
@@ -284,6 +303,7 @@ end
 
 ---@param opts? NvimideOptions
 function M.setup(opts)
+    options = vim.tbl_deep_extend("force", defaults, opts or {})
     -- print("nvimide plugin setup")
     M.init()
 end

@@ -313,8 +313,10 @@ end
 function LLM.get_impl(impl)
     if impl == "avante" then
         return get_avante()
-    else
+    elseif impl == "gen" then
         return get_gen()
+    else
+        return {}
     end
 end
 

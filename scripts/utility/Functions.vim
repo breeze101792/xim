@@ -608,6 +608,54 @@ function! GenerateCachedColorScheme()
     silent! source ~/.vim/tools/save_colorscheme.vim
 endfunction
 command! GenerateCachedColorScheme call GenerateCachedColorScheme()
+" -------------------------------------------
+"  Make command
+" -------------------------------------------
+" Smarter Make Command
+" 1. Search upward for 'Makefile'
+" 2. Execute make -C <directory>
+" 3. Accept arguments (e.g., :M clean, :M all)
+
+function! s:RunMake(args)
+    " 1. Search upward for 'Makefile'
+    let l:makefile = findfile('Makefile', expand('%:p:h') . ';')
+    let l:other_args = ' '
+    " let l:other_args = '--no-print-directory'
+
+    " 2. Fallback to current dir if not found
+    if l:makefile ==# ''
+        echo "Makefile not found! Running make in current dir..."
+        let l:cmd = 'make ' . a:args . ' ' . l:other_args
+    else
+        let l:make_dir = fnamemodify(l:makefile, ':p:h')
+        echo "Executing: make -C " . l:make_dir . " " . a:args . ' ' . l:other_args
+        let l:cmd = 'make -C ' . l:make_dir . ' ' . a:args . ' ' . l:other_args
+    endif
+
+    " 3. Execute make silently (avoid 'Press ENTER') but capture output
+    " The '!' prevents jumping to the first error automatically
+    execute 'make! ' . substitute(l:cmd, '^make', '', '')
+
+    " if v:shell_error != 0
+    "     return
+    " endif
+
+    " 4. 【Change here】Always open Quickfix window (height 10)
+    botright copen 10
+
+    " 5. Force redraw to clear command line message
+    redraw!
+    
+    " Optional: Print a success message if no errors
+    if len(getqflist()) == 0
+        echo "Build Success!"
+    endif
+endfunction
+
+" Define command :M
+command! -nargs=* Make call s:RunMake(<q-args>)
+" force replace make with Make
+cnoreabbrev <expr> make (getcmdtype() == ':' && getcmdline() =~ '^make') ? 'Make' : 'make'
 
 " -------------------------------------------
 "  info
@@ -678,6 +726,10 @@ function! IdeInfo()
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_BOOKMARK '            , g:IDE_MDOULE_BOOKMARK)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_STATUSLINE '          , g:IDE_MDOULE_STATUSLINE)
     let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_MDOULE_HIGHLIGHTWORD '       , g:IDE_MDOULE_HIGHLIGHTWORD)
+
+    let msg=msg . sep . printf("%s"               , "[IMPL]")
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_IMPL_LLM '               , g:IDE_CFG_IMPL_LLM)
+    let msg=msg . sep . printf('    %- 32s: %s'   , 'IDE_CFG_IMPL_COMPLETION '        , g:IDE_CFG_IMPL_COMPLETION)
 
     echo msg
 endfunc
