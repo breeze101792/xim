@@ -30,9 +30,15 @@ local lspui = function(opts)
         }
     )
 
-    vim.diagnostic.config{
-        float={border=_border}
-    }
+    -- config neovim diagnostic
+    vim.diagnostic.config({
+        float={border=_border},
+        -- virtual_text = false, -- Turn off trailing text
+        virtual_text = true, -- Turn off trailing text
+        signs = true,        -- Keep left red/yellow dots
+        underline = true,    -- Keep error underlines
+        update_in_insert = false, -- Do not update while typing to avoid interference
+    })
 end
 
 -- Define after LSP attach to a Buffer
