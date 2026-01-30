@@ -402,6 +402,8 @@ let g:bufExplorerSortBy='name'
 
 """""    Ale
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ale_disable_lsp = 1 " let ale do what it need to do.
+let g:ale_hover_cursor = 0
 " let g:ale_lint_on_enter = 0
 " let g:ale_set_signs = 1
 " let g:ale_sign_error = '◈'
@@ -410,20 +412,22 @@ let g:bufExplorerSortBy='name'
 " let g:ale_echo_msg_error_str = 'E'
 " let g:ale_echo_msg_warning_str = 'W'
 " let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-"  let g:airline#extensions#ale#error_symbol = 'E'
-"  let g:airline#extensions#ale#warning_symbol = 'W'
-" let g:ale_pattern_options = {
-"             \   '.*\.sh$': {'ale_enabled': 0},
-"             \   '.*\.json$': {'ale_enabled': 0},
-"             \   '.*some/folder/.*\.js$': {'ale_enabled': 0},
-"             \}
+
 let g:ale_linters = {
             \   'cpp': ['cppcheck'],
             \   'c': ['cppcheck'],
-            \   'python': ['pylint'],
+            \   'python': [],
+            \   'sh': ['shellcheck'],
             \}
+" for python leave it to native lsp.
+" \   'python': ['pylint'],
+
+"" C/CPP optons.
 " let g:ale_c_cppcheck_options='-f -q --std=c99 --enable=unusedFunction'
-let g:ale_c_cppcheck_options='-f -q --std=c99'
+" let g:ale_c_cppcheck_options='-f -q --std=c99'
+
+let g:ale_c_cppcheck_options='--enable=all --std=c99 --inline-suppr -q'
+let g:ale_cpp_cppcheck_options='--enable=all --std=c++11 --inline-suppr -q'
 
 """"    TComment
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

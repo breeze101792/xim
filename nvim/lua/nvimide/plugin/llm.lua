@@ -19,7 +19,7 @@ function get_avante()
 
     return {
         "yetone/avante.nvim",
-        event = "VeryLazy",
+        event = "InsertEnter",
         -- lazy = false,
         -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
@@ -29,6 +29,8 @@ function get_avante()
             behaviour = {
                 auto_apply_diff_after_generation = true,
                 auto_focus_on_diff_view = false,
+                auto_retry = false,
+                auto_suggestions = false,
                 -- use_cwd_as_project_root = true,
                 -- enable_token_counting = false,
                 --[[
@@ -178,6 +180,34 @@ function get_avante()
                     model = vim.g.IDE_CFG_LLM_OPENWRT_MODEL,
                     -- max_tokens = 1000000 - token_reserve,
                 },
+                ort_deepseek_r1t2 = {
+                    __inherited_from = 'openai',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    -- enable_cursor_planning_mode = true,
+
+                    model = 'tngtech/deepseek-r1t2-chimera:free',
+                    extra_request_body = {
+                        max_completion_tokens = 163840 - token_reserve,
+                    },
+                    -- max_completion_tokens = 120000,
+                },
+                ort_qwen_3_coder = {
+                    __inherited_from = 'openai',
+                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
+                    api_key_name = 'OPENROUTER_API_KEY',
+
+                    disable_tools = true,
+                    -- enable_cursor_planning_mode = true,
+
+                    model = 'qwen/qwen3-coder:free',
+                    extra_request_body = {
+                        max_completion_tokens = 262000 - token_reserve,
+                    },
+                    -- max_completion_tokens = 120000,
+                },
                 -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
                 -- max_completion_tokens => set to max_tokens - 10,000
                 ort_deepseek_v3 = {
@@ -210,6 +240,16 @@ function get_avante()
                     -- max_completion_tokens = 150000,
                 },
                 -- Ollama --
+                ollama_qwen3_1_7b = {
+                    __inherited_from = "openai",
+                    api_key_name = "",
+                    endpoint = "http://127.0.0.1:11434/v1",
+
+                    -- disable_tools = true,
+                    enable_cursor_planning_mode = true,
+                    model = "qwen3:1.7b",
+                    timeout = 30000,
+                },
                 ollama_qwen25_coder_1_5b = {
                     __inherited_from = "openai",
                     api_key_name = "",
@@ -218,6 +258,7 @@ function get_avante()
                     -- disable_tools = true,
                     enable_cursor_planning_mode = true,
                     model = "qwen2.5-coder:1.5b",
+                    timeout = 30000,
                 },
                 ollama_qwen25_coder_14b_q6 = {
                     __inherited_from = "openai",
@@ -227,6 +268,7 @@ function get_avante()
                     -- disable_tools = true,
                     enable_cursor_planning_mode = true,
                     model = "qwen2.5-coder:14b-instruct-q6_K",
+                    timeout = 30000,
                 },
                 -- NOTE. disable it to avoid gcloud command not found.
                 vertex = {
@@ -289,6 +331,7 @@ function get_gen()
     local vim_plugin_path='~/.vim/plugins/'
     return {
         "gen.nvim", dir = vim_plugin_path .. "gen.nvim", lazy = true, cmd = "Gen",
+        event = "InsertEnter",
         opts = {
             model = vim.g.IDE_CFG_LLM_MODEL, -- The default model to use.
             quit_map = "q", -- set keymap for close the response window

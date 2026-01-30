@@ -11,72 +11,6 @@ local options = defaults
 
 ----    Lsp configs
 ----------------------------------------------------------------
--- 定義當 LSP 連結到 Buffer 時要做的事
-local on_attach = function(client, bufnr)
-    -- Activate signature display
-    require("lsp_signature").on_attach({
-        bind = true,
-        handler_opts = { border = "rounded" },
-    }, bufnr)
-
-    -- Key settings
-    --[[
-    local opts = { noremap=true, silent=true, buffer=bufnr }
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-    --]]
-end
-
-local lspclangd = function(opts)
-    local lspconfig = require 'lspconfig'
-
-    if vim.fn.executable('clangd') == false then
-        -- print("clangd not exist.")
-        return
-    end
-
-    lspconfig.clangd.setup({
-        filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" },
-        on_attach = on_attach,
-        cmd = { "clangd", "--background-index" },
-        -- single_file_support = false,
-        -- Only found compile_commands for running
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
-
-    })
-end
-
-local lspccls = function(opts)
-    local lspconfig = require 'lspconfig'
-
-    if vim.fn.executable('ccls') == false then
-        -- print("ccls exist.")
-        return
-    end
-
-    lspconfig.ccls.setup {
-        filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
-        on_attach = on_attach,
-        -- single_file_support = false,
-        init_options = {
-            compilationDatabaseDirectory = "build";
-            index = {
-                threads = 0;
-            };
-            clang = {
-                excludeArgs = { "-frounding-math"} ;
-            };
-        },
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", ".ccls")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
-    }
-end
-
-
 local lspui = function(opts)
     local _border = "single"
 
@@ -96,6 +30,213 @@ local lspui = function(opts)
         float={border=_border}
     }
 end
+
+-- Define after LSP attach to a Buffer
+local on_attach = function(client, bufnr)
+    -- Activate signature display
+    require("lsp_signature").on_attach({
+        bind = true,
+        handler_opts = { border = "rounded" },
+    }, bufnr)
+
+    -- Key settings
+    --[[
+    local opts = { noremap=true, silent=true, buffer=bufnr }
+    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+    --]]
+end
+
+local lsp_clangd = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('clangd') == false then
+        -- print("clangd don't exist.")
+        return
+    end
+
+    lspconfig.clangd.setup({
+        filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+        on_attach = on_attach,
+        cmd = { "clangd", "--background-index" },
+        -- single_file_support = false,
+        -- Only found compile_commands for running
+        root_dir = function(fname)
+            return require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(fname)
+            -- or require("lspconfig.util").find_git_ancestor(fname)
+        end,
+
+    })
+end
+
+local lsp_ccls = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('ccls') == false then
+        -- print("ccls don't exist.")
+        return
+    end
+
+    lspconfig.ccls.setup({
+        filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
+        on_attach = on_attach,
+        -- single_file_support = false,
+        init_options = {
+            compilationDatabaseDirectory = "build";
+            index = {
+                threads = 0;
+            };
+            clang = {
+                excludeArgs = { "-frounding-math"} ;
+            };
+        },
+        root_dir = function(fname)
+            return require("lspconfig.util").root_pattern("compile_commands.json", ".ccls")(fname)
+            -- or require("lspconfig.util").find_git_ancestor(fname)
+        end,
+    })
+end
+local lsp_pyright = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('basedpyright') == false then
+        -- print("basedpyright don't exist.")
+        return
+    end
+
+    lspconfig.basedpyright.setup({
+        filetypes = { 'python' },
+        on_attach = on_attach,
+        settings = {
+            basedpyright = {
+                analysis = {
+                    autoSearchPaths = true,
+                    diagnosticMode = "openFilesOnly",
+                    useLibraryCodeForTypes = true,
+                    typeCheckingMode = "basic", -- If it's too heavy, set to "off"
+                },
+            },
+        },
+        root_dir = function(fname)
+            return require("lspconfig.util").root_pattern(".venv", ".git")(fname)
+        end,
+    })
+
+end
+local lsp_lua = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('lua_ls') == false then
+        -- print("ccls exist.")
+        return
+    end
+
+    lspconfig.lua_ls.setup({
+        filetypes = { "lua"},
+        on_attach = on_attach,
+        settings = {
+            Lua = {
+                runtime = {
+                    -- tell LSP that you use LuaJIT (Neovim build-in)
+                    version = 'LuaJIT',
+                },
+                diagnostics = {
+                    -- Core: Let LSP recognize "vim" global variable to avoid errors
+                    globals = { 'vim' },
+                },
+                workspace = {
+                    -- Allow LSP to read Neovim's runtime files for API completion
+                    library = vim.api.nvim_get_runtime_file("", true),
+                    checkThirdParty = false, -- Disable annoying third-party checks
+                },
+                telemetry = {
+                    enable = false, -- Disable telemetry for privacy reasons
+                },
+            },
+        },
+        root_dir = function(fname)
+            return require("lspconfig.util").root_pattern(".git")(fname)
+        end,
+    })
+end
+local lsp_bashls = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('bashls') == false then
+        -- print("bashls don't exist.")
+        return
+    end
+
+    lspconfig.bashls.setup({
+        filetypes = { "sh", "bash" },
+        on_attach = on_attach,
+        --[[
+        settings = {
+            bashIde = {
+                shellcheckArguments = table.concat({
+                    "-e", "SC2154", -- Variable not declared (e.g., from external source)
+                    "-e", "SC2034", -- Variable defined but not used
+                    "-e", "SC2086", -- Double quote to prevent globbing and word splitting
+                    "-e", "SC1091", -- Can't follow non-constant source
+                    "-e", "SC2181", -- Check exit code directly (common but discouraged)
+                    "-e", "SC2046", -- Quote to prevent word splitting
+                }, " ")
+            },
+        },
+        --]]
+        root_dir = function(fname)
+            return require("lspconfig.util").root_pattern(".git")(fname)
+        end,
+    })
+end
+local lsp_rust = function(opts)
+    local lspconfig = require 'lspconfig'
+
+    if vim.fn.executable('rust_analyzer') == false then
+        -- print("rust_analyzer don't exist.")
+        return
+    end
+
+    lspconfig.rust_analyzer.setup({
+        filetypes = { "rust", "rs" },
+        on_attach = on_attach,
+        settings = {
+            ["rust-analyzer"] = {
+                checkOnSave = true,
+                check = {
+                    -- change default cargo check to clippy
+                    command = "clippy",
+                },
+                imports = {
+                    granularity = {
+                        group = "module",
+                    },
+                    prefix = "self",
+                },
+                cargo = {
+                    buildScripts = {
+                        enable = true, -- Handle code completion generated by build.rs
+                    },
+                },
+                procMacro = {
+                    enable = true, -- Handle macro expansions like #[derive(Serialize)]
+                },
+                -- Enhance Inlay Hints
+                inlayHints = {
+                    bindingModeHints = { enable = true },
+                    chainingHints = { enable = true },
+                    closingBraceHints = { enable = true },
+                    parameterHints = { enable = true },
+                    typeHints = { enable = true },
+                },
+            }
+        },
+        root_dir = function(fname)
+            -- Cargo.toml ??
+            return require("lspconfig.util").root_pattern(".git")(fname)
+        end,
+    })
+end
+
 ----------------------------------------------------------------
 ----    Plugin
 ----------------------------------------------------------------
@@ -111,15 +252,28 @@ local lspconfig = function()
                 -- Default use ccls
                 local flag_clangd = true
                 if flag_clangd then
-                    lspclangd()
+                    lsp_clangd()
                 else
-                    -- FIXME, it's still not woring
-                    lspccls()
+                    -- FIXME, it's still not working
+                    lsp_ccls()
                 end
-                --[[
-                elseif has_value({ "c", "cpp", "objc", "objcpp", "cuda", "proto" }, vim.bo.filetype) then
-                print("Fit list.")
-                --]]
+            elseif has_value({ "py", "python" }, vim.bo.filetype) then
+                -- Install basedpyright, ruff
+                lspui()
+                lsp_pyright()
+            elseif has_value({ "lua"}, vim.bo.filetype) then
+                -- Install lua-language-server
+                lspui()
+                lsp_lua()
+            elseif has_value({ "bash", "sh"}, vim.bo.filetype) then
+                -- Install bash-language-server(npm)
+                lspui()
+                lsp_bashls()
+            elseif has_value({ "rs", "rust"}, vim.bo.filetype) then
+                -- TODO, need more test.
+                -- Install rust-analyzer
+                lspui()
+                lsp_rust()
             end
         end,
     })
@@ -130,8 +284,9 @@ function LSPM.get_impl(impl)
     return {
         {
             "nvim-lspconfig" ,
+            event = "VeryLazy", -- Lazy load to optimize startup speed
             dir = vim_plugin_path .. "nvim-lspconfig" ,
-            ft = {"sh" , "cpp" , "c"},
+            ft = {"sh" ,"bash" , "cpp" , "c", "python", "lua", "rust"},
             config = lspconfig,
             dependencies = {
                 "QFEnter",
