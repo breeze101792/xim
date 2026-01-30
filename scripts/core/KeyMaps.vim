@@ -72,6 +72,10 @@ map <C-l> <Esc>:tabnext<CR>
 map <S-h> <Esc>:tabmove -1 <CR>
 map <S-l> <Esc>:tabmove +1 <CR>
 
+" Remap Ctrl+j/k to Page Backward/Forward
+nnoremap <C-k> <C-b>
+nnoremap <C-j> <C-f>
+
 " tab manipulation with arror keys
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
