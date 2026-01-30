@@ -49,6 +49,17 @@ let g:IDE_CFG_LLM_OPENAPI_MODEL              = get(g:, 'IDE_CFG_LLM_OPENAPI_MODE
 let g:IDE_CFG_LLM_OLLAMA_URL                 = get(g:, 'IDE_CFG_LLM_OLLAMA_URL', "http://localhost:11434/")
 let g:IDE_CFG_LLM_OLLAMA_MODEL               = get(g:, 'IDE_CFG_LLM_OLLAMA_MODEL', "qwen2.5:14b-instruct-q8_0")
 
+""""    Fallback Configs                          """"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if g:IDE_ENV_INS == "vim"
+    if g:IDE_CFG_IMPL_COMPLETION == "ncmp"
+        " fallback to coc/supertab?
+        let g:IDE_CFG_IMPL_COMPLETION = "coc"
+    endif
+    " currently, don't let vim support it.
+    let g:IDE_CFG_LLM_IMPL = ""
+endif
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Shell vim env                             """"

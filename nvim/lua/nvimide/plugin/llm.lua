@@ -1,6 +1,14 @@
 ---@class nvimide.core: nvimide.plugin
 local LLM = {}
 
+---@class NvimideOptions
+local defaults = {
+    plugin_path = "~/.vim/plugins/",
+}
+
+---@type NvimideOptions
+local options = defaults
+
 ----------------------------------------------------------------
 ----    Plugin
 ----------------------------------------------------------------
@@ -202,14 +210,24 @@ function get_avante()
                     -- max_completion_tokens = 150000,
                 },
                 -- Ollama --
+                ollama_qwen25_coder_1_5b = {
+                    __inherited_from = "openai",
+                    api_key_name = "",
+                    endpoint = "http://127.0.0.1:11434/v1",
+
+                    -- disable_tools = true,
+                    enable_cursor_planning_mode = true,
+                    model = "qwen2.5-coder:1.5b",
+                },
                 ollama_qwen25_coder_14b_q6 = {
-                    __inherited_from = 'ollama',
+                    __inherited_from = "openai",
+                    api_key_name = "",
+                    endpoint = "http://127.0.0.1:11434/v1",
 
                     -- disable_tools = true,
                     enable_cursor_planning_mode = true,
                     model = "qwen2.5-coder:14b-instruct-q6_K",
                 },
-
                 -- NOTE. disable it to avoid gcloud command not found.
                 vertex = {
                     __inherited_from = 'gemini',
@@ -307,6 +325,12 @@ function LLM.get_impl(impl)
     else
         return {}
     end
+end
+
+---@param opts? NvimideOptions
+function LLM.setup(opts)
+    options = vim.tbl_deep_extend("force", defaults, opts or {})
+    return LLM
 end
 
 return LLM

@@ -26,92 +26,10 @@ end
 ----    Config
 ----------------------------------------------------------------
 
-----    Lsp configs
-----------------------------------------------------------------
-local lspsetup = function(opts)
-
-    local win = require('lspconfig.ui.windows')
-    local _default_opts = win.default_opts
-
-    win.default_opts = function(options)
-        local opts = _default_opts(options)
-        opts.border = 'single'
-        return opts
-    end
-
-end
-
-local lspclangd = function(opts)
-    local lspconfig = require 'lspconfig'
-
-    if vim.fn.executable('clangd') == false then
-        -- print("clangd not exist.")
-        return
-    end
-
-    lspconfig.clangd.setup({
-        filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" },
-        single_file_support = false,
-        -- Only found compile_commands for running
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
-
-    })
-end
-
-local lspccls = function(opts)
-    local lspconfig = require 'lspconfig'
-
-    if vim.fn.executable('ccls') == false then
-        -- print("ccls exist.")
-        return
-    end
-
-    lspconfig.ccls.setup {
-        filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
-        single_file_support = false,
-        init_options = {
-            compilationDatabaseDirectory = "build";
-            index = {
-                threads = 0;
-            };
-            clang = {
-                excludeArgs = { "-frounding-math"} ;
-            };
-        },
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", ".ccls")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
-    }
-end
-
-
-local lspui = function(opts)
-    local _border = "single"
-
-    vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
-    vim.lsp.handlers.hover, {
-        border = _border
-    }
-    )
-
-    vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(
-    vim.lsp.handlers.signature_help, {
-        border = _border
-    }
-    )
-
-
-    vim.diagnostic.config{
-        float={border=_border}
-    }
-end
 ----------------------------------------------------------------
 ----    Plugins
 ----------------------------------------------------------------
+--[[
 local impl_tab_completion = function(impl)
     local vim_plugin_path = options.plugin_path
     if impl == "coc" then
@@ -125,6 +43,7 @@ local impl_tab_completion = function(impl)
         return nil
     end
 end
+--]]
 
 ----------------------------------------------------------------
 ----    Main
@@ -219,13 +138,6 @@ function M.init()
         { "ale"                        , dir = vim_plugin_path .. "ale"                        , ft = {"sh"        , "cpp"  , "c"}   , cmd = "ALEEnable" } ,
         { "vim-cpp-enhanced-highlight" , dir = vim_plugin_path .. "vim-cpp-enhanced-highlight" , ft = {"cpp"       , "c"} } ,
         { "vim-python-pep8-indent"     , dir = vim_plugin_path .. "vim-python-pep8-indent"     , ft = {"python"} } ,
-        { "nvim-lspconfig"             , dir = vim_plugin_path .. "nvim-lspconfig"             , ft = {"sh"        , "cpp"  , "c"},
-        dependencies = {
-            "QFEnter",
-        },
-        config = function()
-            lspsetup()
-        end},
 
         -- with key
         { "vim-visual-multi" , dir = vim_plugin_path .. "vim-visual-multi" ,
@@ -253,9 +165,13 @@ function M.init()
 
     ----    Plugins Impls
     ----------------------------------------------------------------
-    table.insert(lazy_plugin, impl_tab_completion(vim.g.IDE_CFG_IMPL_COMPLETION))
+    local lsp = require('nvimide.plugin.lsp').setup(options)
+    table.insert(lazy_plugin, lsp.get_impl())
 
-    local llm = require('nvimide.plugin.llm')
+    local cmp = require('nvimide.plugin.completion').setup(options)
+    table.insert(lazy_plugin, cmp.get_impl(vim.g.IDE_CFG_IMPL_COMPLETION))
+
+    local llm = require('nvimide.plugin.llm').setup(options)
     table.insert(lazy_plugin, llm.get_impl(vim.g.IDE_CFG_IMPL_LLM))
 
     ----    Plugins Opions

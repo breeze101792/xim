@@ -119,6 +119,10 @@ Theme
 git clone https://github.com/vim-airline/vim-airline-themes.git
 git clone https://github.com/rafi/awesome-vim-colorschemes.git
 ```
+Tags
+```
+ludovicchabant/vim-gutentags
+```
 Others
 ```
 git clone https://github.com/vim-syntastic/syntastic.git
