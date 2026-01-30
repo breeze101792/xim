@@ -11,6 +11,10 @@ local options = defaults
 
 ----    Lsp configs
 ----------------------------------------------------------------
+local lsp_notify = function(executable)
+    vim.notify("LSP Warning: " .. executable .. " not found in PATH", vim.log.levels.WARN)
+end
+
 local lspui = function(opts)
     local _border = "single"
 
@@ -49,8 +53,8 @@ end
 local lsp_clangd = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('clangd') == false then
-        -- print("clangd don't exist.")
+    if vim.fn.executable('clangd') ~= 1 then
+        lsp_notify("clangd")
         return
     end
 
@@ -71,8 +75,8 @@ end
 local lsp_ccls = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('ccls') == false then
-        -- print("ccls don't exist.")
+    if vim.fn.executable('ccls') ~= 1 then
+        lsp_notify("ccls")
         return
     end
 
@@ -98,8 +102,8 @@ end
 local lsp_pyright = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('basedpyright') == false then
-        -- print("basedpyright don't exist.")
+    if vim.fn.executable('basedpyright') ~= 1 then
+        lsp_notify("basedpyright")
         return
     end
 
@@ -125,8 +129,8 @@ end
 local lsp_lua = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('lua_ls') == false then
-        -- print("ccls exist.")
+    if vim.fn.executable('lua-language-server') ~= 1 then
+        lsp_notify("lua-language-server")
         return
     end
 
@@ -161,8 +165,8 @@ end
 local lsp_bashls = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('bashls') == false then
-        -- print("bashls don't exist.")
+    if vim.fn.executable('bash-language-server') ~= 1 then
+        lsp_notify("bash-language-server")
         return
     end
 
@@ -191,8 +195,8 @@ end
 local lsp_rust = function(opts)
     local lspconfig = require 'lspconfig'
 
-    if vim.fn.executable('rust_analyzer') == false then
-        -- print("rust_analyzer don't exist.")
+    if vim.fn.executable('rust_analyzer') ~= 1 then
+        lsp_notify("rust_analyzer")
         return
     end
 
