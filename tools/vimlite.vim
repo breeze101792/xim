@@ -178,6 +178,8 @@ map <C-h> <Esc>:tabprev<CR>
 map <C-l> <Esc>:tabnext<CR>
 map <S-h> <Esc>:tabmove -1 <CR>
 map <S-l> <Esc>:tabmove +1 <CR>
+nnoremap <C-k> <C-b>
+nnoremap <C-j> <C-f>
 map <C-Left> <Esc>:tabprev<CR>
 map <C-Right> <Esc>:tabnext<CR>
 map <S-Left> <Esc>:tabmove -1 <CR>

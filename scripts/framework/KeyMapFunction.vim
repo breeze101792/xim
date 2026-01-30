@@ -63,6 +63,7 @@ imap <F9> <ESC>:LLMToggle<CR>
 " i: Find files #including this file
 " s: Find this C symbol
 " t: Find this text string
+" TODO, find a way to map those key with more easy way to access.
 if g:IDE_ENV_INS == "nvim"
     nnoremap <silent>ca :exec "Cscope find a ".expand('<cword>')<CR>
     nnoremap <silent>cc :exec "Cscope find c ".expand('<cword>')<CR>
@@ -276,8 +277,8 @@ vmap <silent> <Leader>vR <plug>EgMapReplaceSelection_R
 " QuickFix can open the current line with :.cc
 
 " Ale
-nmap <silent> <C-k> <Plug>(ale_previous_wrap)
-nmap <silent> <C-j> <Plug>(ale_next_wrap)
+nmap <silent> <Leader>ek <Plug>(ale_previous_wrap)
+nmap <silent> <Leader>ej <Plug>(ale_next_wrap)
 
 " Avante
 " " other customize shortcut
