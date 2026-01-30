@@ -59,7 +59,7 @@ fHelp()
 {
     echo "${VAR_SCRIPT_NAME}"
     echo "[Example]"
-    printf "    %s\n" "run test: .sh -a"
+    printf "    %s\n" "./setup.sh -a"
     echo "[Options]"
     printf "    %- 16s\t%s\n" "-s|--setup" "Setup vim. default vim."
     printf "    %- 16s\t%s\n" "-n|--nvim" "Specify instance. nvim"
@@ -68,6 +68,9 @@ fHelp()
     printf "    %- 16s\t%s\n" "-r|--release-lite" "Release litevim."
     printf "    %- 16s\t%s\n" "-i|--instance" "Specify instance. vim/nvim/all"
     printf "    %- 16s\t%s\n" "-a|--all" "Specify instance. all"
+    printf "    %- 16s\t%s\n" "-p|--plugin-check" "Check if plugins are registered"
+    printf "    %- 16s\t%s\n" "-v|--verbose" "Verbose mode"
+    printf "    %- 16s\t%s\n" "coc" "Setup coc.nvim dependencies (npm install)"
     printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
     echo "[Pkgs]"
     printf "    %s\n" "Please install ctags/cscope"
@@ -303,7 +306,7 @@ function fSetupCusConfig()
     fi
 
     touch ${path_central_cache}/ConfigCustomize.vim
-    for each_config in $(cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep let |tr -s ' ' | cut -d ':' -f 2 | cut -d '=' -f 1 | sort | uniq)
+    for each_config in $(cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep 'let' | grep 'get' | grep -v 'deprecated' |tr -s ' ' | cut -d ':' -f 2 | cut -d '=' -f 1 | sort | uniq)
     do
         echo "Checking ${each_config}"
         if cat ${path_central_cache}/ConfigCustomize.vim | grep ${each_config} > /dev/null
@@ -313,7 +316,7 @@ function fSetupCusConfig()
             echo " - Adding config ${each_config}"
             # cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"n\"" | sed 's/get.*/"n"/g' >> ${path_central_cache}/ConfigCustomize.vim
             # cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\"y\"" | sed 's/get.*/"y"/g' >> ${path_central_cache}/ConfigCustomize.vim
-            cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep ${each_config} | head -n 1 | grep "\".*\"" | sed 's/get.* "/"/g' | sed 's/")/"/g' >> ${path_central_cache}/ConfigCustomize.vim
+            cat ${PATH_IDE_ROOT}/scripts/core/Config.vim | grep 'let' | grep ${each_config} | head -n 1 | grep "\".*\"" | sed 's/get.* "/"/g' | sed 's/")/"/g' | sed 's/^/" /g'>> ${path_central_cache}/ConfigCustomize.vim
         fi
     done
 }
@@ -503,6 +506,16 @@ function fInstallScript()
     fPrintHeader ${FUNCNAME[0]}
     fSoftLink ${PATH_IDE_ROOT}/xim.sh ~/.usr/bin/xim
 }
+function fSetup_coc()
+{
+    fPrintHeader ${FUNCNAME[0]}
+    echo ""
+    if command -v npm; then
+        npm ci
+    else
+        echo "Please install npm first."
+    fi
+}
 
 ## Main Functions
 ###########################################################
@@ -551,6 +564,9 @@ function fMain()
                 ;;
             -v|--verbose)
                 flag_verbose=true
+                ;;
+            coc)
+                fSetup_coc
                 ;;
             -h|--help)
                 fHelp

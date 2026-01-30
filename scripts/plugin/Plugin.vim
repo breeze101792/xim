@@ -96,15 +96,25 @@ endif
 """"    Auto-start loading
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 if VAR_PLUGIN_DEBUG == 0
-    Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
     Plug VAR_PLUGIN_PATH.'/vim-visual-multi', { 'on':  [] }
     Plug VAR_PLUGIN_PATH.'/vim-surround', { 'on':  [] }
     Plug VAR_PLUGIN_PATH.'/QFEnter', { 'on':  [] }
 else
-    Plug VAR_PLUGIN_PATH.'/supertab'
     Plug VAR_PLUGIN_PATH.'/vim-visual-multi'
     Plug VAR_PLUGIN_PATH.'/vim-surround'
     Plug VAR_PLUGIN_PATH.'/QFEnter'
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Config plugins
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"" Currently don't support lazy loading.
+if g:IDE_CFG_IMPL_COMPLETION == "coc"
+    "" Note, coc support vim also.
+    Plug VAR_PLUGIN_PATH.'/coc.nvim'
+elseif g:IDE_CFG_IMPL_COMPLETION == "supertab"
+    " Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
+    Plug VAR_PLUGIN_PATH.'/supertab'
 endif
 
 " Initialize plugin system
@@ -115,7 +125,7 @@ call plug#end()
 if VAR_PLUGIN_DEBUG == 0
     function! IDE_PlugInDealyLoading()
         " load redraw plugins first, to prevent status restore
-        call plug#load('supertab') " this will restore line number
+        " call plug#load('supertab') " this will restore line number
         call plug#load('vim-visual-multi')
         call plug#load('QFEnter')
         call plug#load('tagbar')

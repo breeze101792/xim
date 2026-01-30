@@ -24,13 +24,18 @@ let g:IDE_CFG_COLORSCHEME_NAME               = get(g:, 'IDE_CFG_COLORSCHEME_NAME
 let g:IDE_CFG_BACKGROUND_WORKER              = get(g:, 'IDE_CFG_BACKGROUND_WORKER', "y")
 let g:IDE_CFG_AUTO_TAG_UPDATE                = get(g:, 'IDE_CFG_AUTO_TAG_UPDATE', "y")
 
+"" Tab Completions
+let g:IDE_CFG_IMPL_COMPLETION                = get(g:, 'IDE_CFG_IMPL_COMPLETION', "supertab")
+
 "" LLM
-let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante")
+"" FIXME, remove IDE_CFG_LLM_IMPL, it's for legacy name.
+let g:IDE_CFG_LLM_IMPL                       = get(g:, 'IDE_CFG_LLM_IMPL', "avante") " deprecated
+let g:IDE_CFG_IMPL_LLM                       = get(g:, 'IDE_CFG_IMPL_LLM', g:IDE_CFG_LLM_IMPL)
 let g:IDE_CFG_LLM_PROVIDER                   = get(g:, 'IDE_CFG_LLM_PROVIDER', "LLMLocal")
 
 " gemini service.
 " let g:IDE_CFG_LLM_GEMINI_URL                = get(g:, 'IDE_CFG_LLM_GEMINI_URL', "http://localhost:1337/v1/")
-let g:IDE_CFG_LLM_GEMINI_MODEL              = get(g:, 'IDE_CFG_LLM_GEMINI_MODEL', "gemini-2.5-flash-preview-05-20")
+let g:IDE_CFG_LLM_GEMINI_MODEL               = get(g:, 'IDE_CFG_LLM_GEMINI_MODEL', "gemini-2.5-flash-preview-05-20")
 
 " openrouter service.
 let g:IDE_CFG_LLM_OPENWRT_URL                 = get(g:, 'IDE_CFG_LLM_OPENWRT_URL', "https://openrouter.ai/api/v1/")
