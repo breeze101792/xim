@@ -41,7 +41,7 @@ let g:IDE_CFG_LLM_GEMINI_MODEL               = get(g:, 'IDE_CFG_LLM_GEMINI_MODEL
 let g:IDE_CFG_LLM_OPENWRT_URL                 = get(g:, 'IDE_CFG_LLM_OPENWRT_URL', "https://openrouter.ai/api/v1/")
 let g:IDE_CFG_LLM_OPENWRT_MODEL               = get(g:, 'IDE_CFG_LLM_OPENWRT_MODEL', "google/gemini-2.0-flash-exp:free")
 
-" openai service.
+" openai compatible service.
 let g:IDE_CFG_LLM_OPENAPI_URL                = get(g:, 'IDE_CFG_LLM_OPENAPI_URL', "http://localhost:1337/v1/")
 let g:IDE_CFG_LLM_OPENAPI_MODEL              = get(g:, 'IDE_CFG_LLM_OPENAPI_MODEL', "gpt-4.1")
 

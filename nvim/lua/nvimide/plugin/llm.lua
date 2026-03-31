@@ -240,6 +240,16 @@ function get_avante()
                     -- max_completion_tokens = 150000,
                 },
                 -- Ollama --
+                ollama_default = {
+                    __inherited_from = "openai",
+                    api_key_name = "",
+                    endpoint = "http://127.0.0.1:11434/v1",
+
+                    -- disable_tools = true,
+                    enable_cursor_planning_mode = true,
+                    model = vim.g.IDE_CFG_LLM_OLLAMA_MODEL,
+                    timeout = 30000,
+                },
                 ollama_qwen3_1_7b = {
                     __inherited_from = "openai",
                     api_key_name = "",
