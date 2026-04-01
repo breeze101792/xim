@@ -21,10 +21,9 @@ function get_avante()
         "yetone/avante.nvim",
         event = "InsertEnter",
         -- lazy = false,
-        -- version = false, -- Never set this value to "*"! Never!
+        version = false, -- Never set this value to "*"! Never!
         -- version = "*",
-        -- tag = "v0.0.25",
-        tag = "v0.0.27",
+        -- tag = "v0.0.27",
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
@@ -104,6 +103,17 @@ function get_avante()
             },
             -- for example
             provider = vim.g.IDE_CFG_LLM_PROVIDER,
+            -- ACP configs
+            acp_providers = {
+                ["gemini-cli"] = {
+                    command = "gemini",
+                    args = { "--experimental-acp" }, 
+                    env = {
+                        NODE_NO_WARNINGS = "1",
+                    },
+                    auth_method = "oauth-personal",
+                },
+            },
             providers = {
                 gemini = {
                     __inherited_from = 'gemini',
@@ -141,19 +151,7 @@ function get_avante()
                         max_tokens = 1000000 - token_reserve,
                     }
                 },
-                -- for second google account
-                google_gemini_pro_2_5 = {
-                    __inherited_from = 'gemini',
-                    api_key_name = 'GEMINI_API_KEY_2',
-
-                    model = 'gemini-2.5-pro',
-                    extra_request_body = {
-                        generationConfig = {
-                            temperature = 0,
-                        },
-                        max_tokens = 1000000 - token_reserve,
-                    }
-                },
+                -- LLM
                 LLMLocal = {
                     __inherited_from = 'openai',
 
@@ -180,20 +178,6 @@ function get_avante()
                     model = vim.g.IDE_CFG_LLM_OPENWRT_MODEL,
                     -- max_tokens = 1000000 - token_reserve,
                 },
-                ort_deepseek_r1t2 = {
-                    __inherited_from = 'openai',
-                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    -- enable_cursor_planning_mode = true,
-
-                    model = 'tngtech/deepseek-r1t2-chimera:free',
-                    extra_request_body = {
-                        max_completion_tokens = 163840 - token_reserve,
-                    },
-                    -- max_completion_tokens = 120000,
-                },
                 ort_qwen_3_coder = {
                     __inherited_from = 'openai',
                     endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
@@ -207,37 +191,6 @@ function get_avante()
                         max_completion_tokens = 262000 - token_reserve,
                     },
                     -- max_completion_tokens = 120000,
-                },
-                -- NOTE. If use openwrt, please export this on shell, export OPENROUTER_API_KEY=""
-                -- max_completion_tokens => set to max_tokens - 10,000
-                ort_deepseek_v3 = {
-                    __inherited_from = 'openai',
-                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    -- enable_cursor_planning_mode = true,
-
-                    model = 'deepseek/deepseek-chat-v3-0324:free',
-                    extra_request_body = {
-                        max_completion_tokens = 131072 - token_reserve,
-                    },
-                    -- max_completion_tokens = 120000,
-                },
-                ort_deepseek_r1 = {
-                    __inherited_from = 'openai',
-                    endpoint = vim.g.IDE_CFG_LLM_OPENWRT_URL,
-                    api_key_name = 'OPENROUTER_API_KEY',
-
-                    disable_tools = true,
-                    -- enable_cursor_planning_mode = true,
-
-                    -- model = 'deepseek/deepseek-r1:free',
-                    model = 'deepseek/deepseek-r1-0528:free',
-                    extra_request_body = {
-                        max_completion_tokens = 163840 - token_reserve,
-                    },
-                    -- max_completion_tokens = 150000,
                 },
                 -- Ollama --
                 ollama_default = {
@@ -258,16 +211,6 @@ function get_avante()
                     -- disable_tools = true,
                     enable_cursor_planning_mode = true,
                     model = "qwen3:1.7b",
-                    timeout = 30000,
-                },
-                ollama_qwen25_coder_1_5b = {
-                    __inherited_from = "openai",
-                    api_key_name = "",
-                    endpoint = "http://127.0.0.1:11434/v1",
-
-                    -- disable_tools = true,
-                    enable_cursor_planning_mode = true,
-                    model = "qwen2.5-coder:1.5b",
                     timeout = 30000,
                 },
                 ollama_qwen25_coder_14b_q6 = {

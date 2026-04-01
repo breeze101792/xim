@@ -44,14 +44,14 @@ fErrControl()
 }
 fHelp()
 {
-    echo "${VAR_SCRIPT_NAME}"
+    echo "Usage: ./${VAR_SCRIPT_NAME}.sh [options]"
     echo "[Example]"
-    printf "    %s\n" "run test: .sh -a"
+    printf "    %s\n" "./${VAR_SCRIPT_NAME}.sh --profiling"
     echo "[Options]"
-    printf "    %- 16s\t%s\n" "--profiling|pf" "Profile vim starup"
-    printf "    %- 16s\t%s\n" "--startuptime|st" "Record startup time by vim's --startuptime"
-    printf "    %- 16s\t%s\n" "-v|--verbose" "Print in verbose mode"
-    printf "    %- 16s\t%s\n" "-h|--help" "Print helping"
+    printf "    %- 18s\t%s\n" "--profiling|pf" "Profile vim startup"
+    printf "    %- 18s\t%s\n" "--startuptime|st" "Record startup time by vim's --startuptime"
+    printf "    %- 18s\t%s\n" "-v|--verbose" "Print in verbose mode"
+    printf "    %- 18s\t%s\n" "-h|--help" "Print help message"
 }
 fInfo()
 {
@@ -154,7 +154,7 @@ function fMain()
                 fprofiling
                 exit 0
                 ;;
-            --starttime|st)
+            --startuptime|st)
                 var_action='startuptime'
                 fstartup
                 exit 0
