@@ -21,9 +21,10 @@ function get_avante()
         "yetone/avante.nvim",
         event = "InsertEnter",
         -- lazy = false,
-        version = false, -- Never set this value to "*"! Never!
+        -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
         -- tag = "v0.0.27",
+        -- tag = "v0.0.28",
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
