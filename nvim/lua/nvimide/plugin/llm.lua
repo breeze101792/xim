@@ -24,7 +24,7 @@ function get_avante()
         -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
         -- tag = "v0.0.27",
-        -- tag = "v0.0.28",
+        tag = "v0.0.29",
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
@@ -194,7 +194,7 @@ function get_avante()
                     -- max_completion_tokens = 120000,
                 },
                 -- Ollama --
-                ollama_default = {
+                ollama = {
                     __inherited_from = "openai",
                     api_key_name = "",
                     endpoint = "http://127.0.0.1:11434/v1",
