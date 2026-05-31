@@ -1,5 +1,12 @@
 " File: LLMAgent.vim
 " Description: AI-powered code assistant using LLM APIs or CLI tools.
+"   Backend 'api': Uses OpenAI-compatible API with function-calling tools.
+"   Backend 'cli': Uses ACP (Agent Client Protocol) JSON-RPC over stdio.
+"     Compatible ACP tools:
+"       - Claude:  npx -y @agentclientprotocol/claude-agent-acp  (API key)
+"       - Claude:  npx -y claude-code-acp                        (Pro/Max subscription)
+"       - Gemini:  gemini --experimental-acp -p ""               (built-in)
+"       - Copilot: copilot --acp --stdio                        (built-in)
 " Usage:
 "   :LLMAsk [prompt]       - Ask a question to the LLM
 "   :LLMExplain            - Explain selected code or word under cursor
@@ -9,7 +16,7 @@
 "   :LLMDiff               - Show diff of proposed changes
 "   :LLMPatch              - Apply LLM changes directly
 "
-" Dependencies: curl (for API mode)
+" Dependencies: curl (for API mode), Node.js (for claude-agent-acp)
 " Supported: Vim 8+, Neovim
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -18,6 +25,7 @@
 augroup LLMAgentGroup
     autocmd!
     autocmd VimResized * call LLMAgent_OnResize()
+    autocmd VimLeavePre * call LLMAgent_StopACP()
 augroup END
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -39,6 +47,9 @@ let g:llm_agent_prompt_refactor = get(g:, 'llm_agent_prompt_refactor', 'Refactor
 let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 10)
 let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
+let g:llm_agent_acp_cmd           = get(g:, 'llm_agent_acp_cmd', 'npx -y @agentclientprotocol/claude-agent-acp')
+let g:llm_agent_acp_auto_approve  = get(g:, 'llm_agent_acp_auto_approve', 0)
+let g:llm_agent_acp_max_rounds    = get(g:, 'llm_agent_acp_max_rounds', 20)
 
 function! LLMAgent_GetSidebarWidth()
     return max([40, float2nr(&columns * 0.3)])
@@ -50,6 +61,17 @@ endfunction
 
 " Script-local state for multi-turn conversation
 let s:llm_agent_messages = []
+
+" ACP (Agent Client Protocol) state
+let s:acp_job_id = -1
+let s:acp_session_id = ''
+let s:acp_pending_reqs = {}
+let s:acp_prompt_resolved = 0
+let s:acp_write_list = []
+let s:acp_response_text = ''
+let s:acp_turn_error = ''
+let s:acp_next_req_id = 1
+let s:acp_current_action = ''  " tracks the LLMAgent action for context
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
@@ -295,6 +317,425 @@ function! LLMAgent_Call(system_prompt, user_prompt)
     else
         let l:full_prompt = a:system_prompt . "\n\n" . a:user_prompt
         return LLMAgent_CallCLI(l:full_prompt)
+    endif
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Private Functions - ACP Process Management
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+function! LLMAgent_EnsureACP()
+    if s:acp_job_id > 0
+        if has('nvim')
+            try
+                call jobpid(s:acp_job_id)
+            catch
+                let s:acp_job_id = -1
+            endtry
+        else
+            if job_status(s:acp_job_id) == 'fail'
+                let s:acp_job_id = -1
+            endif
+        endif
+    endif
+
+    if s:acp_job_id > 0
+        return 1
+    endif
+
+    if has('nvim')
+        let l:cmd_parts = split(g:llm_agent_acp_cmd)
+        let s:acp_job_id = jobstart(l:cmd_parts, {
+            \ 'on_stdout': function('LLMAgent_ACPOnStdout'),
+            \ 'on_stderr': function('LLMAgent_ACPOnStderr'),
+            \ 'on_exit': function('LLMAgent_ACPOnExit'),
+            \ })
+        if s:acp_job_id <= 0
+            return 0
+        endif
+    else
+        let s:acp_job_id = job_start(g:llm_agent_acp_cmd, {
+            \ 'out_cb': function('LLMAgent_ACPOnStdout'),
+            \ 'err_cb': function('LLMAgent_ACPOnStderr'),
+            \ 'exit_cb': function('LLMAgent_ACPOnExit'),
+            \ 'mode': 'nl',
+            \ })
+        if job_status(s:acp_job_id) == 'fail'
+            let s:acp_job_id = -1
+            return 0
+        endif
+    endif
+
+    let s:acp_session_id = ''
+    let s:acp_pending_reqs = {}
+    let s:acp_prompt_resolved = 0
+    let s:acp_next_req_id = 1
+    return 1
+endfunction
+
+function! LLMAgent_StopACP()
+    if s:acp_job_id > 0
+        if has('nvim')
+            call jobstop(s:acp_job_id)
+        else
+            call job_stop(s:acp_job_id)
+        endif
+    endif
+    let s:acp_job_id = -1
+    let s:acp_session_id = ''
+    let s:acp_pending_reqs = {}
+    let s:acp_prompt_resolved = 0
+endfunction
+
+function! LLMAgent_SendACP(msg)
+    if s:acp_job_id <= 0
+        return
+    endif
+    let l:json_str = type(a:msg) == v:t_dict ? json_encode(a:msg) : a:msg
+    if has('nvim')
+        call chansend(s:acp_job_id, l:json_str . "\n")
+    else
+        call ch_sendraw(s:acp_job_id, l:json_str . "\n")
+    endif
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Private Functions - ACP Message Handler
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+function! LLMAgent_ACPOnStdout(job_id, data, event)
+    if has('nvim')
+        let l:lines = a:data
+    else
+        " Vim: data is a single string, split by newline
+        let l:lines = split(a:data, "\n", 1)
+    endif
+    for l:line in l:lines
+        if empty(l:line)
+            continue
+        endif
+        " Skip non-JSON startup output
+        if l:line[0] != '{' && l:line[0] != '['
+            continue
+        endif
+        call LLMAgent_HandleACPMessage(l:line)
+    endfor
+endfunction
+
+function! LLMAgent_ACPOnStderr(job_id, data, event)
+    " Silently ignore stderr (ACP uses stdout for protocol messages)
+endfunction
+
+function! LLMAgent_ACPOnExit(job_id, exit_code, event)
+    let s:acp_job_id = -1
+    let s:acp_session_id = ''
+    " If prompt was not yet resolved, mark with error
+    if !s:acp_prompt_resolved
+        let s:acp_turn_error = 'ACP process exited (code ' . a:exit_code . ')'
+        let s:acp_prompt_resolved = 1
+    endif
+endfunction
+
+function! LLMAgent_HandleACPMessage(line)
+    try
+        let l:msg = json_decode(a:line)
+    catch
+        return
+    endtry
+
+    " Check if it's a notification (no id field) - always a session/update
+    if !has_key(l:msg, 'id')
+        if has_key(l:msg, 'method') && l:msg['method'] == 'session/update'
+            call LLMAgent_HandleACPUpdate(l:msg['params'])
+        endif
+        return
+    endif
+
+    " Check if it's a response to one of our requests
+    if has_key(l:msg, 'result') || has_key(l:msg, 'error')
+        let l:id = has_key(l:msg, 'id') ? l:msg['id'] : 0
+        let l:req = get(s:acp_pending_reqs, l:id, '')
+        if !empty(l:req)
+            call remove(s:acp_pending_reqs, l:id)
+            if has_key(l:msg, 'error')
+                call LLMAgent_ACPHandleError(l:id, l:req, l:msg['error'])
+                return
+            endif
+            if l:req == 'session/new'
+                let s:acp_session_id = l:msg['result']['sessionId']
+                let s:acp_prompt_resolved = 0
+            elseif l:req == 'session/prompt'
+                let s:acp_prompt_resolved = 1
+            endif
+            return
+        endif
+    endif
+
+    " It's a request from the agent (has method + id, not a response)
+    if has_key(l:msg, 'method') && has_key(l:msg, 'id')
+        call LLMAgent_HandleACPRequest(l:msg)
+        return
+    endif
+endfunction
+
+function! LLMAgent_HandleACPRequest(msg)
+    let l:method = a:msg['method']
+    let l:id = a:msg['id']
+    let l:params = get(a:msg, 'params', {})
+
+    if l:method == 'fs/read_text_file'
+        let l:path = l:params['path']
+        let l:content = ''
+        if filereadable(l:path)
+            let l:lines = readfile(l:path)
+            let l:content = join(l:lines, "\n")
+        else
+            call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'error': {'code': -32002, 'message': 'File not found: ' . l:path}})
+            return
+        endif
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'content': l:content}})
+
+    elseif l:method == 'fs/write_text_file'
+        let l:path = l:params['path']
+        let l:content = l:params['content']
+        " Defer write: tell agent success, queue for user approval
+        call add(s:acp_write_list, {'path': l:path, 'content': l:content})
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {}})
+
+    elseif l:method == 'terminal/create'
+        let l:command = l:params['command']
+        let l:cwd = get(l:params, 'cwd', '.')
+        let l:cmd = 'cd ' . shellescape(l:cwd) . ' 2>/dev/null && ' . l:command . ' 2>&1'
+        let l:output = system(l:cmd)
+        let l:terminal_id = reltime()
+        let s:acp_terminal_output = l:output
+        let s:acp_terminal_running = 0
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'terminalId': string(l:terminal_id)}})
+
+    elseif l:method == 'terminal/output'
+        let l:terminal_id = l:params['terminalId']
+        let l:output = get(s:, 'acp_terminal_output', '')
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'output': l:output, 'exitStatus': {'exitCode': 0}, 'truncated': v:false}})
+
+    elseif l:method == 'terminal/wait_for_exit'
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'exitCode': 0}})
+
+    elseif l:method == 'terminal/kill'
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {}})
+
+    elseif l:method == 'terminal/release'
+        if exists('s:acp_terminal_output')
+            unlet s:acp_terminal_output
+        endif
+        let s:acp_terminal_running = 0
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {}})
+
+    elseif l:method == 'session/request_permission'
+        " Auto-allow all permissions from the agent
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'outcome': {'selected': {'optionId': 'allow_once'}}}})
+
+    else
+        call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'error': {'code': -32601, 'message': 'Method not found: ' . l:method}})
+    endif
+endfunction
+
+function! LLMAgent_ACPHandleError(id, method, error)
+    let l:err_msg = has_key(a:error, 'message') ? a:error['message'] : string(a:error)
+    if a:method == 'session/prompt'
+        let s:acp_turn_error = l:err_msg
+        let s:acp_prompt_resolved = 1
+    endif
+    call LLMAgent_SidebarLog('ACP ' . a:method . ' error: ' . l:err_msg, 'Error')
+endfunction
+
+function! LLMAgent_HandleACPUpdate(params)
+    let l:update = get(a:params, 'update', {})
+    if empty(l:update)
+        return
+    endif
+
+    " Handle ContentChunk streaming updates
+    if has_key(l:update, 'content') && type(l:update['content']) == v:t_list
+        for l:block in l:update['content']
+            if has_key(l:block, 'type') && l:block['type'] == 'text'
+                let s:acp_response_text .= l:block['text']
+            endif
+        endfor
+    endif
+
+    " Handle Diff notifications
+    if has_key(l:update, 'diff') && type(l:update['diff']) == v:t_list
+        for l:diff in l:update['diff']
+            if has_key(l:diff, 'path') && has_key(l:diff, 'new')
+                call add(s:acp_write_list, {'path': l:diff['path'], 'content': l:diff['new']})
+            endif
+        endfor
+    endif
+
+    " Handle ToolCallComplete - log tool activity
+    if has_key(l:update, 'toolCallComplete')
+        let l:tool = l:update['toolCallComplete']
+        let l:name = get(l:tool, 'name', 'unknown')
+        call LLMAgent_SidebarLog(l:name, 'Tool')
+    endif
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Private Functions - ACP Agent Loop
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+function! LLMAgent_ACPSessionNew()
+    if empty(s:acp_session_id)
+        let l:id = s:acp_next_req_id
+        let s:acp_next_req_id += 1
+        let s:acp_pending_reqs[l:id] = 'session/new'
+        let s:acp_prompt_resolved = 0
+        let l:cwd = getcwd()
+        call LLMAgent_SendACP({
+            \ 'jsonrpc': '2.0',
+            \ 'method': 'session/new',
+            \ 'params': {'cwd': l:cwd, 'mcpServers': []},
+            \ 'id': l:id,
+            \ })
+        " Wait for session to be created
+        let l:waited = 0
+        while empty(s:acp_session_id) && s:acp_job_id > 0 && l:waited < 50
+            if has('nvim')
+                call jobwait([s:acp_job_id], 100)
+            else
+                sleep 100m
+            endif
+            let l:waited += 1
+        endwhile
+    endif
+    return !empty(s:acp_session_id)
+endfunction
+
+function! LLMAgent_RunWithToolsACP(prompt)
+    let s:acp_response_text = ''
+    let s:acp_write_list = []
+    let s:acp_turn_error = ''
+    let s:acp_prompt_resolved = 0
+
+    " Start ACP process if not running
+    if !LLMAgent_EnsureACP()
+        call LLMAgent_SidebarLog('Failed to start ACP process', 'Error')
+        return
+    endif
+
+    " Create session if needed
+    if !LLMAgent_ACPSessionNew()
+        call LLMAgent_SidebarLog('Failed to create ACP session', 'Error')
+        return
+    endif
+
+    " Build prompt content blocks
+    let l:content_blocks = []
+
+    " Add system prompt if starting new conversation
+    if !empty(a:prompt)
+        let l:system_prompt = LLMAgent_GetSystemPrompt()
+        let l:file_ctx = LLMAgent_GetFileContext()
+        if !empty(l:file_ctx)
+            let l:system_prompt .= "\n\n" . l:file_ctx
+        endif
+        let l:system_prompt .= "\n\nCRITICAL RULES:\n1. To see file content, use read_file. To write files, use write_file.\n2. After making changes, respond with a brief text summary.\n3. Stop calling tools when the task is complete.\n4. Format text responses with actual line breaks - use short paragraphs and markdown formatting."
+    endif
+
+    " Add conversation history from s:llm_agent_messages
+    if empty(s:llm_agent_messages)
+        " New conversation - build from system_prompt + user prompt
+        if !empty(l:system_prompt)
+            call add(l:content_blocks, {'type': 'text', 'text': l:system_prompt . "\n\n---\n\n" . a:prompt})
+        else
+            call add(l:content_blocks, {'type': 'text', 'text': a:prompt})
+        endif
+    else
+        " Continue existing conversation - send full message history as formatted text
+        let l:history = ''
+        for l:msg in s:llm_agent_messages
+            if l:msg['role'] == 'system'
+                let l:history .= '[System]' . "\n" . l:msg['content'] . "\n\n"
+            elseif l:msg['role'] == 'user'
+                let l:history .= '[User]' . "\n" . l:msg['content'] . "\n\n"
+            elseif l:msg['role'] == 'assistant'
+                let l:history .= '[Assistant]' . "\n" . l:msg['content'] . "\n\n"
+            elseif l:msg['role'] == 'tool'
+                " Skip tool messages - they were side-effects
+                continue
+            endif
+        endfor
+        if !empty(a:prompt)
+            let l:history .= '[User]' . "\n" . a:prompt
+        endif
+        if !empty(l:system_prompt)
+            let l:history = l:system_prompt . "\n\n---\n\n" . l:history
+        endif
+        call add(l:content_blocks, {'type': 'text', 'text': l:history})
+    endif
+
+    " Send prompt
+    let l:id = s:acp_next_req_id
+    let s:acp_next_req_id += 1
+    let s:acp_pending_reqs[l:id] = 'session/prompt'
+    call LLMAgent_SendACP({
+        \ 'jsonrpc': '2.0',
+        \ 'method': 'session/prompt',
+        \ 'params': {'sessionId': s:acp_session_id, 'prompt': l:content_blocks},
+        \ 'id': l:id,
+        \ })
+
+    " Wait for the turn to complete (agent may call us back for tools)
+    let l:waited = 0
+    let l:max_wait = g:llm_agent_timeout * 10  " timeout * 10 polling cycles
+    while !s:acp_prompt_resolved && s:acp_job_id > 0 && l:waited < l:max_wait
+        if has('nvim')
+            call jobwait([s:acp_job_id], 100)
+        else
+            sleep 100m
+        endif
+        let l:waited += 1
+    endwhile
+
+    if !s:acp_prompt_resolved && s:acp_job_id <= 0
+        call LLMAgent_SidebarLog('ACP process died during turn', 'Error')
+        return
+    endif
+
+    if !empty(s:acp_turn_error)
+        call LLMAgent_SidebarLog(s:acp_turn_error, 'Error')
+        return
+    endif
+
+    " Stream accumulated response to sidebar
+    if !empty(s:acp_response_text)
+        call LLMAgent_SidebarLog(s:acp_response_text, 'Agent')
+    endif
+
+    " Store in conversation history
+    if empty(s:llm_agent_messages) && !empty(a:prompt)
+        let l:system = LLMAgent_GetSystemPrompt()
+        let l:file_ctx = LLMAgent_GetFileContext()
+        if !empty(l:file_ctx)
+            let l:system .= "\n\n" . l:file_ctx
+        endif
+        let s:llm_agent_messages = [
+            \ {'role': 'system', 'content': l:system},
+            \ {'role': 'user', 'content': a:prompt}
+            \ ]
+    elseif !empty(a:prompt)
+        call add(s:llm_agent_messages, {'role': 'user', 'content': a:prompt})
+    endif
+    if !empty(s:acp_response_text)
+        call add(s:llm_agent_messages, {'role': 'assistant', 'content': s:acp_response_text})
+    endif
+
+    " Write approval — sync to shared write list for approval callbacks
+    let s:llm_agent_write_list = s:acp_write_list
+    if !empty(s:acp_write_list) && g:llm_agent_tool_confirm
+        call LLMAgent_SidebarShowApproval(s:acp_write_list)
+    elseif !empty(s:acp_write_list)
+        call LLMAgent_ApplyWrites(s:acp_write_list)
     endif
 endfunction
 
@@ -984,6 +1425,12 @@ function! LLMAgent_ContinueChat(user_text)
 endfunction
 
 function! LLMAgent_RunWithTools(prompt)
+    " Dispatch to ACP backend for CLI mode
+    if g:llm_agent_backend == 'cli'
+        call LLMAgent_RunWithToolsACP(a:prompt)
+        return
+    endif
+
     let s:llm_agent_response_text = ''
 
     " Initialize messages if a prompt is given (new conversation)
