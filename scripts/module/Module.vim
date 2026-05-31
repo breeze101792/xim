@@ -49,3 +49,4 @@ endif
 " it's for testing.
 " exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/Lab.vim"
 " exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/LogAnalysis.vim"
+exe "source " . g:IDE_ENV_ROOT_PATH . "/scripts/module/LLMAgent.vim"
