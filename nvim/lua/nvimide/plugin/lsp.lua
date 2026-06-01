@@ -15,20 +15,22 @@ local lsp_notify = function(executable)
     vim.notify("LSP Warning: " .. executable .. " not found in PATH", vim.log.levels.WARN)
 end
 
+-- Save default handlers before any overrides (avoids deprecated vim.lsp.handlers.hover / .signature_help)
+local _default_hover = vim.lsp.handlers["textDocument/hover"]
+local _default_signature = vim.lsp.handlers["textDocument/signatureHelp"]
+
 local lspui = function(opts)
     local _border = "single"
 
-    vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
-        vim.lsp.handlers.hover, {
-            border = _border
-        }
-    )
+    vim.lsp.handlers["textDocument/hover"] = function(err, result, ctx, config)
+        config = vim.tbl_deep_extend("force", config or {}, { border = _border })
+        return _default_hover(err, result, ctx, config)
+    end
 
-    vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(
-        vim.lsp.handlers.signature_help, {
-            border = _border
-        }
-    )
+    vim.lsp.handlers["textDocument/signatureHelp"] = function(err, result, ctx, config)
+        config = vim.tbl_deep_extend("force", config or {}, { border = _border })
+        return _default_signature(err, result, ctx, config)
+    end
 
     -- config neovim diagnostic
     vim.diagnostic.config({
