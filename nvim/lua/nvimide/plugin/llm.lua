@@ -114,6 +114,13 @@ function get_avante()
                     },
                     auth_method = "oauth-personal",
                 },
+                ["claude-acp"] = {
+                    command = "claude-agent-acp"
+                },
+                ["claude-code"] = {
+                    command = "npx",
+                    args = { "--yes", "@agentclientprotocol/claude-agent-acp" }
+                },
             },
             providers = {
                 gemini = {
