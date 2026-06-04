@@ -252,6 +252,76 @@ end
 ----------------------------------------------------------------
 ----    Plugin
 ----------------------------------------------------------------
+-- List of all LSP server executables referenced in this file
+local lsp_tools = {
+    { name = "clangd",                ft = { "c", "cpp", "objc", "objcpp", "cuda", "proto" } },
+    { name = "ccls",                  ft = { "c", "cpp", "objc", "objcpp", "cuda" } },
+    { name = "basedpyright",          ft = { "python" } },
+    { name = "lua-language-server",   ft = { "lua" } },
+    { name = "bash-language-server",  ft = { "sh", "bash" } },
+    { name = "rust_analyzer",         ft = { "rust" } },
+}
+
+-- Look up the filetypes served by a named lsp_tools entry.
+local function fts_for(tool_name)
+    for _, tool in ipairs(lsp_tools) do
+        if tool.name == tool_name then
+            return tool.ft
+        end
+    end
+    return {}
+end
+
+-- Match the existing call shape: has_value(haystack, needle)
+local has_value = function(list, value)
+    for _, v in ipairs(list) do
+        if v == value then return true end
+    end
+    return false
+end
+
+---Check which LSP tools are available in PATH
+---@return table[] results  list of {name, found, path, filetypes}
+local lsp_toolcheck = function()
+    local results = {}
+    local missing = 0
+
+    -- Header
+    vim.notify("LSP Tool Check:", vim.log.levels.INFO)
+
+    for _, tool in ipairs(lsp_tools) do
+        local found = vim.fn.executable(tool.name) == 1
+        local path = found and vim.fn.exepath(tool.name) or nil
+        local fts = table.concat(tool.ft, ", ")
+
+        if found then
+            vim.notify(("  [✓] %-22s %s  (filetypes: %s)")
+                :format(tool.name, path, fts), vim.log.levels.INFO)
+        else
+            missing = missing + 1
+            vim.notify(("  [✗] %-22s NOT FOUND          (filetypes: %s)")
+                :format(tool.name, fts), vim.log.levels.WARN)
+        end
+
+        table.insert(results, {
+            name      = tool.name,
+            found     = found,
+            path      = path,
+            filetypes = tool.ft,
+        })
+    end
+
+    if missing == 0 then
+        vim.notify("All LSP tools are installed.", vim.log.levels.INFO)
+    else
+        vim.notify(("%d LSP tool(s) missing. See :checkhealth lsp for details."):format(missing),
+            vim.log.levels.WARN)
+    end
+
+    return results
+end
+_G.lsp_toolcheck = lsp_toolcheck
+
 local lspconfig = function()
     local lspgroup = vim.api.nvim_create_augroup('lspconfig', { clear = false })
     vim.api.nvim_create_autocmd('BufReadPost', {
@@ -259,7 +329,8 @@ local lspconfig = function()
         group = lspgroup,
         callback = function(args)
             local file_type=vim.fn.expand("%")
-            if has_value({ "c", "cpp", "objc", "objcpp", "cuda", "proto" }, vim.bo.filetype) then
+            local ft = vim.bo.filetype
+            if has_value(fts_for("clangd"), ft) or has_value(fts_for("ccls"), ft) then
                 lspui()
                 -- Default use ccls
                 local flag_clangd = true
@@ -269,25 +340,44 @@ local lspconfig = function()
                     -- FIXME, it's still not working
                     lsp_ccls()
                 end
-            elseif has_value({ "py", "python" }, vim.bo.filetype) then
+            elseif has_value(fts_for("basedpyright"), ft) then
                 -- Install basedpyright, ruff
                 lspui()
                 lsp_pyright()
-            elseif has_value({ "lua"}, vim.bo.filetype) then
+            elseif has_value(fts_for("lua-language-server"), ft) then
                 -- Install lua-language-server
                 lspui()
                 lsp_lua()
-            elseif has_value({ "bash", "sh"}, vim.bo.filetype) then
+            elseif has_value(fts_for("bash-language-server"), ft) then
                 -- Install bash-language-server(npm)
                 lspui()
                 lsp_bashls()
-            elseif has_value({ "rs", "rust"}, vim.bo.filetype) then
+            elseif has_value(fts_for("rust_analyzer"), ft) then
                 -- TODO, need more test.
                 -- Install rust-analyzer
                 lspui()
                 lsp_rust()
             end
         end,
+    })
+end
+local reg_commands = function()
+    -- exporse tools check
+    vim.api.nvim_create_user_command("LspToolCheck", function(opts)
+        local results = lsp_toolcheck()
+        if opts.bang then
+            local missing = vim.tbl_filter(function(r) return not r.found end, results)
+            if #missing == 0 then
+                vim.notify("LspToolCheck: all installed", vim.log.levels.INFO)
+            else
+                for _, r in ipairs(missing) do
+                    vim.notify("missing: " .. r.name, vim.log.levels.WARN)
+                end
+            end
+        end
+    end, {
+        bang = true,
+        desc = "Check which LSP server executables are available in PATH",
     })
 end
 
@@ -333,6 +423,7 @@ end
 ---@param opts? NvimideOptions
 function LSPM.setup(opts)
     options = vim.tbl_deep_extend("force", defaults, opts or {})
+    reg_commands()
     return LSPM
 end
 
