@@ -43,81 +43,58 @@ local lspui = function(opts)
     })
 end
 
--- Define after LSP attach to a Buffer
-local on_attach = function(client, bufnr)
-    -- Activate signature display
-    require("lsp_signature").on_attach({
-        bind = true,
-        handler_opts = { border = "rounded" },
-    }, bufnr)
+----------------------------------------------------------------
+----    Lsp server configs (vim.lsp.config / vim.lsp.enable)
+----------------------------------------------------------------
+-- Configure LSP servers using the Neovim 0.11+ built-in API.
+-- See :help lspconfig-nvim-0.11 for migration details.
 
-    -- Key settings
-    --[[
-    local opts = { noremap=true, silent=true, buffer=bufnr }
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-    --]]
-end
-
-local lsp_clangd = function(opts)
-    local lspconfig = require 'lspconfig'
-
+local lsp_clangd = function()
     if vim.fn.executable('clangd') ~= 1 then
         lsp_notify("clangd")
         return
     end
 
-    lspconfig.clangd.setup({
-        filetypes={ "c", "cpp", "objc", "objcpp", "cuda", "proto" },
-        on_attach = on_attach,
+    vim.lsp.config('clangd', {
         cmd = { "clangd", "--background-index" },
-        -- single_file_support = false,
-        -- Only found compile_commands for running
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
-
+        filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+        root_markers = { "compile_commands.json", "compile_flags.txt" },
     })
+    vim.lsp.enable('clangd')
 end
 
-local lsp_ccls = function(opts)
-    local lspconfig = require 'lspconfig'
-
+local lsp_ccls = function()
     if vim.fn.executable('ccls') ~= 1 then
         lsp_notify("ccls")
         return
     end
 
-    lspconfig.ccls.setup({
+    vim.lsp.config('ccls', {
+        cmd = { "ccls" },
         filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
-        on_attach = on_attach,
-        -- single_file_support = false,
         init_options = {
-            compilationDatabaseDirectory = "build";
+            compilationDatabaseDirectory = "build",
             index = {
-                threads = 0;
-            };
+                threads = 0,
+            },
             clang = {
-                excludeArgs = { "-frounding-math"} ;
-            };
+                excludeArgs = { "-frounding-math" },
+            },
         },
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern("compile_commands.json", ".ccls")(fname)
-            -- or require("lspconfig.util").find_git_ancestor(fname)
-        end,
+        root_markers = { "compile_commands.json", ".ccls" },
     })
+    vim.lsp.enable('ccls')
 end
-local lsp_pyright = function(opts)
-    local lspconfig = require 'lspconfig'
 
+local lsp_pyright = function()
     if vim.fn.executable('basedpyright') ~= 1 then
         lsp_notify("basedpyright")
         return
     end
 
-    lspconfig.basedpyright.setup({
+    vim.lsp.config('basedpyright', {
+        cmd = { "basedpyright-langserver", "--stdio" },
         filetypes = { 'python' },
-        on_attach = on_attach,
         settings = {
             basedpyright = {
                 analysis = {
@@ -128,23 +105,20 @@ local lsp_pyright = function(opts)
                 },
             },
         },
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern(".venv", ".git")(fname)
-        end,
+        root_markers = { ".venv", ".git" },
     })
-
+    vim.lsp.enable('basedpyright')
 end
-local lsp_lua = function(opts)
-    local lspconfig = require 'lspconfig'
 
+local lsp_lua = function()
     if vim.fn.executable('lua-language-server') ~= 1 then
         lsp_notify("lua-language-server")
         return
     end
 
-    lspconfig.lua_ls.setup({
-        filetypes = { "lua"},
-        on_attach = on_attach,
+    vim.lsp.config('lua_ls', {
+        cmd = { "lua-language-server" },
+        filetypes = { "lua" },
         settings = {
             Lua = {
                 runtime = {
@@ -165,22 +139,20 @@ local lsp_lua = function(opts)
                 },
             },
         },
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern(".git")(fname)
-        end,
+        root_markers = { ".luarc.json", ".git" },
     })
+    vim.lsp.enable('lua_ls')
 end
-local lsp_bashls = function(opts)
-    local lspconfig = require 'lspconfig'
 
+local lsp_bashls = function()
     if vim.fn.executable('bash-language-server') ~= 1 then
         lsp_notify("bash-language-server")
         return
     end
 
-    lspconfig.bashls.setup({
+    vim.lsp.config('bashls', {
+        cmd = { "bash-language-server", "start" },
         filetypes = { "sh", "bash" },
-        on_attach = on_attach,
         --[[
         settings = {
             bashIde = {
@@ -195,22 +167,20 @@ local lsp_bashls = function(opts)
             },
         },
         --]]
-        root_dir = function(fname)
-            return require("lspconfig.util").root_pattern(".git")(fname)
-        end,
+        root_markers = { ".git" },
     })
+    vim.lsp.enable('bashls')
 end
-local lsp_rust = function(opts)
-    local lspconfig = require 'lspconfig'
 
+local lsp_rust = function()
     if vim.fn.executable('rust_analyzer') ~= 1 then
         lsp_notify("rust_analyzer")
         return
     end
 
-    lspconfig.rust_analyzer.setup({
-        filetypes = { "rust", "rs" },
-        on_attach = on_attach,
+    vim.lsp.config('rust_analyzer', {
+        cmd = { "rust-analyzer" },
+        filetypes = { "rust" },
         settings = {
             ["rust-analyzer"] = {
                 checkOnSave = true,
@@ -240,13 +210,11 @@ local lsp_rust = function(opts)
                     parameterHints = { enable = true },
                     typeHints = { enable = true },
                 },
-            }
+            },
         },
-        root_dir = function(fname)
-            -- Cargo.toml ??
-            return require("lspconfig.util").root_pattern(".git")(fname)
-        end,
+        root_markers = { "Cargo.toml", ".git" },
     })
+    vim.lsp.enable('rust_analyzer')
 end
 
 ----------------------------------------------------------------
@@ -323,9 +291,24 @@ end
 _G.lsp_toolcheck = lsp_toolcheck
 
 local lspconfig = function()
+    -- Set up LSP UI (borders, diagnostics)
+    lspui()
+
+    -- Set up lsp_signature via LspAttach autocmd (replaces on_attach)
+    vim.api.nvim_create_autocmd('LspAttach', {
+        callback = function(args)
+            local bufnr = args.buf
+            require("lsp_signature").on_attach({
+                bind = true,
+                handler_opts = { border = "rounded" },
+            }, bufnr)
+        end,
+    })
+
+    -- Only start servers when a matching filetype buffer is opened,
+    -- so missing-server warnings only appear for the filetype you actually use.
     local lspgroup = vim.api.nvim_create_augroup('lspconfig', { clear = false })
-    vim.api.nvim_create_autocmd('BufReadPost', {
-        once = true,
+    vim.api.nvim_create_autocmd('FileType', {
         group = lspgroup,
         callback = function(args)
             local file_type=vim.fn.expand("%")
@@ -342,20 +325,16 @@ local lspconfig = function()
                 end
             elseif has_value(fts_for("basedpyright"), ft) then
                 -- Install basedpyright, ruff
-                lspui()
                 lsp_pyright()
             elseif has_value(fts_for("lua-language-server"), ft) then
                 -- Install lua-language-server
-                lspui()
                 lsp_lua()
             elseif has_value(fts_for("bash-language-server"), ft) then
                 -- Install bash-language-server(npm)
-                lspui()
                 lsp_bashls()
             elseif has_value(fts_for("rust_analyzer"), ft) then
                 -- TODO, need more test.
                 -- Install rust-analyzer
-                lspui()
                 lsp_rust()
             end
         end,
