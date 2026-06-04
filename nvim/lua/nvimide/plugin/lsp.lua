@@ -11,9 +11,6 @@ local options = defaults
 
 ----    Lsp configs
 ----------------------------------------------------------------
-local lsp_notify = function(executable)
-    vim.notify("LSP Warning: " .. executable .. " not found in PATH", vim.log.levels.WARN)
-end
 
 -- Save default handlers before any overrides (avoids deprecated vim.lsp.handlers.hover / .signature_help)
 local _default_hover = vim.lsp.handlers["textDocument/hover"]
@@ -51,7 +48,6 @@ end
 
 local lsp_clangd = function()
     if vim.fn.executable('clangd') ~= 1 then
-        lsp_notify("clangd")
         return
     end
 
@@ -65,7 +61,6 @@ end
 
 local lsp_ccls = function()
     if vim.fn.executable('ccls') ~= 1 then
-        lsp_notify("ccls")
         return
     end
 
@@ -88,7 +83,6 @@ end
 
 local lsp_pyright = function()
     if vim.fn.executable('basedpyright') ~= 1 then
-        lsp_notify("basedpyright")
         return
     end
 
@@ -112,7 +106,6 @@ end
 
 local lsp_lua = function()
     if vim.fn.executable('lua-language-server') ~= 1 then
-        lsp_notify("lua-language-server")
         return
     end
 
@@ -146,7 +139,6 @@ end
 
 local lsp_bashls = function()
     if vim.fn.executable('bash-language-server') ~= 1 then
-        lsp_notify("bash-language-server")
         return
     end
 
@@ -174,7 +166,6 @@ end
 
 local lsp_rust = function()
     if vim.fn.executable('rust_analyzer') ~= 1 then
-        lsp_notify("rust_analyzer")
         return
     end
 
