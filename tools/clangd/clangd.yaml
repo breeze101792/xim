@@ -1,0 +1,83 @@
+# Basic clangd configuration for projects that use `bear` to generate
+# compile_commands.json.
+#
+# How to use:
+#   * Copy/rename this file to `.clangd` in the root of your project, OR
+#   * Pass it explicitly:     clangd --config=/path/to/clangd.yaml
+#
+# `bear` intercepts every compiler invocation during the build, which means the
+# generated database often contains:
+#   - Linker calls (gcc/g++ invoked for linking, not compiling)
+#   - Hardening / sanitizer / ABI flags that clangd does not understand
+#   - GCC- and glibc-specific -D macros that confuse the parser
+#   - Build-system noise (prefix maps, canonical prefixes, etc.)
+#
+# The lists below strip those flags. Adjust them freely to match your toolchain.
+
+CompileFlags:
+  # Flags added to every translation unit. Override the language standard,
+  # include paths, or anything else you want clangd to assume.
+  Add: [-std=c++17]
+
+  Remove:
+    # -------------------------------------------------------------------
+    # Linker flags — bear sometimes records calls that are actually linking
+    # -------------------------------------------------------------------
+    - -Wl,*
+    - -pie
+    - -no-pie
+    - -rdynamic
+    - -s
+
+    # -------------------------------------------------------------------
+    # Build-system noise
+    # -------------------------------------------------------------------
+    - -no-canonical-prefixes
+    - --no-canonical-prefixes
+    - -fdebug-prefix-map=*
+    # -ffile-prefix-map=*   # uncomment if your toolchain injects it
+    # -fmacro-prefix-map=*  # uncomment if your toolchain injects it
+
+    # -------------------------------------------------------------------
+    # Hardening / sanitizer flags clangd may not understand
+    # -------------------------------------------------------------------
+    - -fstack-protector*
+    - -fcf-protection*
+    - -fno-plt
+    - -fno-omit-frame-pointer
+    - -fvisibility=*
+    - -fdata-sections
+    - -ffunction-sections
+    - -fno-asynchronous-unwind-tables
+
+    # -------------------------------------------------------------------
+    # Warning flags — often turned into errors or generate noise in clangd
+    # -------------------------------------------------------------------
+    - -Werror*
+
+    # -------------------------------------------------------------------
+    # GCC / glibc defines that confuse clang
+    # -------------------------------------------------------------------
+    - -D_FORTIFY_SOURCE=*
+    - -D__USE_MISC
+    - -D__GLIBC_USE*
+
+    # -------------------------------------------------------------------
+    # Architecture / ABI flags that are irrelevant for static analysis
+    # -------------------------------------------------------------------
+    - -mstackrealign
+    - -mno-stackrealign
+
+# Index resources from your project's include paths so headers are resolved
+# quickly. Adjust /usr/include and /usr/local/include to match your system.
+Index:
+  Background: Build
+
+# Diagnostics: don't fail the build just because of clangd's opinion about
+# includes / modernize; tweak to taste.
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+  Suppress:
+    - -Wunused-variable
+

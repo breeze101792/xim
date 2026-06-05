@@ -24,7 +24,7 @@ function get_avante()
         -- version = false, -- Never set this value to "*"! Never!
         -- version = "*",
         -- tag = "v0.0.27",
-        tag = "v0.0.29",
+        tag = "v0.1.2",
         opts = {
             behaviour = {
                 auto_apply_diff_after_generation = true,
