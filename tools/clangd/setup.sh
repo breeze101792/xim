@@ -27,9 +27,9 @@ function fMain()
     local var_template_file="${SCRIPT_ROOT}/clangd.yaml"
 
     if [[ "$(uname)" == "Darwin" ]]; then
-        var_target_file="${HOME}/Library/Application Support/clangd/clangd.yaml"
+        var_target_file="${HOME}/Library/Preferences/clangd/config.yaml"
     else
-        var_target_file="${HOME}/.config/clangd/clangd.yaml"
+        var_target_file="${HOME}/.config/clangd/config.yaml"
     fi
 
     while [[ $# != 0 ]]
