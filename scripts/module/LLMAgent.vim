@@ -28,6 +28,20 @@ augroup LLMAgentGroup
     autocmd VimLeavePre * call LLMAgent_StopACP()
 augroup END
 
+" Sidebar log prefix colors. The mapping in LLMAgent_PrefixHiGroup returns
+" these custom group names; the colors below are set explicitly so the
+" look is the same regardless of the user's :colorscheme.
+"   You   -> green  (user input)
+"   Agent -> purple (LLM output)
+"   Error -> red    (tool/API failures)
+"   Warning -> yellow (non-fatal issues)
+"   other -> gray   (Tool, Result, System, anything else)
+hi default LLMAgentHiYou     ctermfg=82  guifg=#a6e3a1
+hi default LLMAgentHiAgent   ctermfg=141 guifg=#cba6f7
+hi default LLMAgentHiError   ctermfg=203 guifg=#f38ba8
+hi default LLMAgentHiWarning ctermfg=228 guifg=#f9e2af
+hi default LLMAgentHiOther   ctermfg=246 guifg=#a6adc8
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Variables
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -35,11 +49,11 @@ let g:llm_agent_backend         = get(g:, 'llm_agent_backend', 'api')
 let g:llm_agent_cli_cmd         = get(g:, 'llm_agent_cli_cmd', 'claude')
 let g:llm_agent_api_url         = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
 let g:llm_agent_api_key         = get(g:, 'llm_agent_api_key', '')
-let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m2.7:cloud')
+let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
 let g:llm_agent_streaming       = get(g:, 'llm_agent_streaming', 0)
 let g:llm_agent_enable_keymaps  = get(g:, 'llm_agent_enable_keymaps', 0)
 let g:llm_agent_system_prompt   = get(g:, 'llm_agent_system_prompt', '')
-let g:llm_agent_timeout         = get(g:, 'llm_agent_timeout', 60)
+let g:llm_agent_timeout         = get(g:, 'llm_agent_timeout', 180)
 let g:llm_agent_prompt_write    = get(g:, 'llm_agent_prompt_write', 'Write code for the following request. Return ONLY the code, no markdown fences, no explanation:')
 let g:llm_agent_prompt_explain  = get(g:, 'llm_agent_prompt_explain', 'Explain the following code concisely:')
 let g:llm_agent_prompt_fix      = get(g:, 'llm_agent_prompt_fix', 'Fix any bugs or issues in the following code. Return ONLY the corrected code, no markdown fences, no explanation:')
@@ -49,7 +63,11 @@ let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
 let g:llm_agent_acp_cmd           = get(g:, 'llm_agent_acp_cmd', 'npx -y @agentclientprotocol/claude-agent-acp')
 let g:llm_agent_acp_auto_approve  = get(g:, 'llm_agent_acp_auto_approve', 0)
-let g:llm_agent_acp_max_rounds    = get(g:, 'llm_agent_acp_max_rounds', 20)
+" Debug mode. When enabled, every API request and response is appended to
+" g:llm_agent_debug_file as JSON, one event per line. You can then share
+" the log to debug why the LLM is misbehaving. Default off (no log file).
+let g:llm_agent_debug              = get(g:, 'llm_agent_debug', 0)
+let g:llm_agent_debug_file        = get(g:, 'llm_agent_debug_file', '/tmp/LLMAgent_Debug.log')
 
 function! LLMAgent_GetSidebarWidth()
     return max([40, float2nr(&columns * 0.3)])
@@ -61,6 +79,15 @@ endfunction
 
 " Script-local state for multi-turn conversation
 let s:llm_agent_messages = []
+let s:llm_agent_write_list = []
+let s:llm_agent_response_text = ''
+" Paths that the LLM has just tried (and failed) to patch in this
+" conversation. Used to strongly nudge the next turn toward write_file.
+let s:llm_agent_patch_fails = {}
+
+" Paths that the LLM has read in this conversation. patch and write_file
+" check this to enforce "read before modify".
+let s:llm_agent_read_files = {}
 
 " ACP (Agent Client Protocol) state
 let s:acp_job_id = -1
@@ -71,134 +98,40 @@ let s:acp_write_list = []
 let s:acp_response_text = ''
 let s:acp_turn_error = ''
 let s:acp_next_req_id = 1
-let s:acp_current_action = ''  " tracks the LLMAgent action for context
+let s:acp_terminal_output = ''
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 function! LLMAgent_GetToolDefinitions()
-    return [
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'read_file',
-        \     'description': 'Read the contents of a file. Optionally specify a line range.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'path': {'type': 'string', 'description': 'Path to the file to read'},
-        \         'start_line': {'type': 'integer', 'description': 'Optional: starting line number (1-based)'},
-        \         'end_line': {'type': 'integer', 'description': 'Optional: ending line number (inclusive)'}
-        \       },
-        \       'required': ['path']
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'write_file',
-        \     'description': 'Write or create a file with the given content. Changes will be shown as a diff for approval before applying.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'path': {'type': 'string', 'description': 'Path to the file to write'},
-        \         'content': {'type': 'string', 'description': 'The complete file content to write'}
-        \       },
-        \       'required': ['path', 'content']
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'ls',
-        \     'description': 'List files and directories in a given directory.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'path': {'type': 'string', 'description': 'Directory path to list (defaults to current working directory)'}
-        \       },
-        \       'required': []
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'find',
-        \     'description': 'Find files matching a glob pattern.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'pattern': {'type': 'string', 'description': 'Glob pattern to match (e.g. "**/*.lua", "src/**/*.py")'}
-        \       },
-        \       'required': ['pattern']
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'grep',
-        \     'description': 'Search for a pattern within files. Returns matching file paths and line content.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'pattern': {'type': 'string', 'description': 'Regular expression pattern to search for'},
-        \         'path': {'type': 'string', 'description': 'Directory or file path to search in (defaults to cwd)'},
-        \         'glob': {'type': 'string', 'description': 'Optional file glob filter (e.g. "*.lua", "*.py")'}
-        \       },
-        \       'required': ['pattern']
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'patch',
-        \     'description': 'Apply a unified diff patch to a file. The diff must be in standard unified diff format (diff -u format with @@ markers). Changes are accumulated for approval.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {
-        \         'path': {'type': 'string', 'description': 'Path to the file to patch'},
-        \         'diff': {'type': 'string', 'description': 'Unified diff content to apply (diff -u format)'}
-        \       },
-        \       'required': ['path', 'diff']
-        \     }
-        \   }
-        \ },
-        \ {
-        \   'type': 'function',
-        \   'function': {
-        \     'name': 'list_buffers',
-        \     'description': 'List all open Vim buffer names.',
-        \     'parameters': {
-        \       'type': 'object',
-        \       'properties': {},
-        \       'required': []
-        \     }
-        \   }
-        \ }
-        \ ]
+    let l:read_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Path to the file. Absolute, ~/-relative, or relative to the working buffer.'}, 'start_line': {'type': 'integer', 'description': 'Optional: 1-based start line.'}, 'end_line': {'type': 'integer', 'description': 'Optional: 1-based inclusive end line. Omit for the whole file.'}}, 'required': ['path']}
+    let l:read = {'type': 'function', 'function': {'name': 'read_file', 'description': 'Read file contents. By default returns the whole file with every line numbered (e.g. "  42| code"). For large files, pass start_line and end_line. Output is truncated past 50K characters.', 'parameters': l:read_params}}
+
+    let l:write_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Path to the file. Same rules as read_file.'}, 'content': {'type': 'string', 'description': 'The COMPLETE new file content. Use real newlines in the JSON value; literal \n is also accepted and will be decoded.'}}, 'required': ['path', 'content']}
+    let l:write = {'type': 'function', 'function': {'name': 'write_file', 'description': 'Create or fully rewrite a file. Preferred over patch when more than a few lines change. The write is QUEUED — the file is NOT modified until the user approves the change in the sidebar. Returns the resolved path and a byte/line count.', 'parameters': l:write_params}}
+
+    let l:ls_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Directory to list. Defaults to the project root. Relative paths are resolved against the working buffer.'}}, 'required': []}
+    let l:ls = {'type': 'function', 'function': {'name': 'ls', 'description': 'List a directory. Entries ending in "/" are subdirectories. Returns at most a few hundred entries.', 'parameters': l:ls_params}}
+
+    let l:find_params = {'type': 'object', 'properties': {'pattern': {'type': 'string', 'description': 'Glob pattern relative to the project root, e.g. "**/*.py", "src/**/*.go", "scripts/module/*"'}}, 'required': ['pattern']}
+    let l:find = {'type': 'function', 'function': {'name': 'find', 'description': 'Find files by glob. Recursive globs need "**". Returns up to 200 matches.', 'parameters': l:find_params}}
+
+    let l:grep_params = {'type': 'object', 'properties': {'pattern': {'type': 'string', 'description': 'Vim regex (use \\V to match literally, \\C for case-sensitive). Plain text is fine and will be treated as a literal substring.'}, 'path': {'type': 'string', 'description': 'Directory to search. Defaults to project root.'}, 'glob': {'type': 'string', 'description': 'File glob to restrict to, e.g. "*.py" or "scripts/module/*". Default "*".'}}, 'required': ['pattern']}
+    let l:grep = {'type': 'function', 'function': {'name': 'grep', 'description': 'Grep a Vim regex inside files. Returns file:line:content triples. Stops after 100 matches.', 'parameters': l:grep_params}}
+
+    let l:patch_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Path to the file to patch.'}, 'diff': {'type': 'string', 'description': 'A unified diff in diff -u format with @@ ... @@ context markers. Real newlines are required.'}}, 'required': ['path', 'diff']}
+    let l:patch = {'type': 'function', 'function': {'name': 'patch', 'description': 'Apply a unified diff to an existing file. Fragile: if the diff does not match exactly, this fails. If it fails, fall back to write_file with the FULL new file content. Use only for small, well-defined edits.', 'parameters': l:patch_params}}
+
+    let l:list_buffers_params = {'type': 'object', 'properties': {}, 'required': []}
+    let l:list_buffers = {'type': 'function', 'function': {'name': 'list_buffers', 'description': 'List all open Vim buffers by number and name.', 'parameters': l:list_buffers_params}}
+
+    return [l:read, l:write, l:ls, l:find, l:grep, l:patch, l:list_buffers]
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Private Functions - Utility
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-
-function! LLMAgent_GetVisualSelection()
-    let l:save_reg = @"
-    let l:save_regtype = getregtype('"')
-    try
-        normal! gv"xy
-        return @x
-    finally
-        let @" = l:save_reg
-        call setreg('"', l:save_reg, l:save_regtype)
-    endtry
-endfunction
 
 function! LLMAgent_GetContext(line1, line2)
     " Get context from range, or fall back to entire file
@@ -206,6 +139,366 @@ function! LLMAgent_GetContext(line1, line2)
         return join(getline(a:line1, a:line2), "\n")
     endif
     return join(getline(1, '$'), "\n")
+endfunction
+
+" Append one JSON-line event to the debug log, if g:llm_agent_debug is on.
+" a:event is a dict; we add a timestamp, then serialize. Failures to
+" write are swallowed silently — debug logging must never break the agent.
+function! LLMAgent_DebugLog(event)
+    if !g:llm_agent_debug || empty(g:llm_agent_debug_file)
+        return
+    endif
+    let l:event = copy(a:event)
+    let l:event.t = strftime('%Y-%m-%dT%H:%M:%S')
+    try
+        call writefile([json_encode(l:event)], g:llm_agent_debug_file, 'a')
+    catch
+        " Swallow — debug logging must not affect the agent.
+    endtry
+endfunction
+
+" Debug JSON view: pretty-print a JSON string for human reading.
+function! LLMAgent_PrettyJson(s)
+    if empty(a:s)
+        return ''
+    endif
+    try
+        return json_encode(json_decode(a:s))
+    catch
+        return a:s
+    endtry
+endfunction
+
+" Validate the proposed file content for the given path. Returns '' on
+" success, or a short error message describing the syntax problem. This is
+" a safety net: the LLM often produces syntactically invalid code (e.g.
+" shell scripts with multi-line strings that bash can't parse). We only
+" check filetypes where a fast, reliable validator exists in the system
+" PATH; for everything else, we trust the LLM.
+function! LLMAgent_ValidateFileSyntax(path, content)
+    if empty(a:content)
+        return ''
+    endif
+    " Decide the filetype from the extension (the LLM probably didn't set
+    " filetype on the buffer).
+    let l:ext = fnamemodify(a:path, ':e')
+    if l:ext ==# 'sh' || l:ext ==# 'bash' || l:ext ==# 'zsh' || l:ext ==# 'ksh'
+        if !executable('bash')
+            return ''
+        endif
+        " bash -n parses without executing. We must stage the file in a
+        " temp location (it isn't on disk yet) and feed the content via
+        " stdin redirection, since bash -n requires a real file.
+        let l:tmp = tempname() . '.' . l:ext
+        try
+            call writefile(split(a:content, "\n", 1), l:tmp)
+        catch
+            return ''
+        endtry
+        let l:out = system('bash -n ' . shellescape(l:tmp) . ' 2>&1')
+        call delete(l:tmp)
+        if v:shell_error != 0
+            " Trim the noisy temp-file path from the error.
+            let l:out = substitute(l:out, escape(l:tmp, '/\') . ': ', '', 'g')
+            " Strip leading "line N: " prefixes that bash emits, since
+            " they're noise; the message we keep is the actual reason.
+            let l:lines = split(l:out, "\n")
+            " Find the first line with the word "syntax error" / "unexpected".
+            let l:short = ''
+            for l:line in l:lines
+                if l:line =~? 'syntax error\|unexpected'
+                    let l:short = l:line
+                    break
+                endif
+            endfor
+            if empty(l:short)
+                let l:short = l:lines[0]
+            endif
+            return l:short
+        endif
+        return ''
+    elseif l:ext ==# 'py'
+        if !executable('python3')
+            return ''
+        endif
+        let l:tmp = tempname() . '.py'
+        try
+            call writefile(split(a:content, "\n", 1), l:tmp)
+        catch
+            return ''
+        endtry
+        let l:out = system('python3 -m py_compile ' . shellescape(l:tmp) . ' 2>&1')
+        call delete(l:tmp)
+        if v:shell_error != 0
+            let l:out = substitute(l:out, '\s*\^+\s*$', '', '')
+            let l:out = substitute(l:out, escape(l:tmp, '/\') . ':', 'line', 'g')
+            return l:out
+        endif
+        return ''
+    elseif l:ext ==# 'lua' || l:ext ==# 'json'
+        " JSON has a built-in validator in vim via json_decode.
+        if l:ext ==# 'json'
+            try
+                call json_decode(a:content)
+            catch
+                return 'JSON parse error: ' . v:exception
+            endtry
+        endif
+        " Lua: skip (no reliable validator without `luac`).
+    endif
+    return ''
+endfunction
+
+" Queue a write for the user's approval, after syntax-validating the
+" content. Returns '' on success (and adds the entry to
+" s:llm_agent_write_list). On failure returns an error message; the
+" entry is NOT added.
+function! LLMAgent_QueueWrite(path, content)
+    let l:syntax_err = LLMAgent_ValidateFileSyntax(a:path, a:content)
+    if !empty(l:syntax_err)
+        return 'syntax check failed for ' . a:path . ': ' . l:syntax_err . '  The file was NOT queued. Fix the syntax and call write_file again.'
+    endif
+    call add(s:llm_agent_write_list, {'path': a:path, 'content': a:content})
+    " A successful write means the LLM gave up on patch for this file.
+    if has_key(s:llm_agent_patch_fails, a:path)
+        call remove(s:llm_agent_patch_fails, a:path)
+    endif
+    return ''
+endfunction
+
+" Translate a curl exit code into a short, actionable hint. Currently
+" only handles exit 28 (timeout); other exit codes pass through with the
+" raw exit number so the user can look them up in `man curl`.
+function! LLMAgent_CurlExitHint(exit_code)
+    if a:exit_code == 0
+        return ''
+    endif
+    if a:exit_code == 28
+        return 'Operation timed out after g:llm_agent_timeout=' . g:llm_agent_timeout . 's. The model is too slow for this timeout — increase g:llm_agent_timeout (e.g. `let g:llm_agent_timeout = 180`) and rerun. The pending turn is dropped; rerun :LLMAgent / :LLMAsk to retry.'
+    endif
+    return ''
+endfunction
+
+" Decode JSON-style escape sequences that the LLM might leave literal in
+" string arguments. Most commonly this is \n, \t, \r, \" and \\. We only
+" do this when the string has actual backslashes — pure text is returned
+" unchanged.
+function! LLMAgent_DecodeEscapes(s)
+    if stridx(a:s, '\') < 0
+        return a:s
+    endif
+    let l:out = a:s
+    let l:out = substitute(l:out, '\\n',  "\n", 'g')
+    let l:out = substitute(l:out, '\\t',  "\t", 'g')
+    let l:out = substitute(l:out, '\\r',  "\r", 'g')
+    let l:out = substitute(l:out, '\\"',  '"',  'g')
+    let l:out = substitute(l:out, '\\\\', '\', 'g')
+    return l:out
+endfunction
+
+" Resolve a path the LLM gives us against the working buffer's directory
+" (or cwd if no working buffer is set). The LLM often sends relative paths
+" like "scripts/module/foo.py" while editing a file at "src/main.go" — we
+" want to interpret those against the directory of the file the user is
+" editing, which is the same place the LLM sees in its system prompt.
+" A path that resolves above the project root is returned unchanged but the
+" caller is expected to reject it (security check).
+function! LLMAgent_ResolveToolPath(raw_path)
+    if empty(a:raw_path)
+        return ''
+    endif
+    " Absolute paths (or home-relative ~/) are returned as-is after simplify.
+    " Vim has no isabs(); compare fnamemodify before/after :p to detect.
+    if a:raw_path =~ '^[~/]' || fnamemodify(a:raw_path, ':p') ==# fnamemodify(a:raw_path, ':.')
+        return simplify(a:raw_path)
+    endif
+    " Decide the base directory:
+    "   1. The working buffer's directory, if pinned and on disk.
+    "   2. The current buffer's directory.
+    "   3. The cwd.
+    let l:base = ''
+    if exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
+        let l:base = fnamemodify(bufname(s:llm_agent_working_buf), ':p:h')
+    endif
+    if empty(l:base) || !isdirectory(l:base)
+        let l:base = expand('%:p:h')
+    endif
+    if empty(l:base) || !isdirectory(l:base)
+        let l:base = getcwd()
+    endif
+    return simplify(l:base . '/' . a:raw_path)
+endfunction
+
+" True if a:path (already absolute and simplified) lives above the
+" project root. Used to refuse parent-traversal after path resolution.
+function! LLMAgent_IsOutsideProject(path)
+    if a:path =~ '^\.\.'
+        return 1
+    endif
+    if a:path !~ '^/'
+        " Relative — caller should have resolved this; treat as unsafe.
+        return 1
+    endif
+    let l:root = system('git -C ' . shellescape(a:path) . ' rev-parse --show-toplevel 2>/dev/null')
+    let l:root = substitute(l:root, '\n\+$', '', '')
+    if v:shell_error != 0 || empty(l:root)
+        " No git repo. Fall back to cwd as the project root.
+        let l:root = getcwd()
+    endif
+    " A path is inside the project if it starts with l:root + '/'.
+    return stridx(a:path . '/', l:root . '/') != 0
+endfunction
+
+" Resolve a buffer number to a project-relative path string, or '' if the
+" buffer is unnamed / part of the agent's own UI. Mirrors the relative-path
+" logic in LLMAgent_GetFileContext so the two stay in sync.
+function! LLMAgent_ResolveBufPath(bufnr)
+    if !bufexists(a:bufnr)
+        return ''
+    endif
+    let l:abs = fnamemodify(bufname(a:bufnr), ':p')
+    if empty(l:abs) || l:abs =~ 'LLMAgent-'
+        return ''
+    endif
+    let l:git_root = system('git -C ' . shellescape(fnamemodify(l:abs, ':h')) . ' rev-parse --show-toplevel 2>/dev/null')
+    let l:git_root = substitute(l:git_root, '\n\+$', '', '')
+    if v:shell_error == 0 && !empty(l:git_root)
+        return substitute(l:abs, '^' . escape(l:git_root, '.\') . '/', '', '')
+    endif
+    return fnamemodify(l:abs, ':.')
+endfunction
+
+" Build a structured location block the LLM can reliably parse. Tells the
+" model: which file, what range (with absolute line numbers), and the
+" selected text (or 'no selection' if a:line1==a:line2==0). A few lines of
+" surrounding context are included so the LLM can reason about braces,
+" indentation, etc. without an extra read_file round-trip.
+"
+" a:mode values:
+"   'visual'  - line1/line2 came from a visual selection (text included)
+"   'range'   - line1/line2 came from :line1,line2 (text included)
+"   'cursor'  - single line / no range; just file + line + 5 lines of context
+"   'none'    - file only, no line info
+function! LLMAgent_BuildLocationContext(bufnr, line1, line2, mode)
+    let l:rel = LLMAgent_ResolveBufPath(a:bufnr)
+    if empty(l:rel)
+        return ''
+    endif
+    let l:ft = getbufvar(a:bufnr, '&filetype')
+    let l:header = 'File: ' . l:rel
+    if !empty(l:ft)
+        let l:header .= ' (' . l:ft . ')'
+    endif
+
+    if a:mode == 'none' || (a:line1 == 0 && a:line2 == 0)
+        return l:header
+    endif
+
+    if a:mode == 'cursor' || a:line1 == a:line2
+        let l:line = a:line1
+        let l:lo = max([1, l:line - 2])
+        " Over-fetch and let getbufline return what exists. Vim pads missing
+        " line numbers with empty strings, so we drop trailing empties.
+        let l:hi = l:line + 2
+        let l:lines = getbufline(a:bufnr, l:lo, l:hi)
+        let l:snippet = []
+        for l:i in range(len(l:lines))
+            let l:n = l:lo + l:i
+            if empty(l:lines[l:i]) && l:n > l:line
+                " Trailing empty padding from getbufline past EOF
+                break
+            endif
+            let l:marker = (l:n == l:line) ? '>' : ' '
+            call add(l:snippet, printf('%s %4d| %s', l:marker, l:n, l:lines[l:i]))
+        endfor
+        let l:body = l:header . "\nLine: " . l:line . "\nContext:" . "\n```" . "\n" . join(l:snippet, "\n") . "\n```"
+        return l:body
+    endif
+
+    " Range / visual mode: line1..line2 with their actual content
+    let l:lo = max([1, a:line1])
+    let l:hi = a:line2
+    let l:lines = getbufline(a:bufnr, l:lo, l:hi)
+    let l:snippet = []
+    for l:i in range(len(l:lines))
+        let l:n = l:lo + l:i
+        if empty(l:lines[l:i]) && l:n > a:line1
+            " Trailing empty padding from getbufline past EOF
+            break
+        endif
+        call add(l:snippet, printf('  %4d| %s', l:n, l:lines[l:i]))
+    endfor
+    let l:body = l:header . "\nRange: lines " . l:lo . '-' . l:hi . "\nSelection:" . "\n```" . "\n" . join(l:snippet, "\n") . "\n```"
+    return l:body
+endfunction
+
+" Capture the user's last visual selection AND its exact line range. Returns
+" a dict with keys: text, line1, line2, mode. mode is one of:
+"   'visual'  - we are currently in visual mode
+"   'range'   - not in visual now, but the '< '> marks point at a
+"               previous visual selection
+"   'none'    - no selection information is available
+" line1/line2 are 0 when mode == 'none'.
+" Always restores the unnamed register.
+function! LLMAgent_CaptureSelection()
+    let l:save_reg = @"
+    let l:save_regtype = getregtype('"')
+    try
+        " Path 1: we're currently in visual mode (rare for command invocation,
+        " but happens with operator-pending mappings and :normal tricks).
+        if mode() ==# 'v' || mode() ==# 'V' || mode() ==# "\<C-V>"
+            let l:line1 = line('v')
+            let l:line2 = line('.')
+            if l:line2 < l:line1
+                let [l:line1, l:line2] = [l:line2, l:line1]
+            endif
+            normal! gv"xy
+            return {'text': @x, 'line1': l:line1, 'line2': l:line2, 'mode': 'visual'}
+        endif
+
+        " Path 2: invoked from a :command. Vim exits visual mode before the
+        " command runs, but the '< '> marks still describe the last visual
+        " selection. If those marks are set to valid lines in the current
+        " buffer (or to lines we can re-yank), re-yank the text and return
+        " the range. The '<' and '>' marks track per-buffer, so a stale
+        " selection from a different buffer is harmless — those marks
+        " are simply unset (line() returns 0) in the new buffer.
+        let l:start_mark = line("'<")
+        let l:end_mark = line("'>")
+        if l:start_mark > 0 && l:end_mark > 0
+            let l:line1 = min([l:start_mark, l:end_mark])
+            let l:line2 = max([l:start_mark, l:end_mark])
+            " Sanity: marks must be inside the current buffer's line range.
+            let l:last_line = line('$')
+            if l:line1 >= 1 && l:line2 <= l:last_line
+                silent execute 'normal! ' . l:line1 . 'GV' . l:line2 . 'G"xy'
+                if !empty(@x)
+                    return {'text': @x, 'line1': l:line1, 'line2': l:line2, 'mode': 'range'}
+                endif
+            endif
+        endif
+
+        return {'text': '', 'line1': 0, 'line2': 0, 'mode': 'none'}
+    finally
+        let @" = l:save_reg
+        call setreg('"', l:save_reg, l:save_regtype)
+    endtry
+endfunction
+
+" Reset all in-memory agent conversation state. The sidebar display buffer is
+" not touched (use :LLMClear for that). Safe to call when state is unset.
+function! LLMAgent_Reset()
+    let s:llm_agent_messages = []
+    let s:llm_agent_write_list = []
+    let s:llm_agent_response_text = ''
+    let s:llm_agent_patch_fails = {}
+    let s:llm_agent_read_files = {}
+    let s:acp_response_text = ''
+    let s:acp_write_list = []
+    let s:acp_turn_error = ''
+    if exists('s:llm_agent_working_buf')
+        unlet s:llm_agent_working_buf
+    endif
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -222,8 +515,10 @@ endfunction
 function! LLMAgent_GetFileContext()
     " Use saved working buffer if available (set before sidebar opens)
     if exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
-        let l:buf_path = fnamemodify(bufname(s:llm_agent_working_buf), ':p')
+        let l:buf = s:llm_agent_working_buf
+        let l:buf_path = fnamemodify(bufname(l:buf), ':p')
     else
+        let l:buf = bufnr('%')
         let l:buf_path = expand('%:p')
     endif
     if empty(l:buf_path) || l:buf_path =~ 'LLMAgent-'
@@ -240,14 +535,56 @@ function! LLMAgent_GetFileContext()
         let l:rel = fnamemodify(l:buf_path, ':.')
     endif
     let l:info .= 'Working on file: ' . l:rel
-    let l:ft = ''
-    if exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
-        let l:ft = getbufvar(s:llm_agent_working_buf, '&filetype')
-    endif
+    let l:ft = getbufvar(l:buf, '&filetype')
     if !empty(l:ft)
         let l:info .= ' (' . l:ft . ')'
     endif
     return l:info
+endfunction
+
+" Build the system prompt used by both API and ACP backends. It bundles the
+" base system prompt, the current file's context, and the tool-use rules the
+" agent must follow.
+function! LLMAgent_GetAgentSystemPrompt()
+    let l:prompt = LLMAgent_GetSystemPrompt()
+    let l:file_ctx = LLMAgent_GetFileContext()
+    if !empty(l:file_ctx)
+        let l:prompt .= "\n\n" . l:file_ctx
+    endif
+    " If a working buffer is pinned (e.g. user opened :LLMAgent from inside
+    " a source file), include its path / filetype so the LLM can target it
+    " with read_file / write_file even if the user doesn't mention it again.
+    if exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
+        let l:loc = LLMAgent_BuildLocationContext(s:llm_agent_working_buf, 0, 0, 'none')
+        if !empty(l:loc)
+            let l:prompt .= "\n\nActive buffer:\n" . l:loc
+        endif
+    endif
+    " If the LLM has been failing at patch on a path, scold it loudly.
+    if !empty(s:llm_agent_patch_fails)
+        let l:warn = "\n\nPATCH FAILURES THIS SESSION (use write_file for these):"
+        for l:p in keys(s:llm_agent_patch_fails)
+            let l:warn .= "\n- " . l:p . " failed " . s:llm_agent_patch_fails[l:p] . " time(s)"
+        endfor
+        let l:warn .= "\nFor each: call read_file, then call write_file with the COMPLETE new content. Do NOT call patch again on these."
+        let l:prompt .= l:warn
+    endif
+    let l:rules = "\n\nWORKFLOW (follow this order):"
+    let l:rules .= "\n1. If you have NOT yet called read_file on the target file in this conversation, do that first. You cannot patch or rewrite a file you have not read."
+    let l:rules .= "\n2. Prefer write_file. It is the only tool that cannot fail on whitespace, tabs, indentation, multi-line strings, or line-number mismatches. The full final content goes in 'content'."
+    let l:rules .= "\n3. Use patch ONLY for a tiny, well-defined change (one or two adjacent lines, no tabs, no leading whitespace change). Before calling patch, you must have just read the file so you know the exact current line content."
+    let l:rules .= "\n4. If patch fails once, call read_file again to refresh, then call write_file with the full file. Do NOT retry patch with a guess."
+    let l:rules .= "\n5. For refactor / restructure / reformat tasks, use write_file directly (not patch) — the whole point is structural change."
+    let l:rules .= "\n5. To find files, use find with a glob (e.g. '**/*.py'). To search, use grep with a regex. To list a directory, use ls."
+    let l:rules .= "\n6. Never put code in your text response — always modify files via tools."
+    let l:rules .= "\n7. After tools finish, give a short text summary (1-3 sentences). Do not include code blocks."
+    let l:rules .= "\n8. Stop calling tools as soon as the task is done. Do not call tools just to confirm what you already know."
+    let l:rules .= "\n\nRESPONSE FORMATTING RULES:"
+    let l:rules .= "\n- Sidebar is narrow. Use short sentences, blank lines between them, and simple ## or - markdown only."
+    let l:rules .= "\n- Do NOT use markdown tables (the sidebar renders them poorly). Use bullet lists instead."
+    let l:rules .= "\n- Do NOT repeat the user's question or paste the file contents back at them."
+    let l:rules .= "\n- Reference files by path, e.g. 'updated scripts/module/LLMAgent.vim', not by quoting full contents."
+    return l:prompt . l:rules
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -273,7 +610,15 @@ function! LLMAgent_CallAPI(messages)
     call delete(l:tmpfile)
 
     if v:shell_error != 0
-        return {'error': 'curl failed (exit ' . v:shell_error . '): ' . l:response}
+        let l:hint = LLMAgent_CurlExitHint(v:shell_error)
+        let l:msg = 'curl failed (exit ' . v:shell_error . ')'
+        if !empty(l:response)
+            let l:msg .= ': ' . substitute(l:response, '\n\+$', '', '')
+        endif
+        if !empty(l:hint)
+            let l:msg .= '  ' . l:hint
+        endif
+        return {'error': l:msg}
     endif
 
     try
@@ -290,6 +635,80 @@ function! LLMAgent_CallAPI(messages)
         return {'content': l:content}
     endif
     return {'error': 'Unexpected API response format'}
+endfunction
+
+" Issue one chat-completion request against the configured API and return the
+" decoded response as a dict. Pass a:tools (a list) to enable function-calling;
+" omit it for a plain text completion. On transport / parse / protocol errors
+" the function returns {'error': '...'} so callers can branch on it.
+function! LLMAgent_APIRequest(messages, ...)
+    let l:body = {'model': g:llm_agent_model, 'messages': a:messages}
+    if a:0 > 0 && !empty(a:1)
+        let l:body['tools'] = a:1
+    endif
+    let l:tmpfile = tempname()
+    let l:body_json = json_encode(l:body)
+    call writefile([l:body_json], l:tmpfile)
+
+    " Debug: log the request. The body can be large; if g:llm_agent_debug
+    " is enabled we capture it. Otherwise just record a one-line marker.
+    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
+        let l:_evt = {}
+        let l:_evt.kind = 'api_request'
+        let l:_evt.model = g:llm_agent_model
+        let l:_evt.url = g:llm_agent_api_url . '/chat/completions'
+        let l:_evt.timeout = g:llm_agent_timeout
+        let l:_evt.messages_count = len(a:messages)
+        let l:_evt.tools_count = a:0 > 0 ? len(a:1) : 0
+        let l:_evt.request_body = LLMAgent_PrettyJson(l:body_json)
+        call LLMAgent_DebugLog(l:_evt)
+    endif
+
+    let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
+    if !empty(g:llm_agent_api_key)
+        let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
+    endif
+    let l:curl_cmd .= ' -H "Content-Type: application/json"'
+    let l:curl_cmd .= ' -d @' . shellescape(l:tmpfile)
+    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
+
+    let l:response = system(l:curl_cmd)
+    call delete(l:tmpfile)
+
+    if v:shell_error != 0
+        let l:_evt = {}
+        let l:_evt.kind = 'api_error'
+        let l:_evt.stage = 'curl'
+        let l:_evt.exit = v:shell_error
+        let l:_evt.stderr = strpart(l:response, 0, 2000)
+        call LLMAgent_DebugLog(l:_evt)
+        let l:hint = LLMAgent_CurlExitHint(v:shell_error)
+        let l:msg = 'curl failed (exit ' . v:shell_error . ')'
+        if !empty(l:response)
+            let l:msg .= ': ' . substitute(l:response, '\n\+$', '', '')
+        endif
+        if !empty(l:hint)
+            let l:msg .= '  ' . l:hint
+        endif
+        return {'error': l:msg}
+    endif
+    try
+        let l:data = json_decode(l:response)
+    catch
+        let l:_evt = {}
+        let l:_evt.kind = 'api_error'
+        let l:_evt.stage = 'json_decode'
+        let l:_evt.body = strpart(l:response, 0, 4000)
+        call LLMAgent_DebugLog(l:_evt)
+        return {'error': 'Failed to parse JSON response'}
+    endtry
+    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
+        let l:_evt = {}
+        let l:_evt.kind = 'api_response'
+        let l:_evt.body = LLMAgent_PrettyJson(l:response)
+        call LLMAgent_DebugLog(l:_evt)
+    endif
+    return l:data
 endfunction
 
 function! LLMAgent_CallCLI(prompt)
@@ -369,7 +788,6 @@ function! LLMAgent_EnsureACP()
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
     let s:acp_prompt_resolved = 0
-    let s:acp_next_req_id = 1
     return 1
 endfunction
 
@@ -381,10 +799,20 @@ function! LLMAgent_StopACP()
             call job_stop(s:acp_job_id)
         endif
     endif
+    call LLMAgent_ACPResetState()
+endfunction
+
+" Reset ALL ACP transient state. Called on stop, before a new session, and on
+" unclean exit. Keeps s:acp_next_req_id so request IDs don't collide.
+function! LLMAgent_ACPResetState()
     let s:acp_job_id = -1
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
     let s:acp_prompt_resolved = 0
+    let s:acp_write_list = []
+    let s:acp_response_text = ''
+    let s:acp_turn_error = ''
+    let s:acp_terminal_output = ''
 endfunction
 
 function! LLMAgent_SendACP(msg)
@@ -427,8 +855,7 @@ function! LLMAgent_ACPOnStderr(job_id, data, event)
 endfunction
 
 function! LLMAgent_ACPOnExit(job_id, exit_code, event)
-    let s:acp_job_id = -1
-    let s:acp_session_id = ''
+    call LLMAgent_ACPResetState()
     " If prompt was not yet resolved, mark with error
     if !s:acp_prompt_resolved
         let s:acp_turn_error = 'ACP process exited (code ' . a:exit_code . ')'
@@ -509,7 +936,6 @@ function! LLMAgent_HandleACPRequest(msg)
         let l:output = system(l:cmd)
         let l:terminal_id = reltime()
         let s:acp_terminal_output = l:output
-        let s:acp_terminal_running = 0
         call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {'terminalId': string(l:terminal_id)}})
 
     elseif l:method == 'terminal/output'
@@ -524,10 +950,7 @@ function! LLMAgent_HandleACPRequest(msg)
         call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {}})
 
     elseif l:method == 'terminal/release'
-        if exists('s:acp_terminal_output')
-            unlet s:acp_terminal_output
-        endif
-        let s:acp_terminal_running = 0
+        let s:acp_terminal_output = ''
         call LLMAgent_SendACP({'jsonrpc': '2.0', 'id': l:id, 'result': {}})
 
     elseif l:method == 'session/request_permission'
@@ -634,12 +1057,7 @@ function! LLMAgent_RunWithToolsACP(prompt)
 
     " Add system prompt if starting new conversation
     if !empty(a:prompt)
-        let l:system_prompt = LLMAgent_GetSystemPrompt()
-        let l:file_ctx = LLMAgent_GetFileContext()
-        if !empty(l:file_ctx)
-            let l:system_prompt .= "\n\n" . l:file_ctx
-        endif
-        let l:system_prompt .= "\n\nCRITICAL RULES:\n1. To see file content, use read_file. To write files, use write_file.\n2. After making changes, respond with a brief text summary.\n3. Stop calling tools when the task is complete.\n4. Format text responses with actual line breaks - use short paragraphs and markdown formatting."
+        let l:system_prompt = LLMAgent_GetAgentSystemPrompt()
     endif
 
     " Add conversation history from s:llm_agent_messages
@@ -714,13 +1132,8 @@ function! LLMAgent_RunWithToolsACP(prompt)
 
     " Store in conversation history
     if empty(s:llm_agent_messages) && !empty(a:prompt)
-        let l:system = LLMAgent_GetSystemPrompt()
-        let l:file_ctx = LLMAgent_GetFileContext()
-        if !empty(l:file_ctx)
-            let l:system .= "\n\n" . l:file_ctx
-        endif
         let s:llm_agent_messages = [
-            \ {'role': 'system', 'content': l:system},
+            \ {'role': 'system', 'content': LLMAgent_GetAgentSystemPrompt()},
             \ {'role': 'user', 'content': a:prompt}
             \ ]
     elseif !empty(a:prompt)
@@ -732,11 +1145,7 @@ function! LLMAgent_RunWithToolsACP(prompt)
 
     " Write approval — sync to shared write list for approval callbacks
     let s:llm_agent_write_list = s:acp_write_list
-    if !empty(s:acp_write_list) && g:llm_agent_tool_confirm
-        call LLMAgent_SidebarShowApproval(s:acp_write_list)
-    elseif !empty(s:acp_write_list)
-        call LLMAgent_ApplyWrites(s:acp_write_list)
-    endif
+    call LLMAgent_FinishAgentTurn('')
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -937,137 +1346,311 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 function! LLMAgent_ToolReadFile(args)
-    let l:path = a:args['path']
-    let l:start = get(a:args, 'start_line', 0)
-    let l:end = get(a:args, 'end_line', 0)
-    let l:path = simplify(l:path)
-    if l:path =~ '^\.\.'
-        return {'error': 'Cannot read files outside the current directory'}
+    if !has_key(a:args, 'path')
+        return {'ok': 0, 'error': 'read_file: missing "path" argument'}
+    endif
+    let l:path = LLMAgent_ResolveToolPath(a:args['path'])
+    if empty(l:path)
+        return {'ok': 0, 'error': 'read_file: empty "path"'}
+    endif
+    if LLMAgent_IsOutsideProject(l:path)
+        return {'ok': 0, 'error': 'read_file: refused to read outside project (' . l:path . ')'}
     endif
     if !filereadable(l:path)
-        return {'error': 'File not found: ' . l:path}
+        return {'ok': 0, 'error': 'read_file: file not found (' . l:path . '). Use find or ls to locate it first.'}
     endif
     let l:lines = readfile(l:path)
+    let l:start = get(a:args, 'start_line', 0)
+    let l:end = get(a:args, 'end_line', 0)
     if l:start > 0 && l:end >= l:start
+        if l:end > len(l:lines)
+            let l:end = len(l:lines)
+        endif
+        if l:start > len(l:lines)
+            return {'ok': 0, 'error': 'read_file: start_line ' . l:start . ' is past end of file (' . len(l:lines) . ' lines)'}
+        endif
         let l:lines = l:lines[l:start - 1 : l:end - 1]
+        let l:header = 'Lines ' . l:start . '-' . (l:start + len(l:lines) - 1) . ' of ' . l:path . ' (' . len(l:lines) . ' of ' . len(readfile(l:path)) . ' total):'
+    else
+        let l:header = 'Full file: ' . l:path . ' (' . len(l:lines) . ' lines):'
     endif
-    let l:content = join(l:lines, "\n")
+    " Number every line so the LLM can refer to specific lines.
+    let l:numbered = []
+    let l:n = max([1, get(a:args, 'start_line', 1)])
+    for l:line in l:lines
+        call add(l:numbered, printf('%4d| %s', l:n, l:line))
+        let l:n += 1
+    endfor
+    let l:content = l:header . "\n" . join(l:numbered, "\n")
     if len(l:content) > 50000
-        let l:content = strpart(l:content, 0, 50000) . "\n... (truncated)"
+        let l:content = strpart(l:content, 0, 50000) . "\n... (truncated, call read_file with start_line/end_line to see more)"
     endif
-    return {'content': l:content}
+    " Mark this file as read so write_file / patch can verify the LLM
+    " actually read it before modifying.
+    let s:llm_agent_read_files[l:path] = 1
+    return {'ok': 1, 'content': l:content}
 endfunction
 
 function! LLMAgent_ToolWriteFile(args)
-    let l:path = simplify(a:args['path'])
-    if l:path =~ '^\.\.'
-        return {'error': 'Cannot write outside the current directory'}
+    if !has_key(a:args, 'path') || !has_key(a:args, 'content')
+        return {'ok': 0, 'error': 'write_file requires both "path" and "content" arguments'}
     endif
-    let l:content = a:args['content']
-    call add(s:llm_agent_write_list, {'path': l:path, 'content': l:content})
-    return {'content': 'Write queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes)'}
+    let l:path = LLMAgent_ResolveToolPath(a:args['path'])
+    if empty(l:path)
+        return {'ok': 0, 'error': 'write_file: missing or empty "path"'}
+    endif
+    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '/\.git/'
+        return {'ok': 0, 'error': 'write_file: refused to write outside project (' . l:path . ')'}
+    endif
+    " Refuse to write a file the LLM has not read in this conversation.
+    " The LLM often makes up content based on stale memory; reading forces
+    " it to use the current file. Allow an explicit override via the
+    " write_file_force key (rarely useful).
+    if !get(a:args, 'write_file_force', 0) && !has_key(s:llm_agent_read_files, l:path)
+        " New file (doesn't exist) is OK — there's nothing to read.
+        if filereadable(l:path)
+            return {'ok': 0, 'error': 'write_file: refused — you have not called read_file on ' . l:path . ' in this conversation. Call read_file first, then call write_file with the COMPLETE current content (plus your changes). To override this safety check, pass write_file_force: true.'}
+        endif
+    endif
+    " Decode any literal \n / \t / \" / \\ the LLM emitted as JSON escapes.
+    let l:content = LLMAgent_DecodeEscapes(a:args['content'])
+    if empty(l:content)
+        return {'ok': 0, 'error': 'write_file: empty content; if you mean to create an empty file, send "\n"'}
+    endif
+    let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
+    if !empty(l:queue_err)
+        return {'ok': 0, 'error': 'write_file: ' . l:queue_err}
+    endif
+    let l:msg = 'Queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes, ' . len(split(l:content, "\n", 1)) . ' lines). Will NOT be written to disk until the user approves in the sidebar.'
+    return {'ok': 1, 'content': l:msg}
 endfunction
 
 function! LLMAgent_ToolPatch(args)
-    let l:path = simplify(a:args['path'])
-    if l:path =~ '^\.\.'
-        return {'error': 'Cannot patch outside the current directory'}
+    if !has_key(a:args, 'path') || !has_key(a:args, 'diff')
+        return {'ok': 0, 'error': 'patch requires both "path" and "diff" arguments'}
     endif
-
-    let l:diff = a:args['diff']
-
-    " Read original file content
+    let l:path = LLMAgent_ResolveToolPath(a:args['path'])
+    if empty(l:path)
+        return {'ok': 0, 'error': 'patch: missing or empty "path"'}
+    endif
+    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '/\.git/'
+        return {'ok': 0, 'error': 'patch: refused to write outside project (' . l:path . ')'}
+    endif
+    let l:diff = LLMAgent_DecodeEscapes(a:args['diff'])
     if !filereadable(l:path)
-        return {'error': 'File not found: ' . l:path}
+        return {'ok': 0, 'error': 'patch: file not found (' . l:path . '). If the file is new, use write_file instead.'}
     endif
-    let l:original = readfile(l:path)
+    " Refuse to patch a file the LLM has not read this session. patch is
+    " extremely sensitive to whitespace; a guessed diff is almost
+    " guaranteed to fail. Force the LLM to either read first, or to
+    " switch to write_file.
+    if !get(a:args, 'patch_force', 0) && !has_key(s:llm_agent_read_files, l:path)
+        return {'ok': 0, 'error': 'patch: refused — you have not called read_file on ' . l:path . ' in this conversation. Call read_file first so you know the EXACT current line content, then either (a) build a precise patch or (b) switch to write_file with the full new content. To override this safety check, pass patch_force: true.'}
+    endif
 
-    " Write diff and original to temp files, apply patch
+    " --- Pre-validate the diff -----------------------------------------
+    " Catch the most common LLM mistakes before invoking patch(1), so the
+    " error message is specific and actionable instead of "malformed patch".
+    let l:lines = split(l:diff, "\n", 1)
+    if empty(l:lines)
+        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        return {'ok': 0, 'error': 'patch: empty diff. If you only need to rewrite the file, use write_file.'}
+    endif
+    " Strip a single leading/trailing blank line the LLM often adds.
+    while !empty(l:lines) && l:lines[0] =~ '^\s*$'
+        let l:lines = l:lines[1:]
+    endwhile
+    while !empty(l:lines) && l:lines[-1] =~ '^\s*$'
+        let l:lines = l:lines[:-2]
+    endwhile
+    if empty(l:lines)
+        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        return {'ok': 0, 'error': 'patch: diff contains only blank lines. If you only need to rewrite the file, use write_file.'}
+    endif
+    " A valid unified diff must have at least one @@ hunk.
+    let l:hunk_count = 0
+    let l:bad_prefix_count = 0
+    for l:line in l:lines
+        if l:line =~ '^@@'
+            let l:hunk_count += 1
+        elseif l:line !~ '^\(@@\|---\|+++\|[ +-]\|$\)'
+            " Lines that aren't a hunk header, file header, context/+/-, or
+            " blank are garbage. Often a chatty sentence slipped in.
+            let l:bad_prefix_count += 1
+        endif
+    endfor
+    if l:hunk_count == 0
+        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        return {'ok': 0, 'error': 'patch: diff has no @@ hunk header. Unified diffs must contain at least one "@@ -X,Y +A,B @@" line. If you only need to rewrite the file, use write_file.'}
+    endif
+    if l:bad_prefix_count > 0
+        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        let l:hint = 'patch: diff contains ' . l:bad_prefix_count . ' line(s) with invalid unified diff syntax (must start with one of: " ", "+", "-", "@@", "---", "+++"). '
+        " Detect the most common LLM mistake: a source line that contains an
+        " unescaped newline (e.g. printf "..."\n"...") was broken across two
+        " diff lines. patch(1) sees the second fragment as a fresh diff line.
+        if l:hunk_count > 0
+            let l:hint .= 'This often happens when a SOURCE LINE contains a literal newline (e.g. printf "...\n"...") and you split it across two diff lines without a trailing "\\". '
+        endif
+        let l:hint .= 'STRONG RECOMMENDATION: do NOT retry patch. Call read_file to refresh, then call write_file with the COMPLETE new file content. write_file is more reliable for non-trivial edits.'
+        return {'ok': 0, 'error': l:hint}
+    endif
+
+    " --- Try `patch` (POSIX) first ------------------------------------------
+    let l:original = readfile(l:path)
     let l:diff_file = tempname()
     let l:orig_file = tempname()
-    call writefile(split(l:diff, '\n'), l:diff_file)
+    let l:out_file = tempname()
+    " patch(1) needs a trailing newline; some LLMs omit it. writefile
+    " always adds one.
+    call writefile(l:lines, l:diff_file)
     call writefile(l:original, l:orig_file)
-
-    " Try to apply patch, capture result
-    let l:patched_file = tempname()
-    let l:cmd = 'patch -s -o ' . shellescape(l:patched_file) . ' ' . shellescape(l:orig_file) . ' ' . shellescape(l:diff_file) . ' 2>&1'
-    let l:error = system(l:cmd)
+    let l:cmd = 'patch -s -o ' . shellescape(l:out_file) . ' ' . shellescape(l:orig_file) . ' ' . shellescape(l:diff_file) . ' 2>&1'
+    let l:err = system(l:cmd)
     call delete(l:diff_file)
     call delete(l:orig_file)
 
-    if v:shell_error != 0
-        call delete(l:patched_file)
-        return {'error': 'Patch failed: ' . l:error}
+    if v:shell_error == 0
+        let l:patched = readfile(l:out_file)
+        call delete(l:out_file)
+        let l:content = join(l:patched, "\n")
+        let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
+        if !empty(l:queue_err)
+            let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+            return {'ok': 0, 'error': 'patch: applied by patch(1) but ' . l:queue_err}
+        endif
+        let l:msg = 'Patch applied via patch(1) and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
+        return {'ok': 1, 'content': l:msg}
+    endif
+    call delete(l:out_file)
+
+    " --- Try `git apply` (more forgiving with whitespace) -------------------
+    if executable('git') && filereadable(l:path)
+        let l:diff_file2 = tempname()
+        call writefile(l:lines, l:diff_file2)
+        let l:cmd2 = 'cd ' . shellescape(fnamemodify(l:path, ':p:h')) . ' && git apply --recount --whitespace=fix ' . shellescape(l:diff_file2) . ' 2>&1'
+        let l:err2 = system(l:cmd2)
+        call delete(l:diff_file2)
+        if v:shell_error == 0
+            let l:patched = readfile(l:path)
+            let l:content = join(l:patched, "\n")
+            let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
+            if !empty(l:queue_err)
+                let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+                return {'ok': 0, 'error': 'patch: applied by git apply but ' . l:queue_err}
+            endif
+            let l:msg = 'Patch applied via git apply --recount and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
+            return {'ok': 1, 'content': l:msg}
+        endif
+        let l:git_err = l:err2
+    else
+        let l:git_err = 'git not available'
     endif
 
-    let l:patched_content = readfile(l:patched_file)
-    call delete(l:patched_file)
-
-    let l:content = join(l:patched_content, "\n")
-    call add(s:llm_agent_write_list, {'path': l:path, 'content': l:content})
-    return {'content': 'Patch applied and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes)'}
+    " --- Both failed: tell the LLM what to do next --------------------------
+    " Record this path so the dispatcher can see at a glance that the LLM
+    " is in a patch-loop, and the system prompt can be reinforced.
+    let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+    let l:hint = 'patch failed. patch(1) said: ' . substitute(l:err, "\n", ' ', 'g')
+    if !empty(l:git_err) && l:git_err != 'git not available'
+        let l:hint .= ' | git apply said: ' . substitute(l:git_err, "\n", ' ', 'g')
+    endif
+    let l:hint .= "\n\nDO NOT RETRY patch with a guess. Call read_file on " . l:path . " to get the EXACT current content, then call write_file with the COMPLETE new file in `content`."
+    return {'ok': 0, 'error': l:hint}
 endfunction
 
 function! LLMAgent_ToolLs(args)
-    let l:path = get(a:args, 'path', '.')
-    let l:path = simplify(l:path)
-    if l:path =~ '^\.\.'
-        return {'error': 'Cannot access outside the current directory'}
+    let l:raw = get(a:args, 'path', '')
+    let l:path = empty(l:raw) ? getcwd() : LLMAgent_ResolveToolPath(l:raw)
+    if empty(l:path)
+        return {'ok': 0, 'error': 'ls: missing "path"'}
+    endif
+    if LLMAgent_IsOutsideProject(l:path)
+        return {'ok': 0, 'error': 'ls: refused to access outside project (' . l:path . ')'}
     endif
     if !isdirectory(l:path)
-        return {'error': 'Directory not found: ' . l:path}
+        return {'ok': 0, 'error': 'ls: directory not found (' . l:path . ')'}
     endif
     let l:entries = readdir(l:path)
-    let l:result = ''
+    let l:result = 'Contents of ' . l:path . ' (' . len(l:entries) . ' entries):'
+    let l:rows = []
     for l:entry in l:entries
         let l:full = l:path . '/' . l:entry
         if isdirectory(l:full)
-            let l:result .= l:entry . "/\n"
+            call add(l:rows, l:entry . '/')
         else
-            let l:result .= l:entry . "\n"
+            call add(l:rows, l:entry)
         endif
     endfor
-    if empty(l:result)
-        return {'content': '(empty directory)'}
+    if empty(l:rows)
+        return {'ok': 1, 'content': l:result . "\n(empty directory)"}
     endif
-    return {'content': l:result}
+    return {'ok': 1, 'content': l:result . "\n" . join(l:rows, "\n")}
 endfunction
 
 function! LLMAgent_ToolFind(args)
+    if !has_key(a:args, 'pattern')
+        return {'ok': 0, 'error': 'find: missing "pattern" argument'}
+    endif
     let l:pattern = a:args['pattern']
-    let l:files = globpath('.', l:pattern, 0, 1)
+    let l:base = getcwd()
+    " If the user is editing a file, search relative to its project so a
+    " pattern like "**/*.py" hits the right tree.
+    if exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
+        let l:cand = fnamemodify(bufname(s:llm_agent_working_buf), ':p:h')
+        if !empty(l:cand) && isdirectory(l:cand)
+            let l:base = l:cand
+        endif
+    endif
+    let l:files = globpath(l:base, l:pattern, 0, 1)
     if empty(l:files)
-        return {'content': 'No files found matching: ' . l:pattern}
+        return {'ok': 1, 'content': 'No files in ' . l:base . ' match pattern: ' . l:pattern}
     endif
     if len(l:files) > 200
         let l:files = l:files[:199]
-        let l:result = join(l:files, "\n") . "\n... (truncated, showing first 200)"
+        let l:result = 'First 200 of ' . l:pattern . ' matches under ' . l:base . ":\n" . join(l:files, "\n")
     else
-        let l:result = join(l:files, "\n")
+        let l:result = 'Matches for ' . l:pattern . ' under ' . l:base . " (" . len(l:files) . " files):\n" . join(l:files, "\n")
     endif
-    return {'content': l:result}
+    return {'ok': 1, 'content': l:result}
 endfunction
 
 function! LLMAgent_ToolGrep(args)
+    if !has_key(a:args, 'pattern')
+        return {'ok': 0, 'error': 'grep: missing "pattern" argument'}
+    endif
     let l:pattern = a:args['pattern']
-    let l:path = get(a:args, 'path', '.')
+    let l:raw_path = get(a:args, 'path', '.')
     let l:glob_filter = get(a:args, 'glob', '*')
-    let l:path = simplify(l:path)
-    if l:path =~ '^\.\.'
-        return {'error': 'Cannot search outside the current directory'}
+    let l:path = empty(l:raw_path) ? '.' : LLMAgent_ResolveToolPath(l:raw_path)
+    if empty(l:path)
+        return {'ok': 0, 'error': 'grep: missing "path"'}
+    endif
+    if LLMAgent_IsOutsideProject(l:path)
+        return {'ok': 0, 'error': 'grep: refused to search outside project (' . l:path . ')'}
+    endif
+    " Vim regex: anchor unanchored patterns at the start so the LLM's
+    " common case ("function foo") matches a substring instead of treating
+    " every space as an alternation.
+    if l:pattern !~ '[\^$\\\.\*\[\(]'
+        let l:pattern = '\V' . l:pattern
     endif
     let l:files = globpath(l:path, '**/' . l:glob_filter, 0, 1)
     let l:results = []
     let l:match_count = 0
     for l:file in l:files
         if l:match_count >= 100
-            call add(l:results, '... (truncated, max 100 matches)')
+            call add(l:results, '... (truncated at 100 matches; narrow the pattern or glob to see more)')
             break
         endif
         if !filereadable(l:file) || isdirectory(l:file)
             continue
         endif
-        let l:lines = readfile(l:file)
+        try
+            let l:lines = readfile(l:file)
+        catch
+            continue
+        endtry
         let l:line_num = 0
         for l:line in l:lines
             let l:line_num += 1
@@ -1080,29 +1663,34 @@ function! LLMAgent_ToolGrep(args)
                     endif
                 endif
             catch
-                " Invalid regex pattern, skip this file
+                " Invalid Vim regex for this file's content; skip just this
+                " file so other files still get searched.
                 break
             endtry
         endfor
     endfor
     if empty(l:results)
-        return {'content': 'No matches found for: ' . l:pattern}
+        return {'ok': 1, 'content': 'No matches for /' . l:pattern . '/ under ' . l:path . ' (glob ' . l:glob_filter . ')'}
     endif
-    return {'content': join(l:results, "\n")}
+    return {'ok': 1, 'content': 'Matches for /' . l:pattern . '/ under ' . l:path . ' (glob ' . l:glob_filter . '):' . "\n" . join(l:results, "\n")}
 endfunction
 
 function! LLMAgent_ToolListBuffers()
     let l:bufs = []
     for l:i in range(1, bufnr('$'))
-        if buflisted(l:i)
-            let l:name = bufname(l:i)
-            if empty(l:name)
-                let l:name = '[No Name]'
-            endif
-            call add(l:bufs, l:i . ': ' . l:name)
+        if !buflisted(l:i)
+            continue
         endif
+        let l:name = bufname(l:i)
+        if empty(l:name)
+            let l:name = '[No Name]'
+        endif
+        call add(l:bufs, l:i . ': ' . l:name)
     endfor
-    return {'content': join(l:bufs, "\n")}
+    if empty(l:bufs)
+        return {'ok': 1, 'content': 'No listed buffers.'}
+    endif
+    return {'ok': 1, 'content': 'Open buffers (' . len(l:bufs) . "):\n" . join(l:bufs, "\n")}
 endfunction
 
 function! LLMAgent_ExecuteTool(name, args)
@@ -1121,8 +1709,26 @@ function! LLMAgent_ExecuteTool(name, args)
     elseif a:name == 'list_buffers'
         return LLMAgent_ToolListBuffers()
     else
-        return {'error': 'Unknown tool: ' . a:name}
+        return {'ok': 0, 'error': 'Unknown tool name: "' . a:name . '". Available: read_file, write_file, patch, ls, find, grep, list_buffers.'}
     endif
+endfunction
+
+" Normalize a tool result into a flat string for sending back to the LLM.
+" On success: returns the content. On failure: prefixes the error with a
+" clear tag and a hint so the LLM can self-correct.
+function! LLMAgent_FormatToolResult(tool_name, result)
+    if !has_key(a:result, 'ok')
+        " Backwards compat: old tools returned {content, error} only.
+        if has_key(a:result, 'error')
+            return '[TOOL_ERROR: ' . a:tool_name . '] ' . a:result['error']
+        endif
+        return get(a:result, 'content', '')
+    endif
+    if a:result['ok']
+        return get(a:result, 'content', '')
+    endif
+    let l:err = get(a:result, 'error', 'unknown error')
+    return '[TOOL_ERROR: ' . a:tool_name . '] ' . l:err
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1227,6 +1833,24 @@ function! LLMAgent_OnResize()
     endif
 endfunction
 
+" Color table for sidebar log prefixes. Colors are defined at script
+" load (see the `hi default LLMAgentHi*` lines near the top) and are the
+" same regardless of colorscheme.
+"   You / Agent / Error / Warning each get their own color.
+"   Anything else (Tool, Result, System) is gray.
+function! LLMAgent_PrefixHiGroup(prefix)
+    if a:prefix ==# 'You'
+        return 'LLMAgentHiYou'
+    elseif a:prefix ==# 'Agent'
+        return 'LLMAgentHiAgent'
+    elseif a:prefix ==# 'Error'
+        return 'LLMAgentHiError'
+    elseif a:prefix ==# 'Warning'
+        return 'LLMAgentHiWarning'
+    endif
+    return 'LLMAgentHiOther'
+endfunction
+
 function! LLMAgent_SidebarLog(text, ...)
     let l:buf = bufnr('LLMAgent-Chat')
     if l:buf < 0
@@ -1258,6 +1882,14 @@ function! LLMAgent_SidebarLog(text, ...)
 
     if !empty(l:prefix)
         call append('$', '[' . l:prefix . '] ' . l:lines[0])
+        " Highlight the [Prefix] tag in the line we just added.
+        let l:hi = LLMAgent_PrefixHiGroup(l:prefix)
+        if !empty(l:hi)
+            let l:ln = line('$')
+            " priority 10 = same as default, but scoped to the chat
+            " window so it disappears when the buffer is wiped.
+            call matchaddpos(l:hi, [[ln, 1, len(l:prefix) + 2]], 10, -1, {'window': l:chat_win})
+        endif
         let l:i = 1
         while l:i < len(l:lines)
             call append('$', l:lines[l:i])
@@ -1408,20 +2040,33 @@ endfunction
 function! LLMAgent_ContinueChat(user_text)
     if empty(s:llm_agent_messages)
         " No prior conversation; start a new agent session
-        let l:system_prompt = LLMAgent_GetSystemPrompt()
-        let l:file_ctx = LLMAgent_GetFileContext()
-        if !empty(l:file_ctx)
-            let l:system_prompt .= "\n\n" . l:file_ctx
-        endif
-        let l:system_prompt .= "\n\nCRITICAL RULES:\n1. To modify files, you MUST use write_file or patch tools. NEVER output code in your text response.\n2. To see file content, use read_file. To search code, use grep or find. To list directories, use ls.\n3. After making changes, respond with a brief text summary. Do NOT include code blocks.\n4. Stop calling tools when the task is complete.\n5. Format your text responses with actual line breaks. Use short paragraphs separated by blank lines. Never output a single long line — break it up with newlines every 1-2 sentences. Use markdown formatting (## headers, - bullets, | tables) with proper line breaks between rows."
         let s:llm_agent_messages = [
-            \ {'role': 'system', 'content': l:system_prompt},
+            \ {'role': 'system', 'content': LLMAgent_GetAgentSystemPrompt()},
             \ {'role': 'user', 'content': a:user_text}
             \ ]
     else
         call add(s:llm_agent_messages, {'role': 'user', 'content': a:user_text})
     endif
     call LLMAgent_RunWithTools('')
+endfunction
+
+" Final step of an agent turn: log the assistant's reply to the chat, then
+" route any queued file writes through the user's approval / apply / skip
+" flow. Callers can pass an empty a:content if they only want to flush the
+" write list (e.g. when bailing out of the tool loop after max rounds).
+function! LLMAgent_FinishAgentTurn(content)
+    if !empty(a:content)
+        call LLMAgent_SidebarLog(a:content, 'Agent')
+    endif
+    if empty(s:llm_agent_write_list)
+        return
+    endif
+    if g:llm_agent_tool_confirm
+        call LLMAgent_SidebarShowApproval(s:llm_agent_write_list)
+    else
+        call LLMAgent_SidebarLog('Applying ' . len(s:llm_agent_write_list) . ' write(s)...', 'System')
+        call LLMAgent_ApplyWrites(s:llm_agent_write_list)
+    endif
 endfunction
 
 function! LLMAgent_RunWithTools(prompt)
@@ -1435,61 +2080,25 @@ function! LLMAgent_RunWithTools(prompt)
 
     " Initialize messages if a prompt is given (new conversation)
     if !empty(a:prompt)
-        let l:system_prompt = LLMAgent_GetSystemPrompt()
-        let l:file_ctx = LLMAgent_GetFileContext()
-        if !empty(l:file_ctx)
-            let l:system_prompt .= "\n\n" . l:file_ctx
-        endif
-        let l:system_prompt .= "\n\nCRITICAL RULES:\n1. To modify files, you MUST use write_file or patch tools. NEVER output code in your text response.\n2. To see file content, use read_file. To search code, use grep or find. To list directories, use ls.\n3. After making changes, respond with a brief text summary. Do NOT include code blocks.\n4. Stop calling tools when the task is complete.\n5. Format your text responses with actual line breaks. Use short paragraphs separated by blank lines. Never output a single long line — break it up with newlines every 1-2 sentences. Use markdown formatting (## headers, - bullets, | tables) with proper line breaks between rows."
         let s:llm_agent_messages = [
-            \ {'role': 'system', 'content': l:system_prompt},
+            \ {'role': 'system', 'content': LLMAgent_GetAgentSystemPrompt()},
             \ {'role': 'user', 'content': a:prompt}
             \ ]
     endif
 
     let s:llm_agent_write_list = []
 
+    let l:tools = LLMAgent_GetToolDefinitions()
     for l:turn in range(g:llm_agent_tool_max_rounds)
         call LLMAgent_SidebarLog('thinking... (' . (l:turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')', 'Agent')
 
-        let l:body = {
-            \ 'model': g:llm_agent_model,
-            \ 'messages': s:llm_agent_messages,
-            \ 'tools': LLMAgent_GetToolDefinitions()
-            \ }
-        let l:tmpfile = tempname()
-        call writefile([json_encode(l:body)], l:tmpfile)
-
-        let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
-        if !empty(g:llm_agent_api_key)
-            let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
-        endif
-        let l:curl_cmd .= ' -H "Content-Type: application/json"'
-        let l:curl_cmd .= ' -d @' . shellescape(l:tmpfile)
-        let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
-
-        let l:response = system(l:curl_cmd)
-        call delete(l:tmpfile)
-
-        if v:shell_error != 0
-            call LLMAgent_SidebarLog('curl failed (exit ' . v:shell_error . ')', 'Error')
-            return
-        endif
-
-        try
-            let l:data = json_decode(l:response)
-        catch
-            call LLMAgent_SidebarLog('Failed to parse response', 'Error')
-            return
-        endtry
-
+        let l:data = LLMAgent_APIRequest(s:llm_agent_messages, l:tools)
         if has_key(l:data, 'error')
-            call LLMAgent_SidebarLog(l:data['error']['message'], 'Error')
+            call LLMAgent_SidebarLog(l:data['error'], 'Error')
             return
         endif
 
-        let l:choice = l:data['choices'][0]
-        let l:message = l:choice['message']
+        let l:message = l:data['choices'][0]['message']
 
         " Check for tool calls
         if has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
@@ -1508,10 +2117,28 @@ function! LLMAgent_RunWithTools(prompt)
                 endif
                 call LLMAgent_SidebarLog(l:tool_name . '(' . l:args_summary . ')', 'Tool')
 
-                let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
-                let l:result_text = has_key(l:tool_result, 'error') ? 'ERROR: ' . l:tool_result['error'] : l:tool_result['content']
+                " Debug: record what the LLM asked for.
+                let l:_evt = {}
+                let l:_evt.kind = 'tool_call'
+                let l:_evt.tool = l:tool_name
+                let l:_evt.args = l:tool_args
+                let l:_evt.id = get(l:tool_call, 'id', '')
+                call LLMAgent_DebugLog(l:_evt)
 
-                " Log truncated result
+                let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
+                let l:result_text = LLMAgent_FormatToolResult(l:tool_name, l:tool_result)
+
+                " Debug: record what we sent back.
+                let l:_evt = {}
+                let l:_evt.kind = 'tool_result'
+                let l:_evt.tool = l:tool_name
+                let l:_evt.ok = get(l:tool_result, 'ok', -1)
+                let l:_evt.result_preview = strpart(l:result_text, 0, 2000)
+                let l:_evt.result_len = len(l:result_text)
+                call LLMAgent_DebugLog(l:_evt)
+
+                " Log truncated result in the sidebar (strip newlines to keep
+                " the chat narrow). The full text still goes back to the LLM.
                 let l:display = substitute(l:result_text, '\n', ' ', 'g')
                 if len(l:display) > 80
                     let l:display = strpart(l:display, 0, 80) . '...'
@@ -1526,20 +2153,9 @@ function! LLMAgent_RunWithTools(prompt)
             endfor
         else
             " Final response - no more tool calls
-            let l:content = l:message['content']
-            let s:llm_agent_response_text = l:content
+            let s:llm_agent_response_text = l:message['content']
             call add(s:llm_agent_messages, l:message)
-
-            if !empty(s:llm_agent_write_list) && g:llm_agent_tool_confirm
-                call LLMAgent_SidebarLog(l:content, 'Agent')
-                call LLMAgent_SidebarShowApproval(s:llm_agent_write_list)
-            elseif !empty(s:llm_agent_write_list)
-                call LLMAgent_SidebarLog('Applying ' . len(s:llm_agent_write_list) . ' write(s)...', 'System')
-                call LLMAgent_ApplyWrites(s:llm_agent_write_list)
-                call LLMAgent_SidebarLog(l:content, 'Agent')
-            else
-                call LLMAgent_SidebarLog(l:content, 'Agent')
-            endif
+            call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
             return
         endif
     endfor
@@ -1548,137 +2164,17 @@ function! LLMAgent_RunWithTools(prompt)
     call LLMAgent_SidebarLog('max rounds reached, asking for summary...', 'System')
     call add(s:llm_agent_messages, {'role': 'user', 'content': 'You have reached the limit of tool calls. Summarize what you found and any changes you made. Do NOT call any more tools.'})
 
-    let l:body = {'model': g:llm_agent_model, 'messages': s:llm_agent_messages}
-    let l:tmpfile = tempname()
-    call writefile([json_encode(l:body)], l:tmpfile)
-    let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
-    if !empty(g:llm_agent_api_key)
-        let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
-    endif
-    let l:curl_cmd .= ' -H "Content-Type: application/json"'
-    let l:curl_cmd .= ' -d @' . shellescape(l:tmpfile)
-    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
-    let l:response = system(l:curl_cmd)
-    call delete(l:tmpfile)
-
-    if v:shell_error == 0
-        try
-            let l:data = json_decode(l:response)
-            let l:content = l:data['choices'][0]['message']['content']
-            let s:llm_agent_response_text = l:content
-            call add(s:llm_agent_messages, l:data['choices'][0]['message'])
-        catch
-            let l:content = 'LLM stopped responding.'
-        endtry
+    let l:data = LLMAgent_APIRequest(s:llm_agent_messages)
+    if !has_key(l:data, 'error') && has_key(l:data, 'choices') && len(l:data['choices']) > 0
+        let s:llm_agent_response_text = l:data['choices'][0]['message']['content']
+        call add(s:llm_agent_messages, l:data['choices'][0]['message'])
+    elseif has_key(l:data, 'error')
+        call LLMAgent_SidebarLog(l:data['error'], 'Error')
     else
-        let l:content = 'LLM stopped responding (timeout).'
+        call LLMAgent_SidebarLog('LLM stopped responding.', 'Error')
     endif
 
-    if !empty(s:llm_agent_write_list) && g:llm_agent_tool_confirm
-        call LLMAgent_SidebarLog(l:content, 'Agent')
-        call LLMAgent_SidebarShowApproval(s:llm_agent_write_list)
-    elseif !empty(s:llm_agent_write_list)
-        call LLMAgent_ApplyWrites(s:llm_agent_write_list)
-        call LLMAgent_SidebarLog(l:content, 'Agent')
-    else
-        call LLMAgent_SidebarLog(l:content, 'Agent')
-    endif
-endfunction
-
-function! LLMAgent_ShowWriteDiff(write_list)
-    let l:summary = ['LLM Agent wants to write ' . len(a:write_list) . ' file(s):']
-    for l:entry in a:write_list
-        call add(l:summary, '  ' . l:entry['path'] . ' (' . len(l:entry['content']) . ' bytes)')
-    endfor
-    call add(l:summary, '')
-    call add(l:summary, 'Enter=apply  q=reject')
-    if has('nvim')
-        let l:buf = nvim_create_buf(v:false, v:true)
-        call nvim_buf_set_lines(l:buf, 0, -1, v:true, l:summary)
-        call nvim_buf_set_option(l:buf, 'modifiable', v:false)
-        let l:w = min([80, &columns - 8])
-        let l:h = len(l:summary)
-        let s:llm_agent_confirm_win = nvim_open_win(l:buf, v:true, {
-            \ 'relative': 'editor',
-            \ 'width': l:w,
-            \ 'height': l:h,
-            \ 'row': (&lines - l:h) / 2,
-            \ 'col': (&columns - l:w) / 2,
-            \ 'style': 'minimal',
-            \ 'border': 'single',
-            \ })
-        call nvim_buf_set_keymap(l:buf, 'n', '<CR>', ':call LLMAgent_ApplyWritesCallback()<CR>', {'silent': v:true, 'nowait': v:true})
-        call nvim_buf_set_keymap(l:buf, 'n', 'q', ':call LLMAgent_RejectWritesCallback()<CR>', {'silent': v:true, 'nowait': v:true})
-        call nvim_buf_set_keymap(l:buf, 'n', '<Esc>', ':call LLMAgent_RejectWritesCallback()<CR>', {'silent': v:true, 'nowait': v:true})
-    elseif has('popupwin')
-        let s:llm_agent_confirm_popup = popup_create(l:summary, {
-            \ 'line': (&lines - len(l:summary)) / 2,
-            \ 'col': (&columns - 80) / 2,
-            \ 'minwidth': 60,
-            \ 'padding': [1,1,1,1],
-            \ 'border': [],
-            \ 'title': ' LLM Write Confirmation ',
-            \ 'close': 'button',
-            \ 'mapping': 0,
-            \ 'filter': function('LLMAgent_ConfirmFilter'),
-            \ })
-    else
-        pedit LLMAgent-Confirm
-        wincmd P
-        setlocal modifiable
-        %delete _
-        call setline(1, l:summary)
-        setlocal nomodifiable
-        nnoremap <buffer> <silent> <CR> :call LLMAgent_ApplyWritesCallback()<CR>
-        nnoremap <buffer> <silent> q :pclose<CR>
-        nnoremap <buffer> <silent> <Esc> :pclose<CR>
-        wincmd p
-    endif
-endfunction
-
-function! LLMAgent_ConfirmFilter(id, key)
-    if a:key == 'q' || a:key == "\<Esc>" || a:key == "\x1b"
-        call popup_close(a:id)
-        call LLMAgent_RejectWritesCallback()
-        return 1
-    elseif a:key == "\<CR>" || a:key == "\r"
-        call popup_close(a:id)
-        call LLMAgent_ApplyWritesCallback()
-        return 1
-    endif
-    return 0
-endfunction
-
-function! LLMAgent_ApplyWritesCallback()
-    if has('nvim') && exists('s:llm_agent_confirm_win')
-        call nvim_win_close(s:llm_agent_confirm_win, v:true)
-        unlet s:llm_agent_confirm_win
-    endif
-    if exists('s:llm_agent_write_list')
-        call LLMAgent_ApplyWrites(s:llm_agent_write_list)
-    endif
-    if exists('s:llm_agent_response_text')
-        let l:text = s:llm_agent_response_text
-        let l:source_buf = bufnr('%')
-        redraw
-        call LLMAgent_DisplayOpen(l:text, l:source_buf, [line('.'), col('.')], 'view')
-    endif
-endfunction
-
-function! LLMAgent_RejectWritesCallback()
-    if has('nvim') && exists('s:llm_agent_confirm_win')
-        call nvim_win_close(s:llm_agent_confirm_win, v:true)
-        unlet s:llm_agent_confirm_win
-    endif
-    if exists('s:llm_agent_write_list')
-        echo 'LLMAgent: writes rejected (' . len(s:llm_agent_write_list) . ' file(s))'
-    endif
-    if exists('s:llm_agent_response_text')
-        let l:text = s:llm_agent_response_text
-        let l:source_buf = bufnr('%')
-        redraw
-        call LLMAgent_DisplayOpen(l:text, l:source_buf, [line('.'), col('.')], 'view')
-    endif
+    call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
 endfunction
 
 function! LLMAgent_ApplyWrites(write_list)
@@ -1727,7 +2223,7 @@ function! LLMAgent_ReloadWrittenBuffers(write_list)
 endfunction
 
 function! LLMAgent_Execute(action, context, user_input, mode)
-    let l:system_prompt = LLMAgent_GetSystemPrompt()
+    let l:system_prompt = LLMAgent_GetAgentSystemPrompt()
 
     " Build user prompt based on action
     if a:action == 'explain'
@@ -1750,10 +2246,8 @@ function! LLMAgent_Execute(action, context, user_input, mode)
 
     echo 'LLMAgent: thinking...'
 
-    if g:llm_agent_streaming
-        " TODO: implement streaming via job_start / jobstart
-        echom 'LLMAgent: streaming not yet supported, using request mode'
-    endif
+    " Note: streaming is not implemented; the single-shot path is used instead.
+    " g:llm_agent_streaming is preserved for backward compatibility.
 
     let l:result = LLMAgent_Call(l:system_prompt, l:prompt)
 
@@ -1764,8 +2258,12 @@ function! LLMAgent_Execute(action, context, user_input, mode)
 
     let l:content = l:result['content']
 
-    " Build source info for accept
-    let l:source_buf = bufnr('%')
+    " Build source info for accept. Prefer the working buffer pinned by the
+    " command, but fall back to the current buffer (which may differ if the
+    " user switched windows between command and result).
+    let l:source_buf = exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
+        \ ? s:llm_agent_working_buf
+        \ : bufnr('%')
     if a:mode == 'write'
         let l:source_range = [line('.'), col('.')]
     elseif a:mode == 'replace'
@@ -1786,11 +2284,8 @@ endfunction
 " LLMAgent - Tool-enabled AI agent (read_file, write_file, ls, find, grep, list_buffers)
 command! -nargs=? -range LLMAgent call LLMAgent_CommandAgent(<q-args>)
 function! LLMAgent_CommandAgent(args)
-    let l:context = ''
-    try
-        let l:context = LLMAgent_GetVisualSelection()
-    catch
-    endtry
+    let l:buf = bufnr('%')
+    let l:sel = LLMAgent_CaptureSelection()
     let l:prompt = a:args
 
     " If no args, check for input prompt
@@ -1798,10 +2293,10 @@ function! LLMAgent_CommandAgent(args)
         let l:prompt = input('LLM Agent: ')
     endif
 
-    " Empty prompt with no context = open empty chat sidebar
-    if empty(l:prompt) && empty(l:context)
-        let s:llm_agent_working_buf = bufnr('%')
-        let s:llm_agent_messages = []
+    " Empty prompt with no selection = open empty chat sidebar
+    if empty(l:prompt) && l:sel['mode'] ==# 'none'
+        let s:llm_agent_working_buf = l:buf
+        call LLMAgent_Reset()
         call LLMAgent_SidebarOpen()
         return
     endif
@@ -1810,11 +2305,15 @@ function! LLMAgent_CommandAgent(args)
         return
     endif
 
-    if !empty(l:context)
-        let l:prompt = l:prompt . "\n\nUser selected code context:\n" . l:context
+    " Attach a structured location block so the LLM knows the file, range, and
+    " line numbers — not just a blob of selected text.
+    let l:loc = LLMAgent_BuildLocationContext(l:buf, l:sel['line1'], l:sel['line2'], l:sel['mode'])
+    if !empty(l:loc)
+        let l:prompt .= "\n\n" . l:loc
     endif
-    let s:llm_agent_working_buf = bufnr('%')
-    let s:llm_agent_messages = []
+
+    let s:llm_agent_working_buf = l:buf
+    call LLMAgent_Reset()
     call LLMAgent_SidebarOpen()
     call LLMAgent_SidebarLog(l:prompt, 'You')
     call LLMAgent_RunWithTools(l:prompt)
@@ -1823,11 +2322,9 @@ endfunction
 " LLMAsk - Free-form question, optional visual selection as context
 command! -nargs=? -range LLMAsk call LLMAgent_CommandAsk(<q-args>)
 function! LLMAgent_CommandAsk(args)
-    let l:context = ''
-    try
-        let l:context = LLMAgent_GetVisualSelection()
-    catch
-    endtry
+    let l:buf = bufnr('%')
+    let s:llm_agent_working_buf = l:buf
+    let l:sel = LLMAgent_CaptureSelection()
     let l:prompt = a:args
     if empty(l:prompt)
         let l:prompt = input('LLM Ask: ')
@@ -1835,22 +2332,77 @@ function! LLMAgent_CommandAsk(args)
     if empty(l:prompt)
         return
     endif
-    call LLMAgent_Execute('ask', l:context, l:prompt, 'view')
+    let l:loc = LLMAgent_BuildLocationContext(l:buf, l:sel['line1'], l:sel['line2'], l:sel['mode'])
+    if !empty(l:loc)
+        let l:prompt .= "\n\n" . l:loc
+    endif
+    call LLMAgent_Execute('ask', '', l:prompt, 'view')
 endfunction
 
 " LLMExplain - Explain selected code or word under cursor
 command! -range LLMExplain call LLMAgent_CommandExplain()
 function! LLMAgent_CommandExplain()
-    let l:context = LLMAgent_GetContext(line("'<"), line("'>"))
-    if empty(l:context)
+    let l:buf = bufnr('%')
+    let s:llm_agent_working_buf = l:buf
+    let l:sel = LLMAgent_CaptureSelection()
+    if l:sel['mode'] ==# 'none'
+        " No visual selection — explain the cursor line
+        let l:line = line('.')
+        let l:ctx = getline(l:line)
+        if empty(l:ctx)
+            echo 'LLMAgent: nothing to explain'
+            return
+        endif
+        let l:loc = LLMAgent_BuildLocationContext(l:buf, l:line, l:line, 'cursor')
+        call LLMAgent_Execute('explain', l:loc, '', 'view')
+        return
+    endif
+    let l:loc = LLMAgent_BuildLocationContext(l:buf, l:sel['line1'], l:sel['line2'], 'range')
+    if empty(l:loc)
         echo 'LLMAgent: nothing to explain'
         return
     endif
-    call LLMAgent_Execute('explain', l:context, '', 'view')
+    call LLMAgent_Execute('explain', l:loc, '', 'view')
 endfunction
 
-" LLMClear - Clear chat history
+" LLMReset - Wipe in-memory conversation state (multi-turn history, write
+" queue, working-buffer pin). The sidebar display buffer is preserved; use
+" :LLMClear to wipe that too.
+command! LLMReset call LLMAgent_Reset() | call LLMAgent_SidebarLog('Session reset (history cleared)', 'System')
+
+" LLMClear - Clear chat history (sidebar display only)
 command! LLMClear call LLMAgent_ClearChat()
+
+" LLMDebug [on|off|path] - Toggle or set the debug log location. When on,
+" every API request/response and every tool call is appended as a JSON
+" line to the log file, so you can share the log to debug misbehavior.
+command! -nargs=? LLMDebug call LLMAgent_DebugCmd(<q-args>)
+function! LLMAgent_DebugCmd(arg)
+    if a:arg ==# 'off' || a:arg ==# '0'
+        let g:llm_agent_debug = 0
+        echo 'LLMAgent debug logging: OFF'
+        return
+    endif
+    if a:arg ==# 'on'
+        let g:llm_agent_debug = 1
+    elseif !empty(a:arg)
+        let g:llm_agent_debug_file = expand(a:arg)
+        let g:llm_agent_debug = 1
+    elseif empty(g:llm_agent_debug_file)
+        " First-time :LLMDebug: pick a default in cwd.
+        let g:llm_agent_debug_file = getcwd() . '/llmagent-debug.jsonl'
+        let g:llm_agent_debug = 1
+    else
+        let g:llm_agent_debug = !g:llm_agent_debug
+    endif
+    if g:llm_agent_debug
+        " Truncate the log so each :LLMDebug session starts fresh.
+        try | call writefile([], g:llm_agent_debug_file) | catch | endtry
+        echo 'LLMAgent debug logging: ON -> ' . g:llm_agent_debug_file
+    else
+        echo 'LLMAgent debug logging: OFF (file kept at ' . g:llm_agent_debug_file . ')'
+    endif
+endfunction
 
 " LLMToggle - Toggle sidebar open/close
 command! LLMToggle call LLMAgent_ToggleSidebar()
