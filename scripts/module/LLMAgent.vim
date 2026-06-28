@@ -25,7 +25,7 @@
 augroup LLMAgentGroup
     autocmd!
     autocmd VimResized * call LLMAgent_OnResize()
-    autocmd VimLeavePre * call LLMAgent_StopACP()
+    autocmd VimLeavePre * call LLMAgent_StopACP() | call LLMAgent_Stop()
 augroup END
 
 " Sidebar log prefix colors. The mapping in LLMAgent_PrefixHiGroup returns
@@ -99,6 +99,22 @@ let s:acp_response_text = ''
 let s:acp_turn_error = ''
 let s:acp_next_req_id = 1
 let s:acp_terminal_output = ''
+
+" Async API (curl) job state for the 'api' backend. While a request is in
+" flight, s:llm_agent_api_job > 0 and the entry points refuse to start a new
+" turn (use :LLMStop to cancel). The callback is a Funcref invoked with the
+" parsed response dict (same shape LLMAgent_APIRequest used to return).
+let s:llm_agent_api_job = -1
+let s:llm_agent_api_cb = ''
+let s:llm_agent_api_outfile = ''
+let s:llm_agent_api_errfile = ''
+let s:llm_agent_api_bodyfile = ''
+" Agent tool-loop state (was implicit in the old synchronous for-loop).
+let s:llm_agent_turn = 0
+let s:llm_agent_tools = []
+" Stashed display params for the single-shot (ask/explain/write) path, used by
+" LLMAgent_OnSingleResponse after the async response arrives.
+let s:llm_agent_single_ctx = {}
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
@@ -592,52 +608,6 @@ endfunction
 """"    Private Functions - Backend
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-function! LLMAgent_CallAPI(messages)
-    let l:body = {'model': g:llm_agent_model, 'messages': a:messages}
-    let l:body_json = json_encode(l:body)
-
-    let l:tmpfile = tempname()
-    call writefile([l:body_json], l:tmpfile)
-
-    let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
-    if !empty(g:llm_agent_api_key)
-        let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
-    endif
-    let l:curl_cmd .= ' -H "Content-Type: application/json"'
-    let l:curl_cmd .= ' -d @' . shellescape(l:tmpfile)
-    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
-
-    let l:response = system(l:curl_cmd)
-    call delete(l:tmpfile)
-
-    if v:shell_error != 0
-        let l:hint = LLMAgent_CurlExitHint(v:shell_error)
-        let l:msg = 'curl failed (exit ' . v:shell_error . ')'
-        if !empty(l:response)
-            let l:msg .= ': ' . substitute(l:response, '\n\+$', '', '')
-        endif
-        if !empty(l:hint)
-            let l:msg .= '  ' . l:hint
-        endif
-        return {'error': l:msg}
-    endif
-
-    try
-        let l:data = json_decode(l:response)
-    catch
-        return {'error': 'Failed to parse JSON response: ' . l:response}
-    endtry
-
-    if has_key(l:data, 'error')
-        return {'error': l:data['error']['message']}
-    endif
-    if has_key(l:data, 'choices') && len(l:data['choices']) > 0
-        let l:content = l:data['choices'][0]['message']['content']
-        return {'content': l:content}
-    endif
-    return {'error': 'Unexpected API response format'}
-endfunction
-
 " Issue one chat-completion request against the configured API and return the
 " decoded response as a dict. Pass a:tools (a list) to enable function-calling;
 " omit it for a plain text completion. On transport / parse / protocol errors
@@ -712,6 +682,152 @@ function! LLMAgent_APIRequest(messages, ...)
     return l:data
 endfunction
 
+" Async, non-blocking version of LLMAgent_APIRequest. Instead of system() (which
+" freezes all of Vim/Nvim until curl returns), launch curl as a background job
+" that writes its response body to a temp file (-o) and stderr to another
+" (2>). When the job exits, LLMAgent_OnAPIExit reads the file, parses the JSON,
+" and invokes Callback with the same dict shape LLMAgent_APIRequest returns.
+" Callback is a Funcref called as call(Callback, [data]).
+"
+" a:tools_opt may be a list of tool defs (passed through) or 0/empty for none.
+" If the job cannot be started (e.g. Vim without +job/+channel), fall back to
+" the synchronous LLMAgent_APIRequest so the feature still works there — it
+" just blocks as it always did.
+function! LLMAgent_APIRequestAsync(messages, tools_opt, Callback)
+    " Refuse to overlap a request already in flight; the entry points guard too,
+    " but this is the last line of defense for shared script state.
+    if s:llm_agent_api_job > 0
+        call call(a:Callback, [{'error': 'an API request is already in flight; use :LLMStop to cancel'}])
+        return
+    endif
+
+    let l:body = {'model': g:llm_agent_model, 'messages': a:messages}
+    if type(a:tools_opt) == type([]) && !empty(a:tools_opt)
+        let l:body['tools'] = a:tools_opt
+    endif
+    let l:bodyfile = tempname()
+    call writefile([json_encode(l:body)], l:bodyfile)
+
+    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
+        let l:_evt = {}
+        let l:_evt.kind = 'api_request'
+        let l:_evt.model = g:llm_agent_model
+        let l:_evt.url = g:llm_agent_api_url . '/chat/completions'
+        let l:_evt.timeout = g:llm_agent_timeout
+        let l:_evt.messages_count = len(a:messages)
+        let l:_evt.tools_count = (type(a:tools_opt) == type([])) ? len(a:tools_opt) : 0
+        let l:_evt.request_body = LLMAgent_PrettyJson(json_encode(l:body))
+        call LLMAgent_DebugLog(l:_evt)
+    endif
+
+    let l:outfile = tempname()
+    let l:errfile = tempname()
+    let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
+    if !empty(g:llm_agent_api_key)
+        let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
+    endif
+    let l:curl_cmd .= ' -H "Content-Type: application/json"'
+    let l:curl_cmd .= ' -d @' . shellescape(l:bodyfile)
+    let l:curl_cmd .= ' -o ' . shellescape(l:outfile)
+    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
+    " Redirect stderr to a file so LLMAgent_OnAPIExit can report curl errors.
+    " Run via a shell so the 2> redirect works under both jobstart (string) and
+    " job_start (string), mirroring the ACP backend's shell-string usage.
+    let l:shell_cmd = l:curl_cmd . ' 2> ' . shellescape(l:errfile)
+
+    " Stash state for the exit callback.
+    let s:llm_agent_api_cb = a:Callback
+    let s:llm_agent_api_outfile = l:outfile
+    let s:llm_agent_api_errfile = l:errfile
+    let s:llm_agent_api_bodyfile = l:bodyfile
+
+    if has('nvim')
+        let l:job = jobstart(l:shell_cmd, {'on_exit': function('LLMAgent_OnAPIExit')})
+        if l:job <= 0
+            call LLMAgent_APIRequestAsyncFallback(a:messages, a:tools_opt, a:Callback, l:bodyfile, l:outfile, l:errfile)
+            return
+        endif
+        let s:llm_agent_api_job = l:job
+    else
+        let l:job = job_start(l:shell_cmd, {'exit_cb': function('LLMAgent_OnAPIExit'), 'mode': 'nl'})
+        if job_status(l:job) == 'fail'
+            call LLMAgent_APIRequestAsyncFallback(a:messages, a:tools_opt, a:Callback, l:bodyfile, l:outfile, l:errfile)
+            return
+        endif
+        let s:llm_agent_api_job = l:job
+    endif
+endfunction
+
+" Synchronous fallback when a job could not be started. Runs the blocking
+" LLMAgent_APIRequest (identical to pre-async behavior) and invokes the
+" callback with its result. Cleans up the temp files the async path created.
+function! LLMAgent_APIRequestAsyncFallback(messages, tools_opt, Callback, bodyfile, outfile, errfile)
+    call delete(a:bodyfile)
+    call delete(a:outfile)
+    call delete(a:errfile)
+    let s:llm_agent_api_cb = ''
+    let s:llm_agent_api_outfile = ''
+    let s:llm_agent_api_errfile = ''
+    let s:llm_agent_api_bodyfile = ''
+    let l:data = LLMAgent_APIRequest(a:messages, (type(a:tools_opt) == type([]) && !empty(a:tools_opt)) ? a:tools_opt : 0)
+    call call(a:Callback, [l:data])
+endfunction
+
+" Job exit callback (nvim: on_exit(job_id, exit_code, event);
+" vim: exit_cb(job, status)). Reads the response file, builds the same dict
+" LLMAgent_APIRequest returns, and invokes the stashed callback. Then clears
+" job state so a new turn can start.
+function! LLMAgent_OnAPIExit(job, exit_code, event)
+    " Snapshot state, then clear the in-flight marker first so the callback is
+    " free to start the next turn (it sets a new s:llm_agent_api_job).
+    let l:Cb = s:llm_agent_api_cb
+    let l:outfile = s:llm_agent_api_outfile
+    let l:errfile = s:llm_agent_api_errfile
+    let l:bodyfile = s:llm_agent_api_bodyfile
+    let s:llm_agent_api_job = -1
+    let s:llm_agent_api_cb = ''
+    let s:llm_agent_api_outfile = ''
+    let s:llm_agent_api_errfile = ''
+    let s:llm_agent_api_bodyfile = ''
+
+    if a:exit_code != 0
+        let l:err = filereadable(l:errfile) ? join(readfile(l:errfile), "\n") : ''
+        let l:_evt = {'kind': 'api_error', 'stage': 'curl', 'exit': a:exit_code, 'stderr': strpart(l:err, 0, 2000)}
+        call LLMAgent_DebugLog(l:_evt)
+        let l:hint = LLMAgent_CurlExitHint(a:exit_code)
+        let l:msg = 'curl failed (exit ' . a:exit_code . ')'
+        if !empty(l:err)
+            let l:msg .= ': ' . substitute(l:err, '\n\+$', '', '')
+        endif
+        if !empty(l:hint)
+            let l:msg .= '  ' . l:hint
+        endif
+        call delete(l:bodyfile)
+        call delete(l:outfile)
+        call delete(l:errfile)
+        call call(l:Cb, [{'error': l:msg}])
+        return
+    endif
+
+    let l:response = filereadable(l:outfile) ? join(readfile(l:outfile), "\n") : ''
+    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
+        let l:_evt = {'kind': 'api_response', 'body': LLMAgent_PrettyJson(l:response)}
+        call LLMAgent_DebugLog(l:_evt)
+    endif
+    call delete(l:bodyfile)
+    call delete(l:outfile)
+    call delete(l:errfile)
+    try
+        let l:data = json_decode(l:response)
+    catch
+        let l:_evt = {'kind': 'api_error', 'stage': 'json_decode', 'body': strpart(l:response, 0, 4000)}
+        call LLMAgent_DebugLog(l:_evt)
+        call call(l:Cb, [{'error': 'Failed to parse JSON response'}])
+        return
+    endtry
+    call call(l:Cb, [l:data])
+endfunction
+
 function! LLMAgent_CallCLI(prompt)
     let l:tmpfile = tempname()
     call writefile([a:prompt], l:tmpfile)
@@ -725,19 +841,6 @@ function! LLMAgent_CallCLI(prompt)
     endif
 
     return {'content': l:response}
-endfunction
-
-function! LLMAgent_Call(system_prompt, user_prompt)
-    if g:llm_agent_backend == 'api'
-        let l:messages = [
-            \ {'role': 'system', 'content': a:system_prompt},
-            \ {'role': 'user', 'content': a:user_prompt}
-            \ ]
-        return LLMAgent_CallAPI(l:messages)
-    else
-        let l:full_prompt = a:system_prompt . "\n\n" . a:user_prompt
-        return LLMAgent_CallCLI(l:full_prompt)
-    endif
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -801,6 +904,36 @@ function! LLMAgent_StopACP()
         endif
     endif
     call LLMAgent_ACPResetState()
+endfunction
+
+" Cancel an in-flight 'api' backend request (the async curl job) and reset the
+" tool-loop state so a new turn can start. Safe to call when nothing is running.
+" Mirrors LLMAgent_StopACP for the ACP backend.
+function! LLMAgent_Stop()
+    if s:llm_agent_api_job > 0
+        if has('nvim')
+            try
+                call jobstop(s:llm_agent_api_job)
+            catch
+            endtry
+        else
+            try
+                call job_stop(s:llm_agent_api_job)
+            catch
+            endtry
+        endif
+        call LLMAgent_SidebarLog('Stopped', 'System')
+    endif
+    let s:llm_agent_api_job = -1
+    let s:llm_agent_api_cb = ''
+    if !empty(s:llm_agent_api_outfile) | call delete(s:llm_agent_api_outfile) | endif
+    if !empty(s:llm_agent_api_errfile) | call delete(s:llm_agent_api_errfile) | endif
+    if !empty(s:llm_agent_api_bodyfile) | call delete(s:llm_agent_api_bodyfile) | endif
+    let s:llm_agent_api_outfile = ''
+    let s:llm_agent_api_errfile = ''
+    let s:llm_agent_api_bodyfile = ''
+    let s:llm_agent_turn = 0
+    let s:llm_agent_single_ctx = {}
 endfunction
 
 " Reset ALL ACP transient state. Called on stop, before a new session, and on
@@ -2086,6 +2219,13 @@ function! LLMAgent_ClearChat()
 endfunction
 
 function! LLMAgent_ContinueChat(user_text)
+    " In-flight guard (api backend): don't append a follow-up while a curl job
+    " is running — it would collide on shared state. ACP has its own pending
+    " state and is unaffected (s:llm_agent_api_job stays -1 there).
+    if s:llm_agent_api_job > 0
+        call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
+        return
+    endif
     if empty(s:llm_agent_messages)
         " No prior conversation; start a new agent session
         let s:llm_agent_messages = [
@@ -2124,6 +2264,13 @@ function! LLMAgent_RunWithTools(prompt)
         return
     endif
 
+    " In-flight guard: don't start a second turn while a curl job is running.
+    " ACP has its own pending state and is handled by its own backend.
+    if s:llm_agent_api_job > 0
+        call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
+        return
+    endif
+
     let s:llm_agent_response_text = ''
 
     " Initialize messages if a prompt is given (new conversation)
@@ -2135,93 +2282,107 @@ function! LLMAgent_RunWithTools(prompt)
     endif
 
     let s:llm_agent_write_list = []
+    let s:llm_agent_turn = 0
+    let s:llm_agent_tools = LLMAgent_GetToolDefinitions()
+    call LLMAgent_NextTurn()
+endfunction
 
-    let l:tools = LLMAgent_GetToolDefinitions()
-    for l:turn in range(g:llm_agent_tool_max_rounds)
-        call LLMAgent_SidebarLog('thinking... (' . (l:turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')', 'Agent')
+" Kick off the next agent turn (or the max-rounds final summary). Each turn
+" yields to Vim's event loop while the curl job runs; LLMAgent_HandleAPIResponse
+" resumes the loop when the response arrives.
+function! LLMAgent_NextTurn()
+    if s:llm_agent_turn >= g:llm_agent_tool_max_rounds
+        call LLMAgent_SidebarLog('max rounds reached, asking for summary...', 'System')
+        call add(s:llm_agent_messages, {'role': 'user', 'content': 'You have reached the limit of tool calls. Summarize what you found and any changes you made. Do NOT call any more tools.'})
+        call LLMAgent_APIRequestAsync(s:llm_agent_messages, [], function('LLMAgent_HandleFinalResponse'))
+        return
+    endif
+    call LLMAgent_SidebarLog('thinking... (' . (s:llm_agent_turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')', 'Agent')
+    let s:llm_agent_turn += 1
+    call LLMAgent_APIRequestAsync(s:llm_agent_messages, s:llm_agent_tools, function('LLMAgent_HandleAPIResponse'))
+endfunction
 
-        let l:data = LLMAgent_APIRequest(s:llm_agent_messages, l:tools)
-        if has_key(l:data, 'error')
-            call LLMAgent_SidebarLog(l:data['error'], 'Error')
-            return
-        endif
+" Resume after an API response in the tool loop. Replaces the body of the old
+" synchronous for-loop: on error stop; else either run tool calls and continue,
+" or treat it as the final answer and finish the turn.
+function! LLMAgent_HandleAPIResponse(data)
+    if has_key(a:data, 'error')
+        call LLMAgent_SidebarLog(a:data['error'], 'Error')
+        return
+    endif
+    let l:message = a:data['choices'][0]['message']
 
-        let l:message = l:data['choices'][0]['message']
+    if has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
+        call add(s:llm_agent_messages, l:message)
 
-        " Check for tool calls
-        if has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
-            call add(s:llm_agent_messages, l:message)
+        for l:tool_call in l:message['tool_calls']
+            let l:tool_name = l:tool_call['function']['name']
+            let l:tool_args = json_decode(l:tool_call['function']['arguments'])
 
-            for l:tool_call in l:message['tool_calls']
-                let l:tool_name = l:tool_call['function']['name']
-                let l:tool_args = json_decode(l:tool_call['function']['arguments'])
+            " Log the tool call
+            let l:args_summary = ''
+            if has_key(l:tool_args, 'path')
+                let l:args_summary = l:tool_args['path']
+            elseif has_key(l:tool_args, 'pattern')
+                let l:args_summary = l:tool_args['pattern']
+            endif
+            call LLMAgent_SidebarLog(l:tool_name . '(' . l:args_summary . ')', 'Tool')
 
-                " Log the tool call
-                let l:args_summary = ''
-                if has_key(l:tool_args, 'path')
-                    let l:args_summary = l:tool_args['path']
-                elseif has_key(l:tool_args, 'pattern')
-                    let l:args_summary = l:tool_args['pattern']
-                endif
-                call LLMAgent_SidebarLog(l:tool_name . '(' . l:args_summary . ')', 'Tool')
+            " Debug: record what the LLM asked for.
+            let l:_evt = {}
+            let l:_evt.kind = 'tool_call'
+            let l:_evt.tool = l:tool_name
+            let l:_evt.args = l:tool_args
+            let l:_evt.id = get(l:tool_call, 'id', '')
+            call LLMAgent_DebugLog(l:_evt)
 
-                " Debug: record what the LLM asked for.
-                let l:_evt = {}
-                let l:_evt.kind = 'tool_call'
-                let l:_evt.tool = l:tool_name
-                let l:_evt.args = l:tool_args
-                let l:_evt.id = get(l:tool_call, 'id', '')
-                call LLMAgent_DebugLog(l:_evt)
+            let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
+            let l:result_text = LLMAgent_FormatToolResult(l:tool_name, l:tool_result)
 
-                let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
-                let l:result_text = LLMAgent_FormatToolResult(l:tool_name, l:tool_result)
+            " Debug: record what we sent back.
+            let l:_evt = {}
+            let l:_evt.kind = 'tool_result'
+            let l:_evt.tool = l:tool_name
+            let l:_evt.ok = get(l:tool_result, 'ok', -1)
+            let l:_evt.result_preview = strpart(l:result_text, 0, 2000)
+            let l:_evt.result_len = len(l:result_text)
+            call LLMAgent_DebugLog(l:_evt)
 
-                " Debug: record what we sent back.
-                let l:_evt = {}
-                let l:_evt.kind = 'tool_result'
-                let l:_evt.tool = l:tool_name
-                let l:_evt.ok = get(l:tool_result, 'ok', -1)
-                let l:_evt.result_preview = strpart(l:result_text, 0, 2000)
-                let l:_evt.result_len = len(l:result_text)
-                call LLMAgent_DebugLog(l:_evt)
+            " Log truncated result in the sidebar (strip newlines to keep
+            " the chat narrow). The full text still goes back to the LLM.
+            let l:display = substitute(l:result_text, '\n', ' ', 'g')
+            if len(l:display) > 80
+                let l:display = strpart(l:display, 0, 80) . '...'
+            endif
+            call LLMAgent_SidebarLog(l:display, 'Result')
 
-                " Log truncated result in the sidebar (strip newlines to keep
-                " the chat narrow). The full text still goes back to the LLM.
-                let l:display = substitute(l:result_text, '\n', ' ', 'g')
-                if len(l:display) > 80
-                    let l:display = strpart(l:display, 0, 80) . '...'
-                endif
-                call LLMAgent_SidebarLog(l:display, 'Result')
+            call add(s:llm_agent_messages, {
+                \ 'role': 'tool',
+                \ 'tool_call_id': l:tool_call['id'],
+                \ 'content': l:result_text
+                \ })
+        endfor
 
-                call add(s:llm_agent_messages, {
-                    \ 'role': 'tool',
-                    \ 'tool_call_id': l:tool_call['id'],
-                    \ 'content': l:result_text
-                    \ })
-            endfor
-        else
-            " Final response - no more tool calls
-            let s:llm_agent_response_text = l:message['content']
-            call add(s:llm_agent_messages, l:message)
-            call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
-            return
-        endif
-    endfor
+        " Tools ran; start the next turn (async — returns to the event loop).
+        call LLMAgent_NextTurn()
+    else
+        " Final response - no more tool calls
+        let s:llm_agent_response_text = l:message['content']
+        call add(s:llm_agent_messages, l:message)
+        call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
+    endif
+endfunction
 
-    " Max rounds reached - force a final response without tools
-    call LLMAgent_SidebarLog('max rounds reached, asking for summary...', 'System')
-    call add(s:llm_agent_messages, {'role': 'user', 'content': 'You have reached the limit of tool calls. Summarize what you found and any changes you made. Do NOT call any more tools.'})
-
-    let l:data = LLMAgent_APIRequest(s:llm_agent_messages)
-    if !has_key(l:data, 'error') && has_key(l:data, 'choices') && len(l:data['choices']) > 0
-        let s:llm_agent_response_text = l:data['choices'][0]['message']['content']
-        call add(s:llm_agent_messages, l:data['choices'][0]['message'])
-    elseif has_key(l:data, 'error')
-        call LLMAgent_SidebarLog(l:data['error'], 'Error')
+" Resume after the max-rounds final summary request.
+function! LLMAgent_HandleFinalResponse(data)
+    if !has_key(a:data, 'error') && has_key(a:data, 'choices') && len(a:data['choices']) > 0
+        let s:llm_agent_response_text = a:data['choices'][0]['message']['content']
+        call add(s:llm_agent_messages, a:data['choices'][0]['message'])
+    elseif has_key(a:data, 'error')
+        call LLMAgent_SidebarLog(a:data['error'], 'Error')
     else
         call LLMAgent_SidebarLog('LLM stopped responding.', 'Error')
     endif
-
     call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
 endfunction
 
@@ -2297,18 +2458,11 @@ function! LLMAgent_Execute(action, context, user_input, mode)
     " Note: streaming is not implemented; the single-shot path is used instead.
     " g:llm_agent_streaming is preserved for backward compatibility.
 
-    let l:result = LLMAgent_Call(l:system_prompt, l:prompt)
-
-    if has_key(l:result, 'error')
-        echo 'LLMAgent error: ' . l:result['error']
-        return
-    endif
-
-    let l:content = l:result['content']
-
     " Build source info for accept. Prefer the working buffer pinned by the
     " command, but fall back to the current buffer (which may differ if the
-    " user switched windows between command and result).
+    " user switched windows between command and result). Capture this BEFORE
+    " the async dispatch: the response arrives later when cursor/'< may have
+    " moved.
     let l:source_buf = exists('s:llm_agent_working_buf') && bufexists(s:llm_agent_working_buf)
         \ ? s:llm_agent_working_buf
         \ : bufnr('%')
@@ -2321,8 +2475,50 @@ function! LLMAgent_Execute(action, context, user_input, mode)
         let l:source_range = [line('.'), col('.')]
     endif
 
+    if g:llm_agent_backend == 'api'
+        " Async, non-blocking: stash the display params for the callback, then
+        " return control to Vim while curl runs.
+        if s:llm_agent_api_job > 0
+            call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
+            return
+        endif
+        let s:llm_agent_single_ctx = {'source_buf': l:source_buf, 'source_range': l:source_range, 'mode': a:mode}
+        let l:messages = [
+            \ {'role': 'system', 'content': l:system_prompt},
+            \ {'role': 'user', 'content': l:prompt}
+            \ ]
+        call LLMAgent_APIRequestAsync(l:messages, [], function('LLMAgent_OnSingleResponse'))
+        return
+    endif
+
+    " cli backend: single-shot stays synchronous (out of scope for async).
+    let l:full_prompt = l:system_prompt . "\n\n" . l:prompt
+    let l:result = LLMAgent_CallCLI(l:full_prompt)
+    if has_key(l:result, 'error')
+        echo 'LLMAgent error: ' . l:result['error']
+        return
+    endif
     redraw
-    call LLMAgent_DisplayOpen(l:content, l:source_buf, l:source_range, a:mode)
+    call LLMAgent_DisplayOpen(l:result['content'], l:source_buf, l:source_range, a:mode)
+endfunction
+
+" Async callback for the single-shot (ask/explain/write) path on the api
+" backend. Opens the display window with the response using the params stashed
+" in s:llm_agent_single_ctx by LLMAgent_Execute.
+function! LLMAgent_OnSingleResponse(data)
+    let l:ctx = s:llm_agent_single_ctx
+    let s:llm_agent_single_ctx = {}
+    if has_key(a:data, 'error')
+        echo 'LLMAgent error: ' . a:data['error']
+        return
+    endif
+    if !has_key(a:data, 'choices') || empty(a:data['choices'])
+        echo 'LLMAgent error: empty response'
+        return
+    endif
+    let l:content = a:data['choices'][0]['message']['content']
+    redraw
+    call LLMAgent_DisplayOpen(l:content, l:ctx['source_buf'], l:ctx['source_range'], l:ctx['mode'])
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -2417,6 +2613,10 @@ endfunction
 " queue, working-buffer pin). The sidebar display buffer is preserved; use
 " :LLMClear to wipe that too.
 command! LLMReset call LLMAgent_Reset() | call LLMAgent_SidebarLog('Session reset (history cleared)', 'System')
+
+" LLMStop - Cancel an in-flight agent turn (the async curl job) and free the
+" tool loop so a new turn can start immediately.
+command! LLMStop call LLMAgent_Stop()
 
 " LLMClear - Clear chat history (sidebar display only)
 command! LLMClear call LLMAgent_ClearChat()
