@@ -1,7 +1,7 @@
 " File: LLMAgent.vim
-" Description: AI-powered code assistant using LLM APIs or CLI tools.
+" Description: AI-powered code assistant using LLM APIs or ACP tools.
 "   Backend 'api': Uses OpenAI-compatible API with function-calling tools.
-"   Backend 'cli': Uses ACP (Agent Client Protocol) JSON-RPC over stdio.
+"   Backend 'acp': Uses ACP (Agent Client Protocol) JSON-RPC over stdio.
 "     Compatible ACP tools:
 "       - Claude:  npx -y @agentclientprotocol/claude-agent-acp  (API key)
 "       - Claude:  npx -y claude-code-acp                        (Pro/Max subscription)
@@ -46,10 +46,10 @@ hi default LLMAgentHiOther   ctermfg=246 guifg=#a6adc8
 """"    Variables
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:llm_agent_backend         = get(g:, 'llm_agent_backend', 'api')
-let g:llm_agent_cli_cmd         = get(g:, 'llm_agent_cli_cmd', 'claude')
 let g:llm_agent_api_url         = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
 let g:llm_agent_api_key         = get(g:, 'llm_agent_api_key', '')
 let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
+" let g:llm_agent_model           = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
 let g:llm_agent_streaming       = get(g:, 'llm_agent_streaming', 0)
 let g:llm_agent_enable_keymaps  = get(g:, 'llm_agent_enable_keymaps', 0)
 let g:llm_agent_system_prompt   = get(g:, 'llm_agent_system_prompt', '')
@@ -94,6 +94,9 @@ let s:acp_job_id = -1
 let s:acp_session_id = ''
 let s:acp_pending_reqs = {}
 let s:acp_prompt_resolved = 0
+" Set to 1 once the ACP initialize/initialized handshake completes. The
+" server refuses session/new until this is done.
+let s:acp_initialized = 0
 let s:acp_write_list = []
 let s:acp_response_text = ''
 let s:acp_turn_error = ''
@@ -784,6 +787,13 @@ function! LLMAgent_OnAPIExit(job, exit_code, event)
     let l:outfile = s:llm_agent_api_outfile
     let l:errfile = s:llm_agent_api_errfile
     let l:bodyfile = s:llm_agent_api_bodyfile
+    " If the request was already cancelled/cleaned by LLMAgent_Stop before this
+    " exit callback fired, state is empty. Bail out: there is nothing to read or
+    " delete, and delete('') / call('', ...) would throw E474/E117 under nvim.
+    if empty(l:Cb) && empty(l:outfile)
+        let s:llm_agent_api_job = -1
+        return
+    endif
     let s:llm_agent_api_job = -1
     let s:llm_agent_api_cb = ''
     let s:llm_agent_api_outfile = ''
@@ -828,27 +838,85 @@ function! LLMAgent_OnAPIExit(job, exit_code, event)
     call call(l:Cb, [l:data])
 endfunction
 
-function! LLMAgent_CallCLI(prompt)
-    let l:tmpfile = tempname()
-    call writefile([a:prompt], l:tmpfile)
-
-    let l:cmd = g:llm_agent_cli_cmd . ' < ' . shellescape(l:tmpfile)
-    let l:response = system(l:cmd)
-    call delete(l:tmpfile)
-
-    if v:shell_error != 0
-        return {'error': 'CLI failed (exit ' . v:shell_error . '): ' . l:response}
+" One-shot query via the ACP backend, used by the single-shot commands
+" (:LLMAsk/:LLMExplain/write/fix/refactor). Starts a FRESH session for this
+" query, sends the prompt, waits for the turn to resolve, and returns the
+" response in the same shape callers expect: {'content': ...} or
+" {'error': ...}. A fresh session per call keeps single-shot queries stateless
+" (matching the old single-shot behavior) so they neither pollute nor inherit
+" the agent loop's session context. Blocks during the turn, like the ACP agent
+" loop.
+function! LLMAgent_ACPOneShot(prompt)
+    if !LLMAgent_EnsureACP()
+        return {'error': 'Failed to start ACP process'}
+    endif
+    if !LLMAgent_ACPInitialize()
+        return {'error': 'Failed to initialize ACP session'}
+    endif
+    " Force a fresh session for this query.
+    let s:acp_session_id = ''
+    if !LLMAgent_ACPSessionNew()
+        return {'error': 'Failed to create ACP session'}
     endif
 
-    return {'content': l:response}
+    let s:acp_response_text = ''
+    let s:acp_turn_error = ''
+    let s:acp_prompt_resolved = 0
+
+    let l:id = s:acp_next_req_id
+    let s:acp_next_req_id += 1
+    let s:acp_pending_reqs[l:id] = 'session/prompt'
+    call LLMAgent_SendACP({
+        \ 'jsonrpc': '2.0',
+        \ 'method': 'session/prompt',
+        \ 'params': {'sessionId': s:acp_session_id, 'prompt': [{'type': 'text', 'text': a:prompt}]},
+        \ 'id': l:id,
+        \ })
+
+    let l:waited = 0
+    let l:max_wait = g:llm_agent_timeout * 10
+    while !s:acp_prompt_resolved && LLMAgent_ACPOpen() && l:waited < l:max_wait
+        if has('nvim')
+            call jobwait([s:acp_job_id], 100)
+        else
+            sleep 100m
+        endif
+        let l:waited += 1
+    endwhile
+
+    let l:content = s:acp_response_text
+    let l:err = s:acp_turn_error
+    if !s:acp_prompt_resolved && !LLMAgent_ACPOpen() && empty(l:err)
+        let l:err = 'ACP process died during turn'
+    endif
+    " Reset per-turn state and drop the session so the next call starts fresh.
+    let s:acp_response_text = ''
+    let s:acp_turn_error = ''
+    let s:acp_prompt_resolved = 0
+    let s:acp_session_id = ''
+    if !empty(l:err)
+        return {'error': l:err}
+    endif
+    return {'content': l:content}
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Private Functions - ACP Process Management
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" Returns 1 if the ACP job is active, 0 otherwise. Nvim stores a channel id
+" (number) in s:acp_job_id, but Vim stores a Job object, so a direct `> 0`
+" comparison throws E910 ("Using a Job as a Number") under Vim. Use this
+" helper for every "is the process alive?" check so both editors work.
+function! LLMAgent_ACPOpen()
+    if has('nvim')
+        return s:acp_job_id > 0
+    endif
+    return type(s:acp_job_id) == v:t_job && job_status(s:acp_job_id) ==# 'run'
+endfunction
+
 function! LLMAgent_EnsureACP()
-    if s:acp_job_id > 0
+    if LLMAgent_ACPOpen()
         if has('nvim')
             try
                 call jobpid(s:acp_job_id)
@@ -862,7 +930,7 @@ function! LLMAgent_EnsureACP()
         endif
     endif
 
-    if s:acp_job_id > 0
+    if LLMAgent_ACPOpen()
         return 1
     endif
 
@@ -873,7 +941,7 @@ function! LLMAgent_EnsureACP()
             \ 'on_stderr': function('LLMAgent_ACPOnStderr'),
             \ 'on_exit': function('LLMAgent_ACPOnExit'),
             \ })
-        if s:acp_job_id <= 0
+        if !LLMAgent_ACPOpen()
             return 0
         endif
     else
@@ -896,7 +964,7 @@ function! LLMAgent_EnsureACP()
 endfunction
 
 function! LLMAgent_StopACP()
-    if s:acp_job_id > 0
+    if LLMAgent_ACPOpen()
         if has('nvim')
             call jobstop(s:acp_job_id)
         else
@@ -943,6 +1011,7 @@ function! LLMAgent_ACPResetState()
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
     let s:acp_prompt_resolved = 0
+    let s:acp_initialized = 0
     let s:acp_write_list = []
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
@@ -950,7 +1019,7 @@ function! LLMAgent_ACPResetState()
 endfunction
 
 function! LLMAgent_SendACP(msg)
-    if s:acp_job_id <= 0
+    if !LLMAgent_ACPOpen()
         return
     endif
     let l:json_str = type(a:msg) == v:t_dict ? json_encode(a:msg) : a:msg
@@ -965,12 +1034,16 @@ endfunction
 """"    Private Functions - ACP Message Handler
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-function! LLMAgent_ACPOnStdout(job_id, data, event)
+" Variadic so the same function serves both editors: Nvim calls job callbacks
+" as (job_id, data, event) — 3 args — while Vim's out_cb/err_cb/exit_cb call
+" them as (channel, msg) / (channel, status) — 2 args. A fixed 3-arg signature
+" throws E119 under Vim; a:1/a:2 map to the same positions either way.
+function! LLMAgent_ACPOnStdout(...)
     if has('nvim')
-        let l:lines = a:data
+        let l:lines = a:2
     else
         " Vim: data is a single string, split by newline
-        let l:lines = split(a:data, "\n", 1)
+        let l:lines = split(a:2, "\n", 1)
     endif
     for l:line in l:lines
         if empty(l:line)
@@ -984,15 +1057,35 @@ function! LLMAgent_ACPOnStdout(job_id, data, event)
     endfor
 endfunction
 
-function! LLMAgent_ACPOnStderr(job_id, data, event)
+function! LLMAgent_ACPOnStderr(...)
     " Silently ignore stderr (ACP uses stdout for protocol messages)
 endfunction
 
-function! LLMAgent_ACPOnExit(job_id, exit_code, event)
+function! LLMAgent_ACPOnExit(...)
+    " Ignore a stale exit callback from a job we already stopped and replaced.
+    " Nvim's on_exit passes the job id (a number); Vim's exit_cb passes the
+    " exiting job (per :help exit_cb). Only act when the callback is for the
+    " job we currently track — otherwise a killed predecessor's late callback
+    " would clobber a freshly started replacement (e.g. :LLMReset then an
+    " immediate :LLMAgent), leaving the new job orphaned and init stuck.
+    if has('nvim')
+        if a:1 != s:acp_job_id
+            return
+        endif
+    else
+        if type(a:1) == v:t_job
+            if type(s:acp_job_id) != v:t_job || a:1 isnot s:acp_job_id
+                return
+            endif
+        elseif LLMAgent_ACPOpen()
+            " a:1 is a channel and a newer job is already running: stale, skip.
+            return
+        endif
+    endif
     call LLMAgent_ACPResetState()
     " If prompt was not yet resolved, mark with error
     if !s:acp_prompt_resolved
-        let s:acp_turn_error = 'ACP process exited (code ' . a:exit_code . ')'
+        let s:acp_turn_error = 'ACP process exited (code ' . a:2 . ')'
         let s:acp_prompt_resolved = 1
     endif
 endfunction
@@ -1022,7 +1115,9 @@ function! LLMAgent_HandleACPMessage(line)
                 call LLMAgent_ACPHandleError(l:id, l:req, l:msg['error'])
                 return
             endif
-            if l:req == 'session/new'
+            if l:req == 'initialize'
+                let s:acp_initialized = 1
+            elseif l:req == 'session/new'
                 let s:acp_session_id = l:msg['result']['sessionId']
                 let s:acp_prompt_resolved = 0
             elseif l:req == 'session/prompt'
@@ -1111,10 +1206,14 @@ function! LLMAgent_HandleACPUpdate(params)
         return
     endif
 
-    " Handle ContentChunk streaming updates
-    if has_key(l:update, 'content') && type(l:update['content']) == v:t_list
-        for l:block in l:update['content']
-            if has_key(l:block, 'type') && l:block['type'] == 'text'
+    " Handle agent_message_chunk streaming updates. The content field can be
+    " either a single content block (dict, e.g. {"type":"text","text":"..."})
+    " or a list of blocks depending on the ACP server version; handle both.
+    if has_key(l:update, 'content')
+        let l:content = l:update['content']
+        let l:blocks = type(l:content) == type([]) ? l:content : [l:content]
+        for l:block in l:blocks
+            if type(l:block) == type({}) && get(l:block, 'type', '') ==# 'text'
                 let s:acp_response_text .= l:block['text']
             endif
         endfor
@@ -1141,6 +1240,43 @@ endfunction
 """"    Private Functions - ACP Agent Loop
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" Perform the ACP initialize handshake. The server requires an initialize
+" request (and its response) followed by a notifications/initialized
+" notification BEFORE any session/new. Without this, session/new gets no
+" session. Idempotent: skips if already initialized.
+function! LLMAgent_ACPInitialize()
+    if s:acp_initialized
+        return 1
+    endif
+    if !LLMAgent_ACPOpen()
+        return 0
+    endif
+    let l:id = s:acp_next_req_id
+    let s:acp_next_req_id += 1
+    let s:acp_pending_reqs[l:id] = 'initialize'
+    call LLMAgent_SendACP({
+        \ 'jsonrpc': '2.0',
+        \ 'id': l:id,
+        \ 'method': 'initialize',
+        \ 'params': {'protocolVersion': 1, 'clientCapabilities': {}},
+        \ })
+    let l:waited = 0
+    while !s:acp_initialized && LLMAgent_ACPOpen() && l:waited < 30
+        if has('nvim')
+            call jobwait([s:acp_job_id], 100)
+        else
+            sleep 100m
+        endif
+        let l:waited += 1
+    endwhile
+    if !s:acp_initialized
+        return 0
+    endif
+    " Notify the server the initialize phase is complete (no response expected).
+    call LLMAgent_SendACP({'jsonrpc': '2.0', 'method': 'notifications/initialized'})
+    return 1
+endfunction
+
 function! LLMAgent_ACPSessionNew()
     if empty(s:acp_session_id)
         let l:id = s:acp_next_req_id
@@ -1156,7 +1292,7 @@ function! LLMAgent_ACPSessionNew()
             \ })
         " Wait for session to be created
         let l:waited = 0
-        while empty(s:acp_session_id) && s:acp_job_id > 0 && l:waited < 50
+        while empty(s:acp_session_id) && LLMAgent_ACPOpen() && l:waited < 50
             if has('nvim')
                 call jobwait([s:acp_job_id], 100)
             else
@@ -1177,6 +1313,12 @@ function! LLMAgent_RunWithToolsACP(prompt)
     " Start ACP process if not running
     if !LLMAgent_EnsureACP()
         call LLMAgent_SidebarLog('Failed to start ACP process', 'Error')
+        return
+    endif
+
+    " Complete the initialize handshake before any session/new.
+    if !LLMAgent_ACPInitialize()
+        call LLMAgent_SidebarLog('Failed to initialize ACP session', 'Error')
         return
     endif
 
@@ -1240,7 +1382,7 @@ function! LLMAgent_RunWithToolsACP(prompt)
     " Wait for the turn to complete (agent may call us back for tools)
     let l:waited = 0
     let l:max_wait = g:llm_agent_timeout * 10  " timeout * 10 polling cycles
-    while !s:acp_prompt_resolved && s:acp_job_id > 0 && l:waited < l:max_wait
+    while !s:acp_prompt_resolved && LLMAgent_ACPOpen() && l:waited < l:max_wait
         if has('nvim')
             call jobwait([s:acp_job_id], 100)
         else
@@ -1249,7 +1391,7 @@ function! LLMAgent_RunWithToolsACP(prompt)
         let l:waited += 1
     endwhile
 
-    if !s:acp_prompt_resolved && s:acp_job_id <= 0
+    if !s:acp_prompt_resolved && !LLMAgent_ACPOpen()
         call LLMAgent_SidebarLog('ACP process died during turn', 'Error')
         return
     endif
@@ -1916,6 +2058,20 @@ endfunction
 """"    Private Functions - Sidebar
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" One-line status string naming the active backend and the model it uses.
+" Shown at the top of the chat buffer so it's clear which engine is driving
+" the tool. For 'api' the model is g:llm_agent_model; for 'acp' the model is
+" whatever the ACP agent (e.g. claude-agent-acp) provides, so label it by the
+" agent rather than a user-set model name.
+function! LLMAgent_StatusLine()
+    if g:llm_agent_backend ==# 'acp'
+        let l:model = 'Claude (via ACP)'
+    else
+        let l:model = g:llm_agent_model
+    endif
+    return 'mode: ' . g:llm_agent_backend . '  |  model: ' . l:model
+endfunction
+
 function! LLMAgent_SidebarOpen()
     let l:sidebar_width = LLMAgent_GetSidebarWidth()
     let l:input_height = LLMAgent_GetInputHeight()
@@ -1963,7 +2119,8 @@ function! LLMAgent_SidebarOpen()
     setlocal filetype=markdown
     if line('$') == 1 && getline(1) == ''
         call setline(1, '=== LLM Agent ===')
-        call append(1, '')
+        call append(1, LLMAgent_StatusLine())
+        call append(2, '')
     endif
     setlocal nomodifiable
 
@@ -2211,7 +2368,8 @@ function! LLMAgent_ClearChat()
     setlocal modifiable
     %delete _
     call setline(1, '=== LLM Agent ===')
-    call append(1, '')
+    call append(1, LLMAgent_StatusLine())
+    call append(2, '')
     setlocal nomodifiable
     execute l:cur_win . 'wincmd w'
     let s:llm_agent_messages = []
@@ -2258,8 +2416,8 @@ function! LLMAgent_FinishAgentTurn(content)
 endfunction
 
 function! LLMAgent_RunWithTools(prompt)
-    " Dispatch to ACP backend for CLI mode
-    if g:llm_agent_backend == 'cli'
+    " Dispatch to the ACP backend.
+    if g:llm_agent_backend == 'acp'
         call LLMAgent_RunWithToolsACP(a:prompt)
         return
     endif
@@ -2317,7 +2475,26 @@ function! LLMAgent_HandleAPIResponse(data)
 
         for l:tool_call in l:message['tool_calls']
             let l:tool_name = l:tool_call['function']['name']
-            let l:tool_args = json_decode(l:tool_call['function']['arguments'])
+            " Arguments normally arrive as a JSON string (OpenAI spec), but some
+            " servers send a pre-parsed object. Decode defensively: a malformed
+            " arguments string must NOT crash the turn with an uncaught E474.
+            let l:raw_args = get(l:tool_call['function'], 'arguments', '')
+            let l:tool_args = {}
+            let l:args_err = ''
+            if type(l:raw_args) == type({})
+                let l:tool_args = l:raw_args
+            elseif type(l:raw_args) == type('')
+                try
+                    let l:tool_args = json_decode(l:raw_args)
+                    if type(l:tool_args) != type({})
+                        let l:tool_args = {'_raw': l:tool_args}
+                    endif
+                catch
+                    let l:args_err = 'malformed tool arguments'
+                endtry
+            else
+                let l:args_err = 'unexpected tool arguments type'
+            endif
 
             " Log the tool call
             let l:args_summary = ''
@@ -2336,29 +2513,39 @@ function! LLMAgent_HandleAPIResponse(data)
             let l:_evt.id = get(l:tool_call, 'id', '')
             call LLMAgent_DebugLog(l:_evt)
 
-            let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
-            let l:result_text = LLMAgent_FormatToolResult(l:tool_name, l:tool_result)
+            if !empty(l:args_err)
+                " Could not parse arguments: report the error back to the model
+                " as a tool result so it can retry, instead of throwing E474.
+                let l:snippet = strpart(type(l:raw_args) == type('') ? l:raw_args : string(l:raw_args), 0, 200)
+                call LLMAgent_SidebarLog(l:args_err . ': ' . l:snippet, 'Error')
+                let l:_evt = {'kind': 'tool_result', 'tool': l:tool_name, 'ok': 0, 'result_preview': l:args_err}
+                call LLMAgent_DebugLog(l:_evt)
+                let l:result_text = 'Error: ' . l:args_err . '. Please resend ' . l:tool_name . ' with valid JSON arguments.'
+            else
+                let l:tool_result = LLMAgent_ExecuteTool(l:tool_name, l:tool_args)
+                let l:result_text = LLMAgent_FormatToolResult(l:tool_name, l:tool_result)
 
-            " Debug: record what we sent back.
-            let l:_evt = {}
-            let l:_evt.kind = 'tool_result'
-            let l:_evt.tool = l:tool_name
-            let l:_evt.ok = get(l:tool_result, 'ok', -1)
-            let l:_evt.result_preview = strpart(l:result_text, 0, 2000)
-            let l:_evt.result_len = len(l:result_text)
-            call LLMAgent_DebugLog(l:_evt)
+                " Debug: record what we sent back.
+                let l:_evt = {}
+                let l:_evt.kind = 'tool_result'
+                let l:_evt.tool = l:tool_name
+                let l:_evt.ok = get(l:tool_result, 'ok', -1)
+                let l:_evt.result_preview = strpart(l:result_text, 0, 2000)
+                let l:_evt.result_len = len(l:result_text)
+                call LLMAgent_DebugLog(l:_evt)
 
-            " Log truncated result in the sidebar (strip newlines to keep
-            " the chat narrow). The full text still goes back to the LLM.
-            let l:display = substitute(l:result_text, '\n', ' ', 'g')
-            if len(l:display) > 80
-                let l:display = strpart(l:display, 0, 80) . '...'
+                " Log truncated result in the sidebar (strip newlines to keep
+                " the chat narrow). The full text still goes back to the LLM.
+                let l:display = substitute(l:result_text, '\n', ' ', 'g')
+                if len(l:display) > 80
+                    let l:display = strpart(l:display, 0, 80) . '...'
+                endif
+                call LLMAgent_SidebarLog(l:display, 'Result')
             endif
-            call LLMAgent_SidebarLog(l:display, 'Result')
 
             call add(s:llm_agent_messages, {
                 \ 'role': 'tool',
-                \ 'tool_call_id': l:tool_call['id'],
+                \ 'tool_call_id': get(l:tool_call, 'id', ''),
                 \ 'content': l:result_text
                 \ })
         endfor
@@ -2491,9 +2678,10 @@ function! LLMAgent_Execute(action, context, user_input, mode)
         return
     endif
 
-    " cli backend: single-shot stays synchronous (out of scope for async).
+    " ACP backend: one-shot query via the ACP session (synchronous), then
+    " display the result through the same accept/replace window as the api path.
     let l:full_prompt = l:system_prompt . "\n\n" . l:prompt
-    let l:result = LLMAgent_CallCLI(l:full_prompt)
+    let l:result = LLMAgent_ACPOneShot(l:full_prompt)
     if has_key(l:result, 'error')
         echo 'LLMAgent error: ' . l:result['error']
         return
