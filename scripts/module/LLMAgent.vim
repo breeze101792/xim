@@ -1413,8 +1413,19 @@ function! LLMAgent_ToolWriteFile(args)
             return {'ok': 0, 'error': 'write_file: refused — you have not called read_file on ' . l:path . ' in this conversation. Call read_file first, then call write_file with the COMPLETE current content (plus your changes). To override this safety check, pass write_file_force: true.'}
         endif
     endif
-    " Decode any literal \n / \t / \" / \\ the LLM emitted as JSON escapes.
-    let l:content = LLMAgent_DecodeEscapes(a:args['content'])
+    " Decode escape sequences ONLY if the content has no real newlines. When
+    " the LLM sends content as a JSON string, json_decode already turns \n
+    " into real newlines, so a:args['content'] has real newlines as line
+    " separators. Any literal \n / \t remaining in the content is part of the
+    " SOURCE CODE (e.g. printf "...\n...", regex, etc.) and must be preserved —
+    " decoding it would split lines and corrupt the file (see the same guard in
+    " LLMAgent_ToolPatch). We only fall back to DecodeEscapes when there are no
+    " real newlines at all, which means the LLM sent literal \n as line
+    " separators (rare).
+    let l:content = a:args['content']
+    if stridx(l:content, "\n") < 0
+        let l:content = LLMAgent_DecodeEscapes(l:content)
+    endif
     if empty(l:content)
         return {'ok': 0, 'error': 'write_file: empty content; if you mean to create an empty file, send "\n"'}
     endif
