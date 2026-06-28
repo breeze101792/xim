@@ -48,8 +48,8 @@ hi default LLMAgentHiOther   ctermfg=246 guifg=#a6adc8
 let g:llm_agent_backend         = get(g:, 'llm_agent_backend', 'api')
 let g:llm_agent_api_url         = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
 let g:llm_agent_api_key         = get(g:, 'llm_agent_api_key', '')
-let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
-" let g:llm_agent_model           = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
+" let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
+let g:llm_agent_model           = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
 let g:llm_agent_streaming       = get(g:, 'llm_agent_streaming', 0)
 let g:llm_agent_enable_keymaps  = get(g:, 'llm_agent_enable_keymaps', 0)
 let g:llm_agent_system_prompt   = get(g:, 'llm_agent_system_prompt', '')
@@ -115,6 +115,10 @@ let s:llm_agent_api_bodyfile = ''
 " Agent tool-loop state (was implicit in the old synchronous for-loop).
 let s:llm_agent_turn = 0
 let s:llm_agent_tools = []
+" Consecutive empty/unproductive turns in the tool loop. Used to nudge the
+" model to recover instead of silently ending the turn, capped so it can't
+" loop forever. Reset on any productive turn (tool calls or non-empty text).
+let s:llm_agent_empty_count = 0
 " Stashed display params for the single-shot (ask/explain/write) path, used by
 " LLMAgent_OnSingleResponse after the async response arrives.
 let s:llm_agent_single_ctx = {}
@@ -595,15 +599,19 @@ function! LLMAgent_GetAgentSystemPrompt()
     let l:rules .= "\n3. Use patch ONLY for a tiny, well-defined change (one or two adjacent lines, no tabs, no leading whitespace change). Before calling patch, you must have just read the file so you know the exact current line content."
     let l:rules .= "\n4. If patch fails once, call read_file again to refresh, then call write_file with the full file. Do NOT retry patch with a guess."
     let l:rules .= "\n5. For refactor / restructure / reformat tasks, use write_file directly (not patch) — the whole point is structural change."
-    let l:rules .= "\n5. To find files, use find with a glob (e.g. '**/*.py'). To search, use grep with a regex. To list a directory, use ls."
-    let l:rules .= "\n6. Never put code in your text response — always modify files via tools."
-    let l:rules .= "\n7. After tools finish, give a short text summary (1-3 sentences). Do not include code blocks."
-    let l:rules .= "\n8. Stop calling tools as soon as the task is done. Do not call tools just to confirm what you already know."
+    let l:rules .= "\n6. To find files, use find with a glob (e.g. '**/*.py'). To search, use grep with a regex. To list a directory, use ls."
+    let l:rules .= "\n7. Never put code in your text response — always modify files via tools."
+    let l:rules .= "\n8. After tools finish, give a short text summary (1-3 sentences). Do not include code blocks."
+    let l:rules .= "\n9. Stop calling tools as soon as the task is done. Do not call tools just to confirm what you already know."
     let l:rules .= "\n\nRESPONSE FORMATTING RULES:"
     let l:rules .= "\n- Sidebar is narrow. Use short sentences, blank lines between them, and simple ## or - markdown only."
     let l:rules .= "\n- Do NOT use markdown tables (the sidebar renders them poorly). Use bullet lists instead."
     let l:rules .= "\n- Do NOT repeat the user's question or paste the file contents back at them."
     let l:rules .= "\n- Reference files by path, e.g. 'updated scripts/module/LLMAgent.vim', not by quoting full contents."
+    let l:rules .= "\n\nTOOL CALL FORMAT:"
+    let l:rules .= "\n- Each tool call's arguments MUST be a single valid JSON object."
+    let l:rules .= "\n- No markdown, no code fences, no prose, no comments, and no trailing commas inside the arguments JSON. Use the exact parameter names the tool defines."
+    let l:rules .= "\n- Call the smallest set of tools that gets the job done. Do not call a tool you do not need, and do not call read_file on a file you have already read this conversation."
     return l:prompt . l:rules
 endfunction
 
@@ -2441,6 +2449,7 @@ function! LLMAgent_RunWithTools(prompt)
 
     let s:llm_agent_write_list = []
     let s:llm_agent_turn = 0
+    let s:llm_agent_empty_count = 0
     let s:llm_agent_tools = LLMAgent_GetToolDefinitions()
     call LLMAgent_NextTurn()
 endfunction
@@ -2468,9 +2477,25 @@ function! LLMAgent_HandleAPIResponse(data)
         call LLMAgent_SidebarLog(a:data['error'], 'Error')
         return
     endif
-    let l:message = a:data['choices'][0]['message']
 
-    if has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
+    " An empty/missing choices array (content-filter, length-capped, some
+    " server quirks) is the same class of "nothing output" as an empty reply.
+    " Guard it instead of crashing on a:data['choices'][0].
+    if !has_key(a:data, 'choices') || empty(a:data['choices'])
+        let l:message = {}
+    else
+        let l:message = a:data['choices'][0]['message']
+    endif
+
+    let l:has_tools = has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
+    let l:content = get(l:message, 'content', '')
+    " content may be null on a tool-only turn; treat whitespace-only as empty.
+    let l:has_text = type(l:content) == type('')
+                \ ? !empty(trim(l:content))
+                \ : !empty(l:content)
+
+    if l:has_tools
+        let s:llm_agent_empty_count = 0
         call add(s:llm_agent_messages, l:message)
 
         for l:tool_call in l:message['tool_calls']
@@ -2552,11 +2577,29 @@ function! LLMAgent_HandleAPIResponse(data)
 
         " Tools ran; start the next turn (async — returns to the event loop).
         call LLMAgent_NextTurn()
-    else
-        " Final response - no more tool calls
-        let s:llm_agent_response_text = l:message['content']
+    elseif l:has_text
+        " Final response - no more tool calls and we have a real answer.
+        let s:llm_agent_empty_count = 0
+        let s:llm_agent_response_text = l:content
         call add(s:llm_agent_messages, l:message)
         call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
+    else
+        " Nothing usable: no tool calls and no text (or no choices at all).
+        " Don't silently finish with empty content. Nudge the model to recover,
+        " bounded by a consecutive-empty counter so it can't loop forever (the
+        " max_rounds ceiling bounds it too). The nudge reuses the turn slot
+        " this empty response consumed, so it does not burn extra budget:
+        " NextTurn re-increments and re-checks the ceiling.
+        let s:llm_agent_empty_count += 1
+        if s:llm_agent_empty_count <= 2
+            call LLMAgent_SidebarLog('empty response, retrying (' . s:llm_agent_empty_count . '/2)...', 'System')
+            call add(s:llm_agent_messages, {'role': 'user', 'content': 'Your last response was empty. Either call a tool to make progress, or give your final text answer. Do not return an empty reply.'})
+            let s:llm_agent_turn -= 1
+            call LLMAgent_NextTurn()
+        else
+            call LLMAgent_SidebarLog('model produced no usable output after retries, stopping.', 'Error')
+            call LLMAgent_FinishAgentTurn('')
+        endif
     endif
 endfunction
 
