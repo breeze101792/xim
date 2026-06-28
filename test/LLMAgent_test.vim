@@ -493,6 +493,139 @@ function! s:Test_ToolWriteFile_requires_read_first() abort
     call delete(l:f)
 endfunction
 
+function! s:Test_ToolWriteFile_rejects_diff_as_content() abort
+    " After a failed patch, the LLM sometimes pastes the diff text into
+    " write_file's content. That would write the diff text as the file's
+    " literal contents. Refuse it. The diff-shape guard is NOT bypassed
+    " by write_file_force — sending a diff as content is always wrong.
+    let l:f = getcwd() . '/_llm_write_diff_as_content.txt'
+    call writefile(['one', 'two', 'three'], l:f)
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-one\n+ONE\n"
+    let l:r = LLMAgent_ToolWriteFile({'path': l:f, 'content': l:diff, 'write_file_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false when content is a diff')
+    call s:Assert(stridx(l:r['error'], 'diff') >= 0, 'error mentions diff')
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolWriteFile_rejects_partial_content() abort
+    " Existing file with 20 lines. LLM sends only 2 lines (just the change).
+    " Without the guard, writefile would overwrite the file with 2 lines,
+    " destroying the other 18. Refuse it; allow override via write_file_force.
+    let l:f = getcwd() . '/_llm_write_partial.txt'
+    call writefile(range(1, 20)->map('printf("line %d", v:val)'), l:f)
+    " Read first so the read-first gate passes; we want to exercise the
+    " line-count guard, not the read-first guard.
+    call LLMAgent_ToolReadFile({'path': l:f})
+    let l:short = "line 5\nline 6 (edited)\n"
+    let l:r = LLMAgent_ToolWriteFile({'path': l:f, 'content': l:short})
+    call s:AssertEq(l:r['ok'], 0, 'ok false for partial write')
+    call s:Assert(stridx(l:r['error'], 'partial') >= 0 || stridx(l:r['error'], 'COMPLETE') >= 0, 'error mentions partial/COMPLETE')
+    " With write_file_force: true the line-count guard is bypassed, so it
+    " should succeed (the LLM may legitimately intend to shrink the file).
+    let l:r2 = LLMAgent_ToolWriteFile({'path': l:f, 'content': l:short, 'write_file_force': v:true})
+    call s:AssertEq(l:r2['ok'], 1, 'force bypasses line-count guard')
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_allows_no_newline_marker() abort
+    " A correct unified diff that includes the "\ No newline at end of
+    " file" marker must pass the diff-shape validator (previously the
+    " marker line was flagged as "invalid unified diff syntax"). We
+    " assert that the failure, if any, comes from patch(1) — NOT from
+    " our validator's "invalid" / "hunk" message.
+    let l:f = getcwd() . '/_llm_patch_nonl.txt'
+    " Write file WITHOUT trailing newline so the diff marker is correct.
+    call writefile(['one', 'two', 'three'], l:f)
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n\\ No newline at end of file\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    " Either ok=1 (patch applied) or ok=0 with a patch(1) error — but NOT
+    " a validator rejection.
+    if l:r['ok'] == 0
+        call s:Assert(stridx(l:r['error'], 'invalid') < 0, 'must not be rejected as invalid')
+        call s:Assert(stridx(l:r['error'], 'hunk') < 0 || stridx(l:r['error'], 'no @@ hunk') >= 0, 'must not be rejected for hunk-related reasons (ok=0 ok if patch(1) failed)')
+    endif
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_allows_git_extended_headers() abort
+    " LLMs often emit git-style extended diffs (diff --git / index / mode
+    " lines) even when asked for plain unified diff. The validator must
+    " accept these header lines, not flag them as "invalid unified diff
+    " syntax". The diff should reach patch(1) and apply successfully.
+    let l:f = getcwd() . '/_llm_patch_git.txt'
+    call writefile(['one', 'two', 'three'], l:f)
+    let l:diff = "diff --git a/ducky.sh b/ducky.sh\nindex abc..def 100644\n--- a/ducky.sh\n+++ b/ducky.sh\n@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 1, 'git-extended diff applies')
+    if l:r['ok'] == 0
+        " If it failed, it must NOT be a validator rejection.
+        call s:Assert(stridx(l:r['error'], 'invalid') < 0, 'must not be rejected as invalid (git headers are valid)')
+    endif
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_preserves_literal_escape_in_source_line() abort
+    " The killer bug: when a source line contains a literal \n (e.g. a
+    " printf format string), the LLM correctly includes it in the diff as
+    " a literal backslash-n. Previously LLMAgent_DecodeEscapes decoded
+    " that \n into a real newline, splitting the diff line and making
+    " patch(1) fail with "malformed patch". The fix: only decode escapes
+    " when the diff has no real newlines (json_decode already handled
+    " line separators). This test uses a real-world printf line and a
+    " correct diff that preserves the \n literal.
+    let l:f = getcwd() . '/_llm_patch_escape.txt'
+    call writefile(['    printf "    %- 32s\t %s\n" "-g" "Generate"', 'echo done'], l:f)
+    " Diff changes \t to >- on line 1, keeps \n as literal backslash-n.
+    " In Vim double-quoted strings: \\t -> \t (literal), \\n -> \n (literal),
+    " \n -> real newline (line separator).
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-    printf \"    %- 32s\\t %s\\n\" \"-g\" \"Generate\"\n+    printf \"    %- 32s>- %s\\n\" \"-g\" \"Generate\"\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 1, 'ok true — diff with literal \\n in source line must apply')
+    if l:r['ok'] == 0
+        call s:Assert(0, 'unexpected failure: ' . substitute(l:r['error'], '\n', ' | ', 'g'))
+    endif
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_tries_patch1_before_validator_reject() abort
+    " A diff with stray lines (e.g. continuation fragments from a source
+    " string that contained a literal \n) should still reach patch(1).
+    " The validator must NOT reject it outright — patch(1) may be able to
+    " apply it, and if not, the LLM gets patch(1)'s actual error instead
+    " of a confusing "invalid unified diff syntax" message.
+    let l:f = getcwd() . '/_llm_patch_stray.txt'
+    call writefile(['printf "hello\nworld\n"', 'echo done'], l:f)
+    " The LLM decoded \n inside the string into a real newline, splitting
+    " the diff line. The continuation "world..." starts with " — not a
+    " diff prefix. Before the fix this was rejected as "invalid syntax".
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-printf \"hello\nworld\n\"\n+printf \"HELLO\nworld\n\"\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false (patch(1) rejects malformed diff)')
+    " The error should come from patch(1), NOT from the validator's
+    " "invalid unified diff syntax" rejection.
+    call s:Assert(stridx(l:r['error'], 'patch(1) said') >= 0 || stridx(l:r['error'], 'git apply said') >= 0, 'error comes from patch(1)/git, not validator rejection')
+    call s:Assert(stridx(l:r['error'], 'malformed') >= 0 || stridx(l:r['error'], 'failed') >= 0, 'error mentions patch(1) failure')
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_breaks_retry_loop_after_two_fails() abort
+    " After 2 patch failures on the same path, the tool must refuse to
+    " try again — the LLM is in a retry loop and needs to switch to
+    " write_file. This prevents the 13+ retry loops the user observed.
+    let l:f = getcwd() . '/_llm_patch_loop.txt'
+    call writefile(['printf "hello\nworld\n"', 'echo done'], l:f)
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-printf \"hello\nworld\n\"\n+printf \"HELLO\nworld\n\"\n"
+    " Two attempts that fail at patch(1).
+    call LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    " Third attempt must be refused by the loop breaker.
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false for 3rd attempt')
+    call s:Assert(stridx(l:r['error'], 'already failed') >= 0 || stridx(l:r['error'], 'STOP') >= 0, 'error says already failed / STOP')
+    call s:Assert(stridx(l:r['error'], 'write_file') >= 0, 'error recommends write_file')
+    call delete(l:f)
+endfunction
+
 function! s:Test_ToolGrep_plain_text_as_literal() abort
     " A plain pattern (no regex metachars) should match a substring, not
     " be treated as a regex. Uses a project-internal directory.
@@ -877,7 +1010,7 @@ if !filereadable(s:llm_agent_path)
 endif
 execute 'source' s:llm_agent_path
 
-let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolWriteFile_clears_patch_fail_tracking']
+let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking']
 
 for s:t in s:all_tests
     let s:fn = function('<SNR>1_Test_' . s:t)

@@ -58,7 +58,7 @@ let g:llm_agent_prompt_write    = get(g:, 'llm_agent_prompt_write', 'Write code 
 let g:llm_agent_prompt_explain  = get(g:, 'llm_agent_prompt_explain', 'Explain the following code concisely:')
 let g:llm_agent_prompt_fix      = get(g:, 'llm_agent_prompt_fix', 'Fix any bugs or issues in the following code. Return ONLY the corrected code, no markdown fences, no explanation:')
 let g:llm_agent_prompt_refactor = get(g:, 'llm_agent_prompt_refactor', 'Refactor the following code to be cleaner and more efficient. Return ONLY the refactored code, no markdown fences, no explanation:')
-let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 10)
+let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 30)
 let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
 let g:llm_agent_acp_cmd           = get(g:, 'llm_agent_acp_cmd', 'npx -y @agentclientprotocol/claude-agent-acp')
@@ -572,6 +572,7 @@ function! LLMAgent_GetAgentSystemPrompt()
     let l:rules = "\n\nWORKFLOW (follow this order):"
     let l:rules .= "\n1. If you have NOT yet called read_file on the target file in this conversation, do that first. You cannot patch or rewrite a file you have not read."
     let l:rules .= "\n2. Prefer write_file. It is the only tool that cannot fail on whitespace, tabs, indentation, multi-line strings, or line-number mismatches. The full final content goes in 'content'."
+    let l:rules .= "\n   CRITICAL: write_file REPLACES the entire file with what you send. Never send only the changed lines — that destroys the rest of the file. Always send every line of the new file, including unchanged ones."
     let l:rules .= "\n3. Use patch ONLY for a tiny, well-defined change (one or two adjacent lines, no tabs, no leading whitespace change). Before calling patch, you must have just read the file so you know the exact current line content."
     let l:rules .= "\n4. If patch fails once, call read_file again to refresh, then call write_file with the full file. Do NOT retry patch with a guess."
     let l:rules .= "\n5. For refactor / restructure / reformat tasks, use write_file directly (not patch) — the whole point is structural change."
@@ -1417,6 +1418,25 @@ function! LLMAgent_ToolWriteFile(args)
     if empty(l:content)
         return {'ok': 0, 'error': 'write_file: empty content; if you mean to create an empty file, send "\n"'}
     endif
+    " Refuse content that looks like a diff, not a full file. After a failed
+    " patch the LLM sometimes pastes the diff into write_file's content,
+    " which would write the diff text as the file's literal contents.
+    " Matches either a "headered" diff (^--- ...\n+++) or a headerless one
+    " (^@@ -<digit>...).
+    if l:content =~# '\m^--- .*\n+++ ' || l:content =~# '\m^@@ -\d'
+        return {'ok': 0, 'error': 'write_file: content looks like a diff (starts with ---/+++ or @@). write_file expects the COMPLETE new file, not a diff. Re-send the full file content. (If you actually want to apply a diff, use the patch tool.)'}
+    endif
+    " Refuse content that is suspiciously shorter than the existing file.
+    " This catches the "LLM sent only the changed lines" case which would
+    " otherwise destroy the rest of the file. Bypass via write_file_force.
+    let l:existing = filereadable(l:path) ? readfile(l:path) : []
+    if !empty(l:existing) && !get(a:args, 'write_file_force', 0)
+        let l:new_lines = len(split(l:content, "\n", 1))
+        let l:old_lines = len(l:existing)
+        if l:new_lines > 0 && l:new_lines * 3 < l:old_lines
+            return {'ok': 0, 'error': 'write_file: new content has ' . l:new_lines . ' line(s) but the file has ' . l:old_lines . '. This looks like a partial write that would destroy the file. Either (a) re-send the COMPLETE file (all ' . l:old_lines . ' lines, with your changes), or (b) pass write_file_force: true if you really intend to shrink the file this much.'}
+        endif
+    endif
     let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
     if !empty(l:queue_err)
         return {'ok': 0, 'error': 'write_file: ' . l:queue_err}
@@ -1436,7 +1456,18 @@ function! LLMAgent_ToolPatch(args)
     if LLMAgent_IsOutsideProject(l:path) || l:path =~ '/\.git/'
         return {'ok': 0, 'error': 'patch: refused to write outside project (' . l:path . ')'}
     endif
-    let l:diff = LLMAgent_DecodeEscapes(a:args['diff'])
+    " Decode escape sequences ONLY if the diff has no real newlines. When
+    " the LLM sends the diff as a JSON string, json_decode already turns
+    " \n into real newlines, so a:args['diff'] has real newlines as line
+    " separators. Any literal \n / \t remaining in the content is part of
+    " the SOURCE CODE (e.g. printf "...\n...") and must be preserved —
+    " decoding it would split diff lines and corrupt the patch. We only
+    " fall back to DecodeEscapes when there are no real newlines at all,
+    " which means the LLM sent literal \n as line separators (rare).
+    let l:diff = a:args['diff']
+    if stridx(l:diff, "\n") < 0
+        let l:diff = LLMAgent_DecodeEscapes(l:diff)
+    endif
     if !filereadable(l:path)
         return {'ok': 0, 'error': 'patch: file not found (' . l:path . '). If the file is new, use write_file instead.'}
     endif
@@ -1446,6 +1477,13 @@ function! LLMAgent_ToolPatch(args)
     " switch to write_file.
     if !get(a:args, 'patch_force', 0) && !has_key(s:llm_agent_read_files, l:path)
         return {'ok': 0, 'error': 'patch: refused — you have not called read_file on ' . l:path . ' in this conversation. Call read_file first so you know the EXACT current line content, then either (a) build a precise patch or (b) switch to write_file with the full new content. To override this safety check, pass patch_force: true.'}
+    endif
+    " Retry-loop breaker: if this path has already failed patch 2+ times
+    " this session, refuse to try again. The LLM is stuck in a patch-retry
+    " loop (common with files that have source lines containing literal \n
+    " — the LLM can't produce a valid diff). Force it to switch to write_file.
+    if get(s:llm_agent_patch_fails, l:path, 0) >= 2
+        return {'ok': 0, 'error': 'patch: ' . l:path . ' has already failed patch ' . s:llm_agent_patch_fails[l:path] . ' time(s) this session. patch is not going to work for this file — it likely has source lines with literal newlines (e.g. printf "...\n...") that you keep splitting across diff lines. STOP calling patch on this file. Call read_file to get the current content, then call write_file with the COMPLETE new file in `content`.'}
     endif
 
     " --- Pre-validate the diff -----------------------------------------
@@ -1468,32 +1506,28 @@ function! LLMAgent_ToolPatch(args)
         return {'ok': 0, 'error': 'patch: diff contains only blank lines. If you only need to rewrite the file, use write_file.'}
     endif
     " A valid unified diff must have at least one @@ hunk.
+    " Allowed line prefixes: @@ hunk header, --- /+++ file headers, context
+    " line (space), + /- added/removed, \ "No newline" marker, blank line,
+    " and the git extended-diff headers (diff --git, index, mode, rename,
+    " copy, similarity, etc.) which LLMs often emit even when we asked for
+    " plain unified diff.
+    " We count bad-prefix lines for a HINT in the final error, but we do NOT
+    " reject here — patch(1) is often more lenient than our validator and
+    " can apply diffs with stray lines (e.g. continuation fragments from
+    " source strings that contained a literal \n). Rejecting early caused
+    " false positives where the LLM kept retrying the same diff.
     let l:hunk_count = 0
     let l:bad_prefix_count = 0
     for l:line in l:lines
         if l:line =~ '^@@'
             let l:hunk_count += 1
-        elseif l:line !~ '^\(@@\|---\|+++\|[ +-]\|$\)'
-            " Lines that aren't a hunk header, file header, context/+/-, or
-            " blank are garbage. Often a chatty sentence slipped in.
+        elseif l:line !~ '^\(@@\|---\|+++\|diff \|index \|old mode \|new mode \|deleted file \|new file \|similarity \|rename \|copy \|[\\ +-]\|$\)'
             let l:bad_prefix_count += 1
         endif
     endfor
     if l:hunk_count == 0
         let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
         return {'ok': 0, 'error': 'patch: diff has no @@ hunk header. Unified diffs must contain at least one "@@ -X,Y +A,B @@" line. If you only need to rewrite the file, use write_file.'}
-    endif
-    if l:bad_prefix_count > 0
-        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
-        let l:hint = 'patch: diff contains ' . l:bad_prefix_count . ' line(s) with invalid unified diff syntax (must start with one of: " ", "+", "-", "@@", "---", "+++"). '
-        " Detect the most common LLM mistake: a source line that contains an
-        " unescaped newline (e.g. printf "..."\n"...") was broken across two
-        " diff lines. patch(1) sees the second fragment as a fresh diff line.
-        if l:hunk_count > 0
-            let l:hint .= 'This often happens when a SOURCE LINE contains a literal newline (e.g. printf "...\n"...") and you split it across two diff lines without a trailing "\\". '
-        endif
-        let l:hint .= 'STRONG RECOMMENDATION: do NOT retry patch. Call read_file to refresh, then call write_file with the COMPLETE new file content. write_file is more reliable for non-trivial edits.'
-        return {'ok': 0, 'error': l:hint}
     endif
 
     " --- Try `patch` (POSIX) first ------------------------------------------
@@ -1554,6 +1588,9 @@ function! LLMAgent_ToolPatch(args)
     let l:hint = 'patch failed. patch(1) said: ' . substitute(l:err, "\n", ' ', 'g')
     if !empty(l:git_err) && l:git_err != 'git not available'
         let l:hint .= ' | git apply said: ' . substitute(l:git_err, "\n", ' ', 'g')
+    endif
+    if l:bad_prefix_count > 0
+        let l:hint .= "\n\nThe diff also has " . l:bad_prefix_count . " line(s) that don't look like valid unified diff syntax (expected prefixes: \" \", \"+\", \"-\", \"\\\", \"@@\", \"---\", \"+++\", or a git extended header). This often happens when a SOURCE LINE contains a literal newline (e.g. printf \"...\\n\"...\") and you split it across two diff lines without a trailing \"\\\\\". patch(1) could not apply the diff as written."
     endif
     let l:hint .= "\n\nDO NOT RETRY patch with a guess. Call read_file on " . l:path . " to get the EXACT current content, then call write_file with the COMPLETE new file in `content`."
     return {'ok': 0, 'error': l:hint}
