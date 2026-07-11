@@ -111,6 +111,7 @@ endif
 "" Currently don't support lazy loading.
 if g:IDE_CFG_IMPL_COMPLETION == "coc"
     "" Note, coc support vim also.
+    "" build will need to compile it with 'npm ci'
     Plug VAR_PLUGIN_PATH.'/coc.nvim'
 elseif g:IDE_CFG_IMPL_COMPLETION == "supertab"
     " Plug VAR_PLUGIN_PATH.'/supertab', { 'on':  ['<Plug>SuperTabForward'] }
