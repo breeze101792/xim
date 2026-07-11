@@ -336,7 +336,10 @@ function fSetupVim()
         test -f "${var_init_file}" && fBackup "${var_init_file}"
         echo "echo vim-ide to ${var_init_file}"
         touch ${var_init_file}
-        echo "so ~/.vim/vim-ide.vim" >> ${var_init_file}
+        echo '"" VIM IDE Start.
+if filereadable(expand("~/.vim/vim-ide.vim"))
+    source ~/.vim/vim-ide.vim
+endif' >> ${var_init_file}
     fi
 
     test -L ${path_target_ins}/vim-ide.vim || ln -sf ${PATH_IDE_ROOT}/vim-ide.vim ${path_target_ins}/
