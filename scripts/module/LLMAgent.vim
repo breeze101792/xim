@@ -32,6 +32,10 @@
 "     large/structural changes.
 "   - After an ACP turn the agent writes files directly, so open buffers are
 "     automatically reloaded from disk.
+"   - Both backends are ASYNC: requests run in a background job and the editor
+"     stays responsive (no freeze) while the model thinks. For 'api' a curl
+"     job; for 'acp' a streaming stdio job. Responses are delivered via
+"     callbacks, so Vim/Neovim never blocks.
 "
 " Dependencies: curl (for API mode), Node.js (for claude-agent-acp)
 " Supported: Vim 8+, Neovim
