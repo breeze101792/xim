@@ -72,7 +72,7 @@ let g:llm_agent_acp_auto_approve  = get(g:, 'llm_agent_acp_auto_approve', 0)
 " Debug mode. When enabled, every API request and response is appended to
 " g:llm_agent_debug_file as JSON, one event per line. You can then share
 " the log to debug why the LLM is misbehaving. Default off (no log file).
-let g:llm_agent_debug              = get(g:, 'llm_agent_debug', 0)
+let g:llm_agent_debug              = get(g:, 'llm_agent_debug', 1)
 let g:llm_agent_debug_file        = get(g:, 'llm_agent_debug_file', '/tmp/LLMAgent_Debug.log')
 
 function! LLMAgent_GetSidebarWidth()
@@ -1886,6 +1886,20 @@ function! LLMAgent_ToolPatch(args)
     " Catch the most common LLM mistakes before invoking patch(1), so the
     " error message is specific and actionable instead of "malformed patch".
     let l:lines = split(l:diff, "\n", 1)
+    " Normalize line endings: mixed CRLF/LF wrecks patch(1) (a bare trailing
+    " \r on a -/+ line makes the whole hunk "FAILED"). Strip any trailing CR.
+    " Also drop a leading BOM on any line — a stray U+FEFF before a -/+ or
+    " ---/+++ line makes patch(1) reject the whole hunk as malformed. BOMs
+    " are a common LLM artifact when it echoes file content verbatim.
+    let l:norm = []
+    for l:l in l:lines
+        if stridx(l:l, "\r") >= 0 && l:l =~# "\r$"
+            let l:l = strpart(l:l, 0, strlen(l:l) - 1)
+        endif
+        let l:l = substitute(l:l, '^' . "\uFEFF", '', '')
+        call add(l:norm, l:l)
+    endfor
+    let l:lines = l:norm
     if empty(l:lines)
         call LLMAgent_RecordPatchFail(l:path, l:diff)
         return {'ok': 0, 'error': 'patch: empty diff. If you only need to rewrite the file, use write_file.'}
@@ -1951,40 +1965,12 @@ let l:hunk_count = 0
         return {'ok': 0, 'error': 'patch: diff has no @@ hunk header. Unified diffs must contain at least one "@@ -X,Y +A,B @@" line. If you only need to rewrite the file, use write_file.'}
     endif
 
-    " --- Try `git apply` first ---------------------------------------------
-    " git apply --recount is strictly more forgiving than patch(1): it
-    " tolerates missing/fuzzy context, accepts git extended-diff headers,
-    " and re-derives hunk counts. Only when it gives up do we fall back
-    " to patch(1), which can be helpful when git is missing or the file
-    " isn't in a git tree.
-    let l:git_used = 0
-    let l:git_err = ''
-    if executable('git') && filereadable(l:path)
-        let l:diff_file2 = tempname()
-        call writefile(l:lines, l:diff_file2)
-        let l:cmd2 = 'cd ' . shellescape(fnamemodify(l:path, ':p:h')) . ' && git apply --recount --whitespace=fix ' . shellescape(l:diff_file2) . ' 2>&1'
-        let l:err2 = system(l:cmd2)
-        call delete(l:diff_file2)
-        if v:shell_error == 0
-            let l:git_used = 1
-            let l:patched = readfile(l:path)
-            let l:content = join(l:patched, "\n")
-            let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
-            if !empty(l:queue_err)
-                call LLMAgent_RecordPatchFail(l:path, l:diff)
-                return {'ok': 0, 'error': 'patch: applied by git apply but ' . l:queue_err}
-            endif
-            let l:msg = 'Patch applied via git apply --recount and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
-            return {'ok': 1, 'content': l:msg}
-        endif
-        let l:git_err = l:err2
-    else
-        let l:git_err = 'git not available'
-    endif
-
     " --- Try `patch` (POSIX) -----------------------------------------------
-    " patch(1) is the strict parser: it rejects combined "@@@" headers,
-    " NBSP, BOM, and most near-misses that git apply happens to fix.
+    " patch(1) is the workhorse. We deliberately do NOT use `git apply`:
+    " the target file may live outside any git working tree, and we cannot
+    " assume the user's checkout layout. patch(1) applies to the temp copy
+    " and we queue the resulting content for approval, so nothing touches
+    " the tree.
     let l:original = readfile(l:path)
     let l:diff_file = tempname()
     let l:orig_file = tempname()
@@ -2042,6 +2028,30 @@ let l:hunk_count = 0
         call delete(l:out_file3)
     endif
 
+    " --- Recovery: reconstruct headerless diffs ---------
+    " A common LLM output (this model in particular) is a diff with NO
+    " "---/+++" file headers AND a hunk header that is just "@@" with no
+    " line numbers, e.g.
+    "     @@
+    "      echo "[Example]"
+    "     -printf "run test: .sh -a"
+    "     +printf "./setup.sh --setup"
+    " patch(1) and git apply both reject this as "Only garbage" even though
+    " the body matches the file byte-for-byte. Rebuild it: find the old
+    " side (context + removed lines) in the current file, then emit
+    " canonical ---/+++ and "@@ -N,M +N,M @@" headers so patch(1) applies.
+    let l:rebuilt = LLMAgent_RebuildHeaderlessDiff(l:lines, l:original)
+    if !empty(l:rebuilt)
+        let l:content = join(l:rebuilt, "\n")
+        let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
+        if !empty(l:queue_err)
+            call LLMAgent_RecordPatchFail(l:path, l:diff)
+            return {'ok': 0, 'error': 'patch: rebuilt headerless diff but ' . l:queue_err}
+        endif
+        let l:msg = 'Patch applied (reconstructed from a headerless diff) and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
+        return {'ok': 1, 'content': l:msg}
+    endif
+
     " --- Both failed: tell the LLM what to do next --------------------------
     " Record this path so the dispatcher can see at a glance that the LLM
     " is in a patch-loop, and the system prompt can be reinforced.
@@ -2049,11 +2059,8 @@ let l:hunk_count = 0
     " Always capture the raw diff to a debug file so we can diagnose the
     " failure even without the LLM turning on :LLMDebug. The path is stable
     " so the user can grab it next time patch fails.
-    call LLMAgent_DebugDumpPatchDiff(l:path, l:lines, l:err, l:git_err)
+    call LLMAgent_DebugDumpPatchDiff(l:path, l:lines, l:err)
     let l:hint = 'patch failed. patch(1) said: ' . substitute(l:err, "\n", ' ', 'g')
-    if !empty(l:git_err) && l:git_err != 'git not available'
-        let l:hint .= ' | git apply said: ' . substitute(l:git_err, "\n", ' ', 'g')
-    endif
     if l:bad_prefix_count > 0
         let l:hint .= "\n\nThe diff also has " . l:bad_prefix_count . " line(s) that don't look like valid unified diff syntax (expected prefixes: \" \", \"+\", \"-\", \"\\\", \"@@\", \"---\", \"+++\", or a git extended header). This often happens when a SOURCE LINE contains a literal newline (e.g. printf \"...\\n\"...\") and you split it across two diff lines without a trailing \"\\\\\". patch(1) could not apply the diff as written."
     endif
@@ -2108,10 +2115,165 @@ function! LLMAgent_StripDiffProse(lines)
     return l:tail
 endfunction
 
+" Rebuild a headerless unified diff into canonical form by matching its
+" old side (context + removed lines) against the current file.
+"
+" Some LLMs emit diffs that omit BOTH the "--- a/x" / "+++ b/x" file
+" headers AND the line numbers in the "@@" header:
+"     @@
+"      echo "x"
+"     -old
+"     +new
+" patch(1) and git apply both reject this with "Only garbage was found",
+" yet the body content matches the file. Reconstruction:
+"   1. require the first hunk header to be a bare "@@" (no -N +M numbers)
+"      and the diff to have no ---/+++ file headers
+"   2. gather the old-side sequence exactly as the file should contain it
+"   3. locate it in the current file (must match once)
+"   4. return lines with proper ---/+++ and "@@ -N,M +N,M @@" headers
+" Returns a List (rebuilt diff lines) or '' if reconstruction is not
+" possible / ambiguous.
+function! LLMAgent_RebuildHeaderlessDiff(lines, original)
+    " Find the first hunk-header line.
+    let l:hunk_idx = -1
+    let l:i = 0
+    while l:i < len(a:lines)
+        if a:lines[l:i] =~# '^@@\+'
+            let l:hunk_idx = l:i
+            break
+        endif
+        let l:i += 1
+    endwhile
+    if l:hunk_idx < 0
+        return ''
+    endif
+    " The diff must be headerless: no ---/+++ pair anywhere.
+    for l:line in a:lines
+        if l:line =~# '^---\s' || l:line =~# '^+++\s' || l:line =~# '^diff \-\-git' || l:line =~# '^index\s'
+            return ''
+        endif
+    endfor
+    " The hunk header must carry no line numbers: "@@", "@@ @@",
+    " "@@ fHelp()", etc. — but NOT "@@ -1,9 +1,10 @@" (already complete).
+    if a:lines[l:hunk_idx] =~# '@@ \+\-\d\+\(,\d\+\)\? +\d\+\(,\d\+\)\?'
+        return ''
+    endif
+    " Gather the body (everything after the hunk headers). The header may
+    " be a bare "@@" or repeat as "@@ ... @@" — skip all leading @-only lines.
+    let l:body = []
+    let l:j = l:hunk_idx + 1
+    while l:j < len(a:lines)
+        if a:lines[l:j] =~# '^@@\+$'
+            let l:j += 1
+            continue
+        endif
+        call add(l:body, a:lines[l:j])
+        let l:j += 1
+    endwhile
+    if empty(l:body)
+        return ''
+    endif
+    " Parse the old side: context lines (space), removed lines (-), and
+    " any line that does not start with "+" (a headerless diff may drop the
+    " leading space on context lines too). The old side IS the file content.
+    " Track the new-side length independently: context stays, '+' adds,
+    " '-' is removed.
+    let l:old_seq = []
+    let l:new_cnt = 0
+    for l:line in l:body
+        if l:line =~# '^+'
+            " added line: new side only
+            let l:new_cnt += 1
+        elseif l:line =~# '^ '
+            " context line: both sides
+            call add(l:old_seq, strpart(l:line, 1))
+            let l:new_cnt += 1
+        elseif l:line =~# '^-' && l:line !=# '---'
+            " removed line: old side only
+            call add(l:old_seq, strpart(l:line, 1))
+        else
+            " bare context line (no space prefix): both sides
+            call add(l:old_seq, l:line)
+            let l:new_cnt += 1
+        endif
+    endfor
+    " Drop a trailing empty element if the body ended with a blank line.
+    while !empty(l:old_seq) && l:old_seq[-1] ==# ''
+        call remove(l:old_seq, -1)
+    endwhile
+    if empty(l:old_seq)
+        return ''
+    endif
+    let l:n_old = len(l:old_seq)
+    " Locate old_seq exactly once in the original file.
+    let l:match_start = -1
+    let l:match_count = 0
+    let l:i2 = 0
+    while l:i2 <= len(a:original) - l:n_old
+        let l:match = 1
+        let l:k = 0
+        while l:k < l:n_old
+            if a:original[l:i2 + l:k] !=# l:old_seq[l:k]
+                let l:match = 0
+                break
+            endif
+            let l:k += 1
+        endwhile
+        if l:match
+            let l:match_start = l:i2
+            let l:match_count += 1
+        endif
+        let l:i2 += 1
+    endwhile
+    if l:match_count != 1
+        " Ambiguous or not found — do not guess.
+        return ''
+    endif
+    let l:n_new = l:new_cnt
+    " Build the reconstructed NEW file content directly: replace the matched
+    " old-side span with the new side (context + added lines). Doing this by
+    " content avoids patch(1)'s fragile hunk-anchoring (a hunk that ends at
+    " the very end of the file can be rejected even when the lines match).
+    let l:new_seq = []
+    for l:line in l:body
+        if l:line =~# '^+'
+            call add(l:new_seq, strpart(l:line, 1))
+        elseif l:line =~# '^ '
+            call add(l:new_seq, strpart(l:line, 1))
+        elseif l:line =~# '^-' && l:line !=# '---'
+            " removed line: not on the new side
+        else
+            " bare context line (no space prefix)
+            call add(l:new_seq, l:line)
+        endif
+    endfor
+    while !empty(l:new_seq) && l:new_seq[-1] ==# ''
+        call remove(l:new_seq, -1)
+    endwhile
+    let l:out = []
+    " Head: lines before the match.
+    let l:i3 = 0
+    while l:i3 < l:match_start
+        call add(l:out, a:original[l:i3])
+        let l:i3 += 1
+    endwhile
+    " Middle: the new side.
+    for l:line in l:new_seq
+        call add(l:out, l:line)
+    endfor
+    " Tail: lines after the match.
+    let l:i4 = l:match_start + l:n_old
+    while l:i4 < len(a:original)
+        call add(l:out, a:original[l:i4])
+        let l:i4 += 1
+    endwhile
+    return l:out
+endfunction
+
 " Save the failing diff for diagnosis. /tmp/LLMAgent_LastPatchFail.diff is
 " overwritten on every failure and is the most useful artifact when
 " "patch fails every time" — it shows exactly what the LLM sent.
-function! LLMAgent_DebugDumpPatchDiff(path, lines, patch_err, git_err)
+function! LLMAgent_DebugDumpPatchDiff(path, lines, patch_err)
     try
         call writefile([
             \ 'LLMAgent patch failure at ' . strftime('%Y-%m-%dT%H:%M:%S'),
@@ -2119,9 +2281,6 @@ function! LLMAgent_DebugDumpPatchDiff(path, lines, patch_err, git_err)
             \ '',
             \ 'patch(1) said:',
             \ a:patch_err,
-            \ '',
-            \ 'git apply said:',
-            \ a:git_err,
             \ '',
             \ 'raw diff lines (' . len(a:lines) . '):',
             \ ] + a:lines,
