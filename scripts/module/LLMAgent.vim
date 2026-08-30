@@ -225,6 +225,22 @@ let s:acp_response_text = ''
 let s:acp_turn_error = ''
 let s:acp_next_req_id = 1
 let s:acp_terminal_output = ''
+" Async ACP turn state machine. The ACP backend is callback-driven so Vim
+" stays responsive while the agent thinks (jobwait would block the editor).
+" s:acp_phase is the step we are waiting on: '' (idle), 'initialize',
+" 'session_new', 'prompt', or 'oneshot'. s:acp_callback is the Funcref to
+" invoke when that step's response arrives (via LLMAgent_HandleACPMessage).
+let s:acp_phase = ''
+let s:acp_callback = ''
+" Stashed display params for the async one-shot (ask/explain/write) path.
+let s:acp_oneshot_ctx = {}
+" Prompt blocks / text for the in-flight turn, and whether it is a chat turn
+" ('chat') or a one-shot query ('oneshot').
+let s:acp_prompt_blocks = []
+let s:acp_prompt_text = ''
+let s:acp_mode = ''
+" Callback for the async one-shot path (LLMAgent_ACPOneShot).
+let s:acp_oneshot_cb = ''
 
 " Async API (curl) job state for the 'api' backend. While a request is in
 " flight s:llm_agent_api_job is a live job handle (nvim: channel id number,
@@ -1048,35 +1064,59 @@ function! LLMAgent_OnAPIExit(...)
 endfunction
 
 " One-shot query via the ACP backend, used by the single-shot commands
-" (:LLMAsk/:LLMExplain/write/fix/refactor). Starts a FRESH session for this
-" query, sends the prompt, waits for the turn to resolve, and returns the
-" response in the same shape callers expect: {'content': ...} or
-" {'error': ...}. A fresh session per call keeps single-shot queries stateless
-" (matching the old single-shot behavior) so they neither pollute nor inherit
-" the agent loop's session context. Blocks during the turn, like the ACP agent
-" loop.
-function! LLMAgent_ACPOneShot(prompt)
+" (:LLMAsk/:LLMAskExplain/write/fix/refactor). Starts a FRESH session for
+" this query, sends the prompt, and invokes a:Callback with the response in
+" the shape callers expect: {'content': ...} or {'error': ...}. A fresh
+" session per call keeps single-shot queries stateless (matching the old
+" single-shot behavior) so they neither pollute nor inherit the agent loop's
+" session context. Async: Vim stays responsive while the agent thinks.
+function! LLMAgent_ACPOneShot(prompt, Callback)
     if !LLMAgent_EnsureACP()
-        return {'error': 'Failed to start ACP process'}
+        call call(a:Callback, [{'error': 'Failed to start ACP process'}])
+        return
     endif
-    if !LLMAgent_ACPInitialize()
-        return {'error': 'Failed to initialize ACP session'}
+    let s:acp_mode = 'oneshot'
+    let s:acp_prompt_text = a:prompt
+    let s:acp_oneshot_cb = a:Callback
+    call LLMAgent_ACPInitialize(function('LLMAgent_ACPOneShotOnInit'))
+endfunction
+
+" Async continuation for the one-shot path: initialize done, then create a
+" fresh session. a:res is the initialize result dict, or v:null on error.
+function! LLMAgent_ACPOneShotOnInit(res)
+    if a:res is v:null
+        call call(s:acp_oneshot_cb, [{'error': 'Failed to initialize ACP session'}])
+        return
     endif
     " Force a fresh session for this query.
     let s:acp_session_id = ''
-    if !LLMAgent_ACPSessionNew()
-        return {'error': 'Failed to create ACP session'}
-    endif
+    call LLMAgent_ACPSessionNew(function('LLMAgent_ACPOneShotOnSessionNew'))
+endfunction
 
-    if !LLMAgent_ACPSendPrompt([{'type': 'text', 'text': a:prompt}])
-        return {'error': empty(s:acp_turn_error) ? 'ACP session/prompt failed' : s:acp_turn_error}
+" Async continuation for the one-shot path: session created, then send the
+" prompt turn. a:res is the session/new result dict, or v:null on error.
+function! LLMAgent_ACPOneShotOnSessionNew(res)
+    if a:res is v:null
+        call call(s:acp_oneshot_cb, [{'error': 'Failed to create ACP session'}])
+        return
     endif
-    let l:content = s:acp_response_text
+    call LLMAgent_ACPSendPrompt([{'type': 'text', 'text': s:acp_prompt_text}], function('LLMAgent_ACPOneShotOnPrompt'))
+endfunction
+
+" Async continuation for the one-shot path: prompt resolved. Deliver the
+" result to the caller's callback and reset per-turn state.
+function! LLMAgent_ACPOneShotOnPrompt(res)
+    let l:Cb = s:acp_oneshot_cb
+    let s:acp_oneshot_cb = ''
+    if a:res is v:null
+        call call(l:Cb, [{'error': empty(s:acp_turn_error) ? 'ACP session/prompt failed' : s:acp_turn_error}])
+    else
+        call call(l:Cb, [{'content': s:acp_response_text}])
+    endif
     " Reset per-turn state and drop the session so the next call starts fresh.
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
     let s:acp_session_id = ''
-    return {'content': l:content}
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1097,55 +1137,34 @@ function! LLMAgent_ACPOpen()
     return type(s:acp_job_id) == v:t_job && job_status(s:acp_job_id) ==# 'run'
 endfunction
 
-" Send one JSON-RPC request over the ACP connection and block until its
-" response arrives (the stdout handler resolves the pending entry and the
-" wait loop pumps the event loop). Returns the 'result' dict on success,
-" or v:null on timeout / connection loss / JSON-RPC error (an error message
-" is logged to the sidebar).
-function! LLMAgent_ACPRequest(method, params, max_100ms_cycles)
+" Send one JSON-RPC request over the ACP connection WITHOUT blocking. The
+" response is delivered asynchronously: when it arrives, the stdout handler
+" (LLMAgent_HandleACPMessage) invokes s:acp_callback with the 'result' dict
+" (or v:null on error/timeout). Vim stays responsive while the agent thinks.
+" a:phase names the step we are waiting on ('initialize', 'session_new',
+" 'prompt', 'oneshot') so the callback can route the result.
+function! LLMAgent_ACPSendRequest(method, params, phase, Callback)
     let l:id = s:acp_next_req_id
     let s:acp_next_req_id += 1
     let s:acp_pending_reqs[l:id] = a:method
+    let s:acp_phase = a:phase
+    let s:acp_callback = a:Callback
     call LLMAgent_SendACP({
         \ 'jsonrpc': '2.0',
         \ 'method': a:method,
         \ 'params': a:params,
         \ 'id': l:id,
         \ })
-    let l:waited = 0
-    while !has_key(s:acp_completed, string(l:id)) && LLMAgent_ACPOpen() && l:waited < a:max_100ms_cycles
-        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
-        let l:waited += 1
-    endwhile
-    if !has_key(s:acp_completed, string(l:id))
-        return v:null
-    endif
-    let l:res = s:acp_completed[l:id]
-    call remove(s:acp_completed, string(l:id))
-    return l:res
 endfunction
 
-" Send a session/prompt turn and wait for it to resolve. The agent streams
-" updates via session/update (handled by the stdout callbacks, which append
-" to s:acp_response_text / s:acp_write_list) and finally answers the
-" session/prompt request. Returns 1 on success; on any failure
-" s:acp_turn_error holds the message.
-function! LLMAgent_ACPSendPrompt(content_blocks)
+" Send a session/prompt turn asynchronously. The agent streams updates via
+" session/update (handled by the stdout callbacks, which append to
+" s:acp_response_text / s:acp_write_list) and finally answers the
+" session/prompt request; a:Callback is invoked with the result when it does.
+function! LLMAgent_ACPSendPrompt(content_blocks, Callback)
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
-    let l:res = LLMAgent_ACPRequest('session/prompt', {'sessionId': s:acp_session_id, 'prompt': a:content_blocks}, g:llm_agent_timeout * 10)
-    if l:res is v:null
-        if LLMAgent_ACPOpen()
-            let s:acp_turn_error = (empty(s:acp_turn_error) ? 'ACP turn timed out' : s:acp_turn_error)
-        elseif empty(s:acp_turn_error)
-            let s:acp_turn_error = 'ACP process died during turn'
-        endif
-        return 0
-    endif
-    if !empty(s:acp_turn_error)
-        return 0
-    endif
-    return 1
+    call LLMAgent_ACPSendRequest('session/prompt', {'sessionId': s:acp_session_id, 'prompt': a:content_blocks}, 'prompt', a:Callback)
 endfunction
 
 function! LLMAgent_EnsureACP()
@@ -1212,6 +1231,13 @@ function! LLMAgent_ACPResetState()
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
     let s:acp_terminal_output = ''
+    let s:acp_phase = ''
+    let s:acp_callback = ''
+    let s:acp_oneshot_ctx = {}
+    let s:acp_prompt_blocks = []
+    let s:acp_prompt_text = ''
+    let s:acp_mode = ''
+    let s:acp_oneshot_cb = ''
 endfunction
 
 function! LLMAgent_SendACP(msg)
@@ -1316,11 +1342,17 @@ function! LLMAgent_HandleACPMessage(line)
         let l:req = get(s:acp_pending_reqs, l:id, '')
         if !empty(l:req)
             call remove(s:acp_pending_reqs, l:id)
-            " Record the raw response so the blocking LLMAgent_ACPRequest
-            " loop can pick it up; per-request flags below are derived state.
-            let s:acp_completed[l:id] = has_key(l:msg, 'error') ? {'error': l:msg['error']} : {'result': l:msg['result']}
+            " Derive per-request state, then hand the result to the async
+            " callback (s:acp_callback) so Vim never blocks on the agent.
+            let l:phase = s:acp_phase
+            let l:Cb = s:acp_callback
+            let s:acp_phase = ''
+            let s:acp_callback = ''
             if has_key(l:msg, 'error')
                 call LLMAgent_ACPHandleError(l:id, l:req, l:msg['error'])
+                if !empty(l:Cb)
+                    call call(l:Cb, [v:null])
+                endif
                 return
             endif
             if l:req == 'initialize'
@@ -1329,6 +1361,9 @@ function! LLMAgent_HandleACPMessage(line)
                 let s:acp_agent_name = get(l:info, 'name', '')
             elseif l:req == 'session/new'
                 let s:acp_session_id = l:msg['result']['sessionId']
+            endif
+            if !empty(l:Cb)
+                call call(l:Cb, [l:msg['result']])
             endif
             return
         endif
@@ -1447,52 +1482,29 @@ endfunction
 """"    Private Functions - ACP Agent Loop
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Perform the ACP initialize handshake. The server requires an initialize
-" request (and its response) followed by a notifications/initialized
-" notification BEFORE any session/new. Without this, session/new gets no
-" session. Idempotent: skips if already initialized.
-function! LLMAgent_ACPInitialize()
+" Perform the ACP initialize handshake asynchronously. The server requires
+" an initialize request (and its response) followed by a
+" notifications/initialized notification BEFORE any session/new. Without
+" this, session/new gets no session. Idempotent: skips if already
+" initialized. a:Callback is invoked with 1 on success, 0 on failure.
+function! LLMAgent_ACPInitialize(Callback)
     if s:acp_initialized
-        return 1
+        call call(a:Callback, [1])
+        return
     endif
-    let l:id = s:acp_next_req_id
-    let s:acp_next_req_id += 1
-    let s:acp_pending_reqs[l:id] = 'initialize'
-    call LLMAgent_SendACP({
-        \ 'jsonrpc': '2.0',
-        \ 'id': l:id,
-        \ 'method': 'initialize',
-        \ 'params': {'protocolVersion': 1, 'clientCapabilities': {}},
-        \ })
-    let l:waited = 0
-    while !s:acp_initialized && LLMAgent_ACPOpen() && l:waited < 50
-        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
-        let l:waited += 1
-    endwhile
-    if !s:acp_initialized
-        return 0
-    endif
-    " Notify the server the initialize phase is complete (no response expected).
-    call LLMAgent_SendACP({'jsonrpc': '2.0', 'method': 'notifications/initialized'})
-    return 1
+    call LLMAgent_ACPSendRequest('initialize', {'protocolVersion': 1, 'clientCapabilities': {}}, 'initialize', a:Callback)
 endfunction
 
-function! LLMAgent_ACPSessionNew()
+" Create an ACP session asynchronously. opencode requires mcpServers to be
+" an array (omitting it makes session/new fail with "Invalid params"); cwd
+" is the project root. a:Callback is invoked with 1 on success, 0 on failure.
+function! LLMAgent_ACPSessionNew(Callback)
     if !empty(s:acp_session_id)
-        return 1
+        call call(a:Callback, [1])
+        return
     endif
-    " Send session/new and wait for the response. opencode requires
-    " mcpServers to be an array (omitting it makes session/new fail with
-    " "Invalid params"); cwd is the project root.
     let l:cwd = getcwd()
-    let l:res = LLMAgent_ACPRequest('session/new', {'cwd': l:cwd, 'mcpServers': []}, 50)
-    if l:res is v:null
-        return 0
-    endif
-    if has_key(l:res, 'error')
-        return 0
-    endif
-    return !empty(s:acp_session_id)
+    call LLMAgent_ACPSendRequest('session/new', {'cwd': l:cwd, 'mcpServers': []}, 'session_new', a:Callback)
 endfunction
 
 " Render the conversation history as labelled text, the way ACP turns must be
@@ -1529,6 +1541,8 @@ function! LLMAgent_RunWithToolsACP(prompt)
     let s:acp_response_text = ''
     let s:acp_write_list = []
     let s:acp_turn_error = ''
+    let s:acp_mode = 'chat'
+    let s:acp_prompt_text = a:prompt
 
     " Start ACP process if not running
     if !LLMAgent_EnsureACP()
@@ -1536,21 +1550,37 @@ function! LLMAgent_RunWithToolsACP(prompt)
         return
     endif
 
-    " Complete the initialize handshake before any session/new.
-    if !LLMAgent_ACPInitialize()
+    " Complete the initialize handshake before any session/new. Async: the
+    " callback chains into session/new then the prompt turn, so Vim never
+    " blocks while the agent thinks.
+    call LLMAgent_ACPInitialize(function('LLMAgent_ACPOnInit'))
+endfunction
+
+" Async continuation: initialize handshake done. If it failed, stop; else
+" create the session, then send the prompt turn. a:res is the initialize
+" result dict, or v:null on error.
+function! LLMAgent_ACPOnInit(res)
+    if a:res is v:null
         call LLMAgent_SidebarLog('Failed to initialize ACP session', 'Error')
         return
     endif
+    call LLMAgent_ACPSessionNew(function('LLMAgent_ACPOnSessionNew'))
+endfunction
 
-    " Create session if needed
-    if !LLMAgent_ACPSessionNew()
+" Async continuation: session created. If it failed, stop; else send the
+" prompt turn. a:res is the session/new result dict, or v:null on error.
+function! LLMAgent_ACPOnSessionNew(res)
+    if a:res is v:null
         call LLMAgent_SidebarLog('Failed to create ACP session', 'Error')
         return
     endif
+    call LLMAgent_ACPSendPrompt(LLMAgent_ACPBuildPromptBlocks(s:acp_prompt_text), function('LLMAgent_ACPOnPrompt'))
+endfunction
 
-    " Send the turn and wait for it to resolve (the agent may call us back
-    " for fs/terminal tools while it runs).
-    if !LLMAgent_ACPSendPrompt(LLMAgent_ACPBuildPromptBlocks(a:prompt))
+" Async continuation: prompt turn resolved. Stream the response, store the
+" conversation history, run write approval, and reload changed buffers.
+function! LLMAgent_ACPOnPrompt(res)
+    if a:res is v:null
         call LLMAgent_SidebarLog(empty(s:acp_turn_error) ? 'ACP process died during turn' : s:acp_turn_error, 'Error')
         return
     endif
@@ -1561,13 +1591,13 @@ function! LLMAgent_RunWithToolsACP(prompt)
     endif
 
     " Store in conversation history
-    if empty(s:llm_agent_messages) && !empty(a:prompt)
+    if empty(s:llm_agent_messages) && !empty(s:acp_prompt_text)
         let s:llm_agent_messages = [
             \ {'role': 'system', 'content': LLMAgent_GetAgentSystemPrompt()},
-            \ {'role': 'user', 'content': a:prompt}
+            \ {'role': 'user', 'content': s:acp_prompt_text}
             \ ]
-    elseif !empty(a:prompt)
-        call add(s:llm_agent_messages, {'role': 'user', 'content': a:prompt})
+    elseif !empty(s:acp_prompt_text)
+        call add(s:llm_agent_messages, {'role': 'user', 'content': s:acp_prompt_text})
     endif
     if !empty(s:acp_response_text)
         call add(s:llm_agent_messages, {'role': 'assistant', 'content': s:acp_response_text})
@@ -3301,16 +3331,25 @@ function! LLMAgent_Execute(action, context, user_input, mode)
         return
     endif
 
-    " ACP backend: one-shot query via the ACP session (synchronous), then
-    " display the result through the same accept/replace window as the api path.
+    " ACP backend: one-shot query via the ACP session (async), then display
+    " the result through the same accept/replace window as the api path.
     let l:full_prompt = l:system_prompt . "\n\n" . l:prompt
-    let l:result = LLMAgent_ACPOneShot(l:full_prompt)
-    if has_key(l:result, 'error')
-        echo 'LLMAgent error: ' . l:result['error']
+    let s:acp_oneshot_ctx = {'source_buf': l:source_buf, 'source_range': l:source_range, 'mode': a:mode}
+    call LLMAgent_ACPOneShot(l:full_prompt, function('LLMAgent_OnACPOneShotResponse'))
+endfunction
+
+" Async callback for the single-shot (ask/explain/write) path on the ACP
+" backend. Opens the display window with the response using the params
+" stashed in s:acp_oneshot_ctx by LLMAgent_Execute.
+function! LLMAgent_OnACPOneShotResponse(result)
+    let l:ctx = s:acp_oneshot_ctx
+    let s:acp_oneshot_ctx = {}
+    if has_key(a:result, 'error')
+        echo 'LLMAgent error: ' . a:result['error']
         return
     endif
     redraw
-    call LLMAgent_DisplayOpen(l:result['content'], l:source_buf, l:source_range, a:mode)
+    call LLMAgent_DisplayOpen(a:result['content'], l:ctx['source_buf'], l:ctx['source_range'], l:ctx['mode'])
 endfunction
 
 " Async callback for the single-shot (ask/explain/write) path on the api

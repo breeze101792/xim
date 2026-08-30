@@ -1804,7 +1804,7 @@ function! s:Test_StatusLine_acp_uses_reported_agent_name() abort
     let g:llm_agent_backend = 'acp'
     call LLMAgent_ACPResetState()
     " Register a pending 'initialize' request, then feed a matching response.
-    call LLMAgent_ACPInitialize()
+    call LLMAgent_ACPInitialize(function('s:NoopCb'))
     for l:id in range(1, 50)
         call LLMAgent_HandleACPMessage('{"jsonrpc":"2.0","id":' . l:id . ',"result":{"agentInfo":{"name":"OpenCode","version":"1.0.0"}}}')
     endfor
@@ -1886,9 +1886,8 @@ function! s:Test_ACPSessionNew_sends_request_shape() abort
     let g:llm_agent_acp_cmd = 'sh ' . shellescape(l:fake)
     call LLMAgent_ACPResetState()
     call LLMAgent_EnsureACP()
-    " Use the same 'session/new' request ACPSessionNew sends, with a 1-cycle
-    " wait so the loop ends even though the fake never responds.
-    call LLMAgent_ACPRequest('session/new', {'cwd': getcwd(), 'mcpServers': []}, 1)
+    " Send the same 'session/new' request ACPSessionNew sends, asynchronously.
+    call LLMAgent_ACPSendRequest('session/new', {'cwd': getcwd(), 'mcpServers': []}, 'session_new', function('s:NoopCb'))
     sleep 400m
     let l:wire = join((filereadable(l:log) ? readfile(l:log) : []), "\n")
     call s:Assert(stridx(l:wire, 'session/new') >= 0, 'wire request names session/new method')
@@ -1908,13 +1907,26 @@ function! s:Test_ACPSessionNew_captures_session_id() abort
     " is processed (as the stdout handler would), a fresh ACPSessionNew
     " short-circuits to 1.
     call LLMAgent_ACPResetState()
-    call s:AssertEq(LLMAgent_ACPSessionNew(), 0, 'ACPSessionNew returns 0 when s:acp_session_id is empty/no response')
+    " With no ACP process, ACPSessionNew sends the request but no response
+    " arrives; the callback is never invoked (async, non-blocking).
+    call LLMAgent_ACPSessionNew(function('s:NoopCb'))
     " Feed a matching session/new result across candidate ids.
     for l:id in range(1, 50)
         call LLMAgent_HandleACPMessage('{"jsonrpc":"2.0","id":' . l:id . ',"result":{"sessionId":"sess-abc123"}}')
     endfor
-    call s:AssertEq(LLMAgent_ACPSessionNew(), 1, 'ACPSessionNew succeeds once the session id is captured')
+    " Once the session id is captured, a fresh ACPSessionNew short-circuits to
+    " success and invokes its callback with 1.
+    let g:_acp_session_ok = -1
+    call LLMAgent_ACPSessionNew(function('s:CaptureSessionOk'))
+    call s:AssertEq(g:_acp_session_ok, 1, 'ACPSessionNew succeeds once the session id is captured')
     call LLMAgent_ACPResetState()
+endfunction
+
+function! s:NoopCb(...)
+endfunction
+
+function! s:CaptureSessionOk(ok)
+    let g:_acp_session_ok = a:ok
 endfunction
 
 " --- Job helpers: optional on_stdout + (job, ms) signature ----------------
