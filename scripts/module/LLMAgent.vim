@@ -83,7 +83,6 @@ let g:llm_agent_api_url          = get(g:, 'llm_agent_api_url', 'http://localhos
 let g:llm_agent_api_key          = get(g:, 'llm_agent_api_key', '')
 let g:llm_agent_model            = get(g:, 'llm_agent_model', 'deepseek-v4-flash:cloud')
 " let g:llm_agent_model          = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
-let g:llm_agent_streaming        = get(g:, 'llm_agent_streaming', 0)
 let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 0)
 let g:llm_agent_system_prompt    = get(g:, 'llm_agent_system_prompt', '')
 let g:llm_agent_timeout          = get(g:, 'llm_agent_timeout', 180)
@@ -95,7 +94,6 @@ let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 30)
 let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
 let g:llm_agent_acp_cmd          = get(g:, 'llm_agent_acp_cmd', 'opencode acp')
-let g:llm_agent_acp_auto_approve = get(g:, 'llm_agent_acp_auto_approve', 0)
 " Example: use opencode as the ACP backend (comment out the default above and
 " uncomment one of these):
 "   let g:llm_agent_backend = 'acp'
@@ -191,9 +189,9 @@ let s:llm_agent_response_text = ''
 let s:llm_agent_patch_fails = {}
 
 " The diff text that last failed for each path. The retry-loop breaker
-    " only refuses an identical re-submission of a diff that failed several
-    " times — a fresh, different diff is always allowed through so a good
-    " attempt can clear the tracker instead of being locked out.
+" only refuses an identical re-submission of a diff that failed several
+" times — a fresh, different diff is always allowed through so a good
+" attempt can clear the tracker instead of being locked out.
 let s:llm_agent_patch_fail_diffs = {}
 
 " Bump the patch-failure counter for a path and remember the diff that
@@ -214,9 +212,6 @@ let s:llm_agent_read_files = {}
 let s:acp_job_id = v:null
 let s:acp_session_id = ''
 let s:acp_pending_reqs = {}
-" Responses to requests we sent, keyed by request id. The blocking
-" LLMAgent_ACPRequest loop consumes these.
-let s:acp_completed = {}
 let s:acp_prompt_resolved = 0
 " Set to 1 once the ACP initialize/initialized handshake completes. The
 " server refuses session/new until this is done.
@@ -238,9 +233,8 @@ let s:acp_phase = ''
 let s:acp_callback = ''
 " Stashed display params for the async one-shot (ask/explain/write) path.
 let s:acp_oneshot_ctx = {}
-" Prompt blocks / text for the in-flight turn, and whether it is a chat turn
+" Prompt text for the in-flight turn, and whether it is a chat turn
 " ('chat') or a one-shot query ('oneshot').
-let s:acp_prompt_blocks = []
 let s:acp_prompt_text = ''
 let s:acp_mode = ''
 " Callback for the async one-shot path (LLMAgent_ACPOneShot).
@@ -1214,7 +1208,6 @@ function! LLMAgent_EnsureACP()
 
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
-    let s:acp_completed = {}
     let s:acp_prompt_resolved = 0
     return 1
 endfunction
@@ -1244,7 +1237,6 @@ function! LLMAgent_ACPResetState()
     let s:acp_job_id = v:null
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
-    let s:acp_completed = {}
     let s:acp_prompt_resolved = 0
     let s:acp_initialized = 0
     let s:acp_agent_name = ''
@@ -1255,7 +1247,6 @@ function! LLMAgent_ACPResetState()
     let s:acp_phase = ''
     let s:acp_callback = ''
     let s:acp_oneshot_ctx = {}
-    let s:acp_prompt_blocks = []
     let s:acp_prompt_text = ''
     let s:acp_mode = ''
     let s:acp_oneshot_cb = ''
@@ -1299,10 +1290,6 @@ function! LLMAgent_ACPOnStdout(...)
         endif
         call LLMAgent_HandleACPMessage(l:line)
     endfor
-endfunction
-
-function! LLMAgent_ACPOnStderr(...)
-    " Silently ignore stderr (ACP uses stdout for protocol messages)
 endfunction
 
 function! LLMAgent_ACPOnExit(...)
@@ -3423,9 +3410,6 @@ function! LLMAgent_Execute(action, context, user_input, mode)
     endif
 
     echo 'LLMAgent: thinking...'
-
-    " Note: streaming is not implemented; the single-shot path is used instead.
-    " g:llm_agent_streaming is preserved for backward compatibility.
 
     " Build source info for accept. Prefer the working buffer pinned by the
     " command, but fall back to the current buffer (which may differ if the
