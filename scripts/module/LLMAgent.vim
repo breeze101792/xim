@@ -2749,6 +2749,31 @@ function! LLMAgent_SendInput()
     call LLMAgent_ContinueChat(l:text)
 endfunction
 
+" Show a unified diff (current on-disk content vs proposed content) for each
+" queued write, so the user can see exactly what will change before approving.
+" Logs to the chat buffer; no-op if the file doesn't exist yet (new file).
+function! LLMAgent_ShowApprovalDiff(write_list)
+    for l:entry in a:write_list
+        let l:path = l:entry['path']
+        if !filereadable(l:path)
+            call LLMAgent_SidebarLog('NEW FILE: ' . l:path, 'System')
+            continue
+        endif
+        let l:old = tempname()
+        let l:new = tempname()
+        call writefile(readfile(l:path), l:old)
+        call writefile(split(l:entry['content'], "\n", 1), l:new)
+        let l:diff = system('diff -u --label a/' . shellescape(fnamemodify(l:path, ':t')) . ' --label b/' . shellescape(fnamemodify(l:path, ':t')) . ' ' . shellescape(l:old) . ' ' . shellescape(l:new) . ' 2>&1')
+        call delete(l:old)
+        call delete(l:new)
+        if empty(l:diff)
+            continue
+        endif
+        call LLMAgent_SidebarLog('Diff for ' . l:path . ':', 'System')
+        call LLMAgent_SidebarLog(substitute(l:diff, '\n$', '', ''), '')
+    endfor
+endfunction
+
 function! LLMAgent_SidebarShowApproval(write_list)
     " Show approval prompt in the input area
     let l:input_buf = bufnr('LLMAgent-Input')
@@ -2869,6 +2894,7 @@ function! LLMAgent_FinishAgentTurn(content)
         return
     endif
     if g:llm_agent_tool_confirm
+        call LLMAgent_ShowApprovalDiff(s:llm_agent_write_list)
         call LLMAgent_SidebarShowApproval(s:llm_agent_write_list)
     else
         call LLMAgent_SidebarLog('Applying ' . len(s:llm_agent_write_list) . ' write(s)...', 'System')
