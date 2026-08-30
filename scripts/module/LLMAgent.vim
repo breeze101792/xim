@@ -200,6 +200,9 @@ let s:acp_prompt_resolved = 0
 " Set to 1 once the ACP initialize/initialized handshake completes. The
 " server refuses session/new until this is done.
 let s:acp_initialized = 0
+" Agent name reported by the ACP server in the initialize response
+" (e.g. "OpenCode", "Claude Code"). Used in the status line.
+let s:acp_agent_name = ''
 let s:acp_write_list = []
 let s:acp_response_text = ''
 let s:acp_turn_error = ''
@@ -1187,6 +1190,7 @@ function! LLMAgent_ACPResetState()
     let s:acp_completed = {}
     let s:acp_prompt_resolved = 0
     let s:acp_initialized = 0
+    let s:acp_agent_name = ''
     let s:acp_write_list = []
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
@@ -1304,6 +1308,8 @@ function! LLMAgent_HandleACPMessage(line)
             endif
             if l:req == 'initialize'
                 let s:acp_initialized = 1
+                let l:info = get(l:msg['result'], 'agentInfo', {})
+                let s:acp_agent_name = get(l:info, 'name', '')
             elseif l:req == 'session/new'
                 let s:acp_session_id = l:msg['result']['sessionId']
             endif
@@ -2555,7 +2561,9 @@ endfunction
 " agent rather than a user-set model name.
 function! LLMAgent_StatusLine()
     if g:llm_agent_backend ==# 'acp'
-        let l:model = 'Claude (via ACP)'
+        " Use the agent name the ACP server reported at initialize
+        " (e.g. "OpenCode", "Claude Code"); fall back to the command.
+        let l:model = empty(s:acp_agent_name) ? g:llm_agent_acp_cmd : s:acp_agent_name
     else
         let l:model = g:llm_agent_model
     endif
