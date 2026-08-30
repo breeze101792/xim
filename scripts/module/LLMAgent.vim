@@ -57,10 +57,10 @@ hi default LLMAgentHiDiffFile   ctermfg=246 guifg=#a6adc8
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Variables
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:llm_agent_backend          = get(g:, 'llm_agent_backend', 'acp')
+let g:llm_agent_backend          = get(g:, 'llm_agent_backend', 'api')
 let g:llm_agent_api_url          = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
 let g:llm_agent_api_key          = get(g:, 'llm_agent_api_key', '')
-let g:llm_agent_model            = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
+let g:llm_agent_model            = get(g:, 'llm_agent_model', 'deepseek-v4-flash:cloud')
 " let g:llm_agent_model          = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
 let g:llm_agent_streaming        = get(g:, 'llm_agent_streaming', 0)
 let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 0)
@@ -83,7 +83,7 @@ let g:llm_agent_acp_auto_approve = get(g:, 'llm_agent_acp_auto_approve', 0)
 " Debug mode. When enabled, every API request and response is appended to
 " g:llm_agent_debug_file as JSON, one event per line. You can then share
 " the log to debug why the LLM is misbehaving. Default off (no log file).
-let g:llm_agent_debug              = get(g:, 'llm_agent_debug', 1)
+let g:llm_agent_debug              = get(g:, 'llm_agent_debug', 0)
 let g:llm_agent_debug_file        = get(g:, 'llm_agent_debug_file', '/tmp/LLMAgent_Debug.log')
 
 function! LLMAgent_GetSidebarWidth()
