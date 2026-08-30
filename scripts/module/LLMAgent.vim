@@ -2793,7 +2793,7 @@ function! LLMAgent_StartSpinner()
     let s:llm_spinner_buf = l:buf
     let s:llm_spinner_ln = l:nl
     " Strip any frame we already drew on this line so the message text survives.
-    let s:llm_spinner_msg = substitute(getbufline(l:buf, l:nl)[0], '\C\[[⣾⣽⣻⢿⡿⣟⣯⣷][^]]*\]\s*', '', '')
+    let s:llm_spinner_msg = substitute(getbufline(l:buf, l:nl)[0], '\C\s*[⣾⣽⣻⢿⡿⣟⣯⣷] ', '', 'g')
     call LLMAgent_SpinnerTick()
     " 200ms = 5 frames/s, a comfortable pace for a spinner.
     let s:llm_spinner_timer = timer_start(200, function('LLMAgent_SpinnerTick'), {'repeat': -1})
@@ -2822,7 +2822,7 @@ function! LLMAgent_SpinnerTick(...)
     endif
     try
         call setbufvar(s:llm_spinner_buf, '&modifiable', 1)
-        call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, l:frame . ' [' . s:llm_spinner_msg)
+        call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, l:frame . ' ' . s:llm_spinner_msg)
         call setbufvar(s:llm_spinner_buf, '&modifiable', 0)
     catch
         call LLMAgent_StopSpinner()
@@ -2847,7 +2847,7 @@ function! LLMAgent_StopSpinner()
         if s:llm_spinner_buf >= 0 && bufexists(s:llm_spinner_buf) && s:llm_spinner_ln > 0 && s:llm_spinner_ln <= len(getbufline(s:llm_spinner_buf, 1, '$'))
             try
                 call setbufvar(s:llm_spinner_buf, '&modifiable', 1)
-                call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, s:llm_spinner_frames[s:llm_spinner_frame % len(s:llm_spinner_frames)] . ' [' . s:llm_spinner_msg . '] done')
+                call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, s:llm_spinner_frames[s:llm_spinner_frame % len(s:llm_spinner_frames)] . ' ' . s:llm_spinner_msg . ' done')
                 call setbufvar(s:llm_spinner_buf, '&modifiable', 0)
             catch
             endtry
