@@ -1,20 +1,37 @@
 " File: LLMAgent.vim
-" Description: AI-powered code assistant using LLM APIs or ACP tools.
-"   Backend 'api': Uses OpenAI-compatible API with function-calling tools.
-"   Backend 'acp': Uses ACP (Agent Client Protocol) JSON-RPC over stdio.
-"     Compatible ACP tools:
-"       - Claude:  npx -y @agentclientprotocol/claude-agent-acp  (API key)
-"       - Claude:  npx -y claude-code-acp                        (Pro/Max subscription)
-"       - Gemini:  gemini --experimental-acp -p ""               (built-in)
-"       - Copilot: copilot --acp --stdio                        (built-in)
-" Usage:
-"   :LLMAsk [prompt]       - Ask a question to the LLM
-"   :LLMExplain            - Explain selected code or word under cursor
-"   :LLMFix                - Fix selected code
-"   :LLMRefactor           - Refactor selected code
-"   :LLMWrite [prompt]     - Generate code from prompt
-"   :LLMDiff               - Show diff of proposed changes
-"   :LLMPatch              - Apply LLM changes directly
+" Description: AI-powered code assistant with a chat sidebar and one-shot
+" queries. Two command families:
+"   LLMChat  - multi-turn chat in the sidebar with tool-use (read_file,
+"              write_file, patch, ls, find, grep, list_buffers)
+"   LLMAsk   - one-shot free-form question / request
+"   LLMAskExplain - one-shot: explain the selected code / word under cursor
+"
+" Backends (g:llm_agent_backend):
+"   'api' (default) - OpenAI-compatible API with function-calling tools.
+"                     Model set with g:llm_agent_model.
+"   'acp'           - ACP (Agent Client Protocol) JSON-RPC over stdio.
+"                     Compatible ACP tools:
+"                       - Claude: npx -y @agentclientprotocol/claude-agent-acp
+"                       - Claude: npx -y claude-code-acp (Pro/Max subscription)
+"                       - Gemini: gemini --experimental-acp -p ""  (built-in)
+"                       - Copilot: copilot --acp --stdio          (built-in)
+"                       - OpenCode: opencode acp
+"
+" Control commands:
+"   :LLMChatReset   - wipe in-memory conversation state (keep the buffer)
+"   :LLMChatStop    - cancel an in-flight turn
+"   :LLMChatClear   - clear the chat buffer display
+"   :LLMChatDebug   - toggle/set the request/response debug log
+"   :LLMChatToggle  - open/close the sidebar
+"
+" Features:
+"   - Both writes and patches are QUEUED and shown as a color-coded diff for
+"     approval before anything touches disk.
+"   - patch tolerates messy model output (headerless @@, CRLF, BOM, unicode,
+"     prose noise) and defaults to patch for small edits, write_file for
+"     large/structural changes.
+"   - After an ACP turn the agent writes files directly, so open buffers are
+"     automatically reloaded from disk.
 "
 " Dependencies: curl (for API mode), Node.js (for claude-agent-acp)
 " Supported: Vim 8+, Neovim
