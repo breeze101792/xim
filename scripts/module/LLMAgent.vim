@@ -558,8 +558,8 @@ function! LLMAgent_FixHunkHeader(line)
     endif
     let l:body = substitute(l:body, '\s\+@@$', ' @@', '')
     " If, after the rewrite, the header still doesn't look valid, leave
-    " the original line alone — patch(1) or git apply will give a more
-    " useful error than our sanitizer guessing.
+    " the original line alone — patch(1) will give a more useful error
+    " than our sanitizer guessing.
     if l:body !~# '^@@ \-\d\+\(,\d\+\)\? +\d\+\(,\d\+\)\? @@\(.*\)$'
         return a:line
     endif
@@ -2088,8 +2088,8 @@ let l:hunk_count = 0
     "      echo "[Example]"
     "     -printf "run test: .sh -a"
     "     +printf "./setup.sh --setup"
-    " patch(1) and git apply both reject this as "Only garbage" even though
-    " the body matches the file byte-for-byte. Rebuild it: find the old
+    " patch(1) rejects this as "Only garbage" even though the body matches
+    " the file byte-for-byte. Rebuild it: find the old
     " side (context + removed lines) in the current file, then emit
     " canonical ---/+++ and "@@ -N,M +N,M @@" headers so patch(1) applies.
     let l:rebuilt = LLMAgent_RebuildHeaderlessDiff(l:lines, l:original)
@@ -2176,7 +2176,7 @@ endfunction
 "      echo "x"
 "     -old
 "     +new
-" patch(1) and git apply both reject this with "Only garbage was found",
+" patch(1) rejects this with "Only garbage was found",
 " yet the body content matches the file. Reconstruction:
 "   1. require the first hunk header to be a bare "@@" (no -N +M numbers)
 "      and the diff to have no ---/+++ file headers
