@@ -269,6 +269,19 @@ let s:llm_agent_empty_count = 0
 " LLMAgent_OnSingleResponse after the async response arrives.
 let s:llm_agent_single_ctx = {}
 
+" Animated "thinking" spinner. While an async turn is in flight a timer spins
+" an ASCII/braille frame over the current "thinking..." line in the chat so the
+" user sees the agent is busy. When the turn resolves we stop the timer and
+" freeze the line as a plain (non-animated) note, exactly like the static
+" "thinking..." the old synchronous path left behind.
+let s:llm_spinner_frames = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
+let s:llm_spinner_active = 0
+let s:llm_spinner_timer = 0
+let s:llm_spinner_frame = 0
+let s:llm_spinner_buf = -1
+let s:llm_spinner_ln = 0
+let s:llm_spinner_msg = ''
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -799,6 +812,7 @@ function! LLMAgent_Reset()
     let s:acp_response_text = ''
     let s:acp_write_list = []
     let s:acp_turn_error = ''
+    call LLMAgent_StopSpinner()
     if exists('s:llm_agent_working_buf')
         unlet s:llm_agent_working_buf
     endif
@@ -1082,6 +1096,7 @@ function! LLMAgent_ACPOneShot(prompt, Callback)
     let s:acp_mode = 'oneshot'
     let s:acp_prompt_text = a:prompt
     let s:acp_oneshot_cb = a:Callback
+    call LLMAgent_StartSpinner()
     call LLMAgent_ACPInitialize(function('LLMAgent_ACPOneShotOnInit'))
 endfunction
 
@@ -1110,6 +1125,7 @@ endfunction
 " Async continuation for the one-shot path: prompt resolved. Deliver the
 " result to the caller's callback and reset per-turn state.
 function! LLMAgent_ACPOneShotOnPrompt(res)
+    call LLMAgent_StopSpinner()
     let l:Cb = s:acp_oneshot_cb
     let s:acp_oneshot_cb = ''
     if a:res is v:null
@@ -1217,6 +1233,7 @@ function! LLMAgent_Stop()
     endif
     call LLMAgent_JobStop(s:llm_agent_api_job)
     call LLMAgent_APIClearJobState()
+    call LLMAgent_StopSpinner()
     let s:llm_agent_turn = 0
     let s:llm_agent_single_ctx = {}
 endfunction
@@ -1242,6 +1259,7 @@ function! LLMAgent_ACPResetState()
     let s:acp_prompt_text = ''
     let s:acp_mode = ''
     let s:acp_oneshot_cb = ''
+    call LLMAgent_StopSpinner()
 endfunction
 
 function! LLMAgent_SendACP(msg)
@@ -1554,6 +1572,10 @@ function! LLMAgent_RunWithToolsACP(prompt)
         return
     endif
 
+    " Show an animated spinner over this thinking line while the agent works.
+    call LLMAgent_SidebarLog('thinking...', 'Agent')
+    call LLMAgent_StartSpinner()
+
     " Complete the initialize handshake before any session/new. Async: the
     " callback chains into session/new then the prompt turn, so Vim never
     " blocks while the agent thinks.
@@ -1584,6 +1606,7 @@ endfunction
 " Async continuation: prompt turn resolved. Stream the response, store the
 " conversation history, run write approval, and reload changed buffers.
 function! LLMAgent_ACPOnPrompt(res)
+    call LLMAgent_StopSpinner()
     if a:res is v:null
         call LLMAgent_SidebarLog(empty(s:acp_turn_error) ? 'ACP process died during turn' : s:acp_turn_error, 'Error')
         return
@@ -2738,6 +2761,103 @@ function! LLMAgent_PrefixHiGroup(prefix)
     return 'LLMAgentHiOther'
 endfunction
 
+" Start the "thinking" spinner over the current line of the chat buffer. The
+" most recently appended line (s:llm_spinner_ln) is turned into a live
+" animated frame that updates on a timer, so the user can see the agent is
+" working. Because a job is pumping the async turn, timers fire normally and
+" the editor never blocks.
+function! LLMAgent_StartSpinner()
+    if s:llm_spinner_timer > 0
+        try | call timer_stop(s:llm_spinner_timer) | catch | endtry
+        let s:llm_spinner_timer = 0
+    endif
+    let l:buf = bufnr('LLMAgent-Chat')
+    if l:buf < 0
+        " No chat buffer, so there is nothing to animate; leave the static msg.
+        return
+    endif
+    " Target the last non-blank line (e.g. the 'thinking...' message just
+    " logged). SidebarLog('...', 'Agent') adds a trailing blank line, so skip
+    " any blank lines to reach the real message line. Use the buffer's own
+    " line count (not the current window's) so the spinner works even when the
+    " chat window is not the active one.
+    let l:nl = len(getbufline(l:buf, 1, '$'))
+    while l:nl > 1 && getbufline(l:buf, l:nl)[0] ==# ''
+        let l:nl -= 1
+    endwhile
+    if l:nl <= 0
+        return
+    endif
+    let s:llm_spinner_active = 1
+    let s:llm_spinner_frame = 0
+    let s:llm_spinner_buf = l:buf
+    let s:llm_spinner_ln = l:nl
+    " Strip any frame we already drew on this line so the message text survives.
+    let s:llm_spinner_msg = substitute(getbufline(l:buf, l:nl)[0], '\C\[[⣾⣽⣻⢿⡿⣟⣯⣷][^]]*\]\s*', '', '')
+    call LLMAgent_SpinnerTick()
+    " 200ms = 5 frames/s, a comfortable pace for a spinner.
+    let s:llm_spinner_timer = timer_start(200, function('LLMAgent_SpinnerTick'), {'repeat': -1})
+endfunction
+
+" Called each timer tick (and once from StartSpinner): draw the next frame
+" over the animated line. Re-animates the same single line in place with
+" setbufline, so the rest of the chat is untouched. Wipes to a final frame
+" marker (spinner + 'done') — a clear visual end the user can scan for.
+function! LLMAgent_SpinnerTick(...)
+    if !s:llm_spinner_active
+        return
+    endif
+    if s:llm_spinner_buf < 0 || !bufexists(s:llm_spinner_buf)
+        " Chat buffer was wiped; nothing left to animate.
+        call LLMAgent_StopSpinner()
+        return
+    endif
+    let l:frame = s:llm_spinner_frames[s:llm_spinner_frame % len(s:llm_spinner_frames)]
+    let s:llm_spinner_frame += 1
+    " The target is the last line; a later :LLMAsk that logged over the line we
+    " pinned is not ours to animate, so stop before clobbering it.
+    if s:llm_spinner_ln > len(getbufline(s:llm_spinner_buf, 1, '$')) || s:llm_spinner_ln <= 0
+        call LLMAgent_StopSpinner()
+        return
+    endif
+    try
+        call setbufvar(s:llm_spinner_buf, '&modifiable', 1)
+        call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, l:frame . ' [' . s:llm_spinner_msg)
+        call setbufvar(s:llm_spinner_buf, '&modifiable', 0)
+    catch
+        call LLMAgent_StopSpinner()
+        return
+    endtry
+    " Only redraw if the chat is actually on screen.
+    let l:win = bufwinnr(s:llm_spinner_buf)
+    if l:win > 0
+        redraw
+    endif
+endfunction
+
+" Freeze the animated line into its final state (spinner + 'done') and stop
+" the timer. Called when the turn resolves or is cancelled. Idempotent.
+function! LLMAgent_StopSpinner()
+    if s:llm_spinner_timer > 0
+        try | call timer_stop(s:llm_spinner_timer) | catch | endtry
+        let s:llm_spinner_timer = 0
+    endif
+    if s:llm_spinner_active
+        let s:llm_spinner_active = 0
+        if s:llm_spinner_buf >= 0 && bufexists(s:llm_spinner_buf) && s:llm_spinner_ln > 0 && s:llm_spinner_ln <= len(getbufline(s:llm_spinner_buf, 1, '$'))
+            try
+                call setbufvar(s:llm_spinner_buf, '&modifiable', 1)
+                call setbufline(s:llm_spinner_buf, s:llm_spinner_ln, s:llm_spinner_frames[s:llm_spinner_frame % len(s:llm_spinner_frames)] . ' [' . s:llm_spinner_msg . '] done')
+                call setbufvar(s:llm_spinner_buf, '&modifiable', 0)
+            catch
+            endtry
+        endif
+    endif
+    let s:llm_spinner_buf = -1
+    let s:llm_spinner_ln = 0
+    let s:llm_spinner_msg = ''
+endfunction
+
 function! LLMAgent_SidebarLog(text, ...)
     let l:buf = bufnr('LLMAgent-Chat')
     if l:buf < 0
@@ -3072,6 +3192,7 @@ function! LLMAgent_NextTurn()
     endif
     call LLMAgent_SidebarLog('thinking... (' . (s:llm_agent_turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')', 'Agent')
     let s:llm_agent_turn += 1
+    call LLMAgent_StartSpinner()
     call LLMAgent_APIRequestAsync(s:llm_agent_messages, s:llm_agent_tools, function('LLMAgent_HandleAPIResponse'))
 endfunction
 
@@ -3079,6 +3200,7 @@ endfunction
 " synchronous for-loop: on error stop; else either run tool calls and continue,
 " or treat it as the final answer and finish the turn.
 function! LLMAgent_HandleAPIResponse(data)
+    call LLMAgent_StopSpinner()
     if has_key(a:data, 'error')
         call LLMAgent_SidebarLog(a:data['error'], 'Error')
         return
@@ -3183,6 +3305,7 @@ endfunction
 
 " Resume after the max-rounds final summary request.
 function! LLMAgent_HandleFinalResponse(data)
+    call LLMAgent_StopSpinner()
     let l:message = has_key(a:data, 'error') ? {} : LLMAgent_ResponseMessage(a:data)
     if !empty(l:message)
         let s:llm_agent_response_text = get(l:message, 'content', '')
@@ -3331,6 +3454,8 @@ function! LLMAgent_Execute(action, context, user_input, mode)
             \ {'role': 'system', 'content': l:system_prompt},
             \ {'role': 'user', 'content': l:prompt}
             \ ]
+        call LLMAgent_SidebarLog('thinking...', 'Agent')
+        call LLMAgent_StartSpinner()
         call LLMAgent_APIRequestAsync(l:messages, [], function('LLMAgent_OnSingleResponse'))
         return
     endif
@@ -3360,6 +3485,7 @@ endfunction
 " backend. Opens the display window with the response using the params stashed
 " in s:llm_agent_single_ctx by LLMAgent_Execute.
 function! LLMAgent_OnSingleResponse(data)
+    call LLMAgent_StopSpinner()
     let l:ctx = s:llm_agent_single_ctx
     let s:llm_agent_single_ctx = {}
     if has_key(a:data, 'error')

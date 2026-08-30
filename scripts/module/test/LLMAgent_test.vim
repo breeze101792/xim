@@ -1765,6 +1765,65 @@ function! s:Test_JobHelpers_start_echo_job() abort
     call s:Assert(g:_job_done, 'exit callback fires for bash -c string job')
 endfunction
 
+" --- Thinking spinner (LLMAgent_StartSpinner / SpinnerTick / StopSpinner) ---
+
+function! s:Test_Spinner_animates_chat_line() abort
+    " Prime a real chat buffer with a thinking line, as a busy turn would.
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    call LLMAgent_SidebarOpen()
+    call LLMAgent_SidebarLog('thinking...', 'Agent')
+    let l:buf = bufnr('LLMAgent-Chat')
+    call s:Assert(l:buf > 0, 'chat buffer exists after SidebarLog')
+    let l:ln = len(getbufline(l:buf, 1, '$'))
+    " SidebarLog('...', 'Agent') appends a trailing blank; the spinner must
+    " target the last non-blank line (the [Agent] thinking... line).
+    while l:ln > 1 && getbufline(l:buf, l:ln)[0] ==# ''
+        let l:ln -= 1
+    endwhile
+    " Start the spinner, let one tick run, and confirm the chat line is now an
+    " animated frame (any braille char + [message) rather than the static text.
+    call LLMAgent_StartSpinner()
+    call LLMAgent_SpinnerTick()
+    let l:after = getbufline(l:buf, l:ln)[0]
+    call LLMAgent_StopSpinner()
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    let l:braille = '⣾⣽⣻⢿⡿⣟⣯⣷'
+    let l:got_frame = stridx(l:braille, strcharpart(l:after, 0, 1)) >= 0
+    call s:Assert(l:got_frame, 'timer tick prepends an animated braille frame, got: ' . string(l:after))
+    call s:Assert(stridx(l:after, 'thinking') >= 0, 'message text survives behind the frame, got: ' . string(l:after))
+    call s:Assert(stridx(l:after, 'done') < 0, 'a live tick is not frozen into done, got: ' . string(l:after))
+endfunction
+
+function! s:Test_StopSpinner_freezes_line_to_done() abort
+    silent! execute 'bwipe! LLMAgent-Chat'
+    call LLMAgent_SidebarOpen()
+    call LLMAgent_SidebarLog('thinking...', 'Agent')
+    let l:buf = bufnr('LLMAgent-Chat')
+    let l:ln = len(getbufline(l:buf, 1, '$'))
+    while l:ln > 1 && getbufline(l:buf, l:ln)[0] ==# ''
+        let l:ln -= 1
+    endwhile
+    call LLMAgent_StartSpinner()
+    call LLMAgent_SpinnerTick()
+    call LLMAgent_StopSpinner()
+    let l:line = getbufline(l:buf, l:ln)[0]
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    call s:Assert(stridx(l:line, 'done') >= 0, 'StopSpinner freezes the line to a done marker, got: ' . string(l:line))
+endfunction
+
+function! s:Test_StartSpinner_noop_without_chat_buffer() abort
+    " No LLMAgent-Chat buffer exists (we never SidebarLog'd this turn), so the
+    " spinner must no-op rather than throw; a later StopSpinner is also safe.
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    call LLMAgent_StartSpinner()
+    call LLMAgent_StopSpinner()
+    call s:Assert(1, 'StartSpinner/StopSpinner no-op safely with no chat buffer')
+endfunction
+
 " --- Status line (LLMAgent_StatusLine) ------------------------------------
 
 function! s:Test_StatusLine_api_uses_model() abort
@@ -2014,6 +2073,7 @@ let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_
     \ 'ResponseMessage_shapes', 'MessageHasText_variants',
     \ 'APIRequestBody_tools_only_when_given', 'BuildCurlCmd_parts', 'ParseCompletion_shapes', 'CurlError_combines_parts',
     \ 'JobHelpers_nojob_safety', 'JobHelpers_start_echo_job',
+    \ 'Spinner_animates_chat_line', 'StopSpinner_freezes_line_to_done', 'StartSpinner_noop_without_chat_buffer',
     \ 'StatusLine_api_uses_model', 'StatusLine_acp_falls_back_to_cmd', 'StatusLine_acp_uses_reported_agent_name',
     \ 'ReloadChangedBuffers_skips_unsaved_edits',
     \ 'RenderDiff_color_coded_lines',
