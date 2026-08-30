@@ -1765,6 +1765,218 @@ function! s:Test_JobHelpers_start_echo_job() abort
     call s:Assert(g:_job_done, 'exit callback fires for bash -c string job')
 endfunction
 
+" --- Status line (LLMAgent_StatusLine) ------------------------------------
+
+function! s:Test_StatusLine_api_uses_model() abort
+    " api backend: the model shown is g:llm_agent_model.
+    let l:save_backend = g:llm_agent_backend
+    let l:save_model = g:llm_agent_model
+    let g:llm_agent_backend = 'api'
+    let g:llm_agent_model = 'probe-model-xyz'
+    let l:s = LLMAgent_StatusLine()
+    call s:Assert(stridx(l:s, 'probe-model-xyz') >= 0, 'api status shows g:llm_agent_model')
+    call s:Assert(stridx(l:s, 'mode: api') >= 0, 'api status marks the backend')
+    let g:llm_agent_backend = l:save_backend
+    let g:llm_agent_model = l:save_model
+endfunction
+
+function! s:Test_StatusLine_acp_falls_back_to_cmd() abort
+    " acp backend with no initialize handshake: no agent name reported, so
+    " the status line falls back to g:llm_agent_acp_cmd as the label.
+    let l:save_backend = g:llm_agent_backend
+    let l:save_cmd = g:llm_agent_acp_cmd
+    let g:llm_agent_backend = 'acp'
+    let g:llm_agent_acp_cmd = 'my-custom-acp-cmd'
+    call LLMAgent_ACPResetState()
+    let l:s = LLMAgent_StatusLine()
+    call s:Assert(stridx(l:s, 'my-custom-acp-cmd') >= 0, 'acp status falls back to g:llm_agent_acp_cmd')
+    call s:Assert(stridx(l:s, 'mode: acp') >= 0, 'acp status marks the backend')
+    let g:llm_agent_backend = l:save_backend
+    let g:llm_agent_acp_cmd = l:save_cmd
+endfunction
+
+function! s:Test_StatusLine_acp_uses_reported_agent_name() abort
+    " After the initialize handshake reports an agentInfo.name, the status
+    " line uses that name (e.g. "OpenCode") instead of the command. We drive
+    " the initialize response through LLMAgent_HandleACPMessage just like the
+    " real ACP stdout handler would.
+    let l:save_backend = g:llm_agent_backend
+    let g:llm_agent_backend = 'acp'
+    call LLMAgent_ACPResetState()
+    " Register a pending 'initialize' request, then feed a matching response.
+    call LLMAgent_ACPInitialize()
+    for l:id in range(1, 50)
+        call LLMAgent_HandleACPMessage('{"jsonrpc":"2.0","id":' . l:id . ',"result":{"agentInfo":{"name":"OpenCode","version":"1.0.0"}}}')
+    endfor
+    let l:s = LLMAgent_StatusLine()
+    call s:Assert(stridx(l:s, 'OpenCode') >= 0, 'acp status shows the agent name from initialize')
+    call s:Assert(stridx(l:s, 'my-custom') < 0, 'acp status does not show the fallback command once the name is known')
+    call LLMAgent_ACPResetState()
+    let g:llm_agent_backend = l:save_backend
+endfunction
+
+" --- Reload open buffers after external change ----------------------------
+
+function! s:Test_ReloadChangedBuffers_skips_unsaved_edits() abort
+    " ReloadChangedBuffers must NOT clobber a buffer that has unsaved local
+    " edits, even when the file on disk changed. It skips &modified buffers.
+    let l:f = s:ToolTestWriteFile('_llm_reload_unsaved.txt', ['one', 'two'])
+    execute 'edit ' . fnameescape(l:f)
+    write
+    let l:buf = bufnr(l:f)
+    " Local (unsaved) edit in the buffer.
+    call setline(1, ['LOCAL EDIT', 'two'])
+    " Change the file on disk underneath us.
+    call writefile(['one', 'TWO-disk', 'three'], l:f)
+    call LLMAgent_ReloadChangedBuffers()
+    call s:AssertEq(getbufline(l:buf, 1, 1), ['LOCAL EDIT'], 'unsaved buffer keeps its local edit (not reloaded)')
+    call s:AssertEq(getbufline(l:buf, 2, 2), ['two'], 'unsaved buffer second line untouched')
+    bwipe!
+    call s:ToolTestCleanup('_llm_reload_unsaved.txt')
+endfunction
+
+" --- Diff rendering (LLMAgent_RenderDiff / colors) ------------------------
+
+function! s:Test_RenderDiff_color_coded_lines() abort
+    " RenderDiff appends a unified diff to the chat buffer with per-line
+    " highlight groups: green for +, red for -, purple for @@ hunks, gray
+    " for the ---/+++ file headers. Verify the correct group is applied on
+    " each rendered line.
+    call LLMAgent_SidebarOpen()
+    call LLMAgent_RenderDiff("--- a/x\n+++ b/x\n@@ -1,3 +1,3 @@\n old\n-removed\n+added\n ctx\n")
+    let l:chat = bufnr('LLMAgent-Chat')
+    let l:joined = join(getbufline(l:chat, 1, '$'), "\n")
+    call s:Assert(stridx(l:joined, '-removed') >= 0, 'removed line rendered into chat')
+    call s:Assert(stridx(l:joined, '+added') >= 0, 'added line rendered into chat')
+    call s:Assert(stridx(l:joined, '@@') >= 0, 'hunk header rendered into chat')
+    let l:groups = {}
+    for l:m in getmatches(bufwinnr(l:chat))
+        let l:g = get(l:m, 'group', '')
+        let l:groups[l:g] = 1
+    endfor
+    call s:Assert(has_key(l:groups, 'LLMAgentHiDiffAdd'), 'added lines get the Add highlight')
+    call s:Assert(has_key(l:groups, 'LLMAgentHiDiffDel'), 'removed lines get the Del highlight')
+    call s:Assert(has_key(l:groups, 'LLMAgentHiDiffHunk'), 'hunk @@ lines get the Hunk highlight')
+    call s:Assert(has_key(l:groups, 'LLMAgentHiDiffFile'), '---/+++ file headers get the File highlight')
+    " Close the chat window / wipe the buffer so later sidebar tests start clean.
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+endfunction
+
+" --- ACP session/new (LLMAgent_ACPSessionNew) -----------------------------
+
+function! s:Test_ACPSessionNew_sends_request_shape() abort
+    " ACPSessionNew issues a session/new request whose params carry the cwd
+    " and an EMPTY mcpServers array (opencode fails without it). Capture the
+    " exact wire request with a fake ACP process that logs its stdin. The
+    " blocking wait is kept to one cycle so this runs fast headless.
+    let l:save_backend = g:llm_agent_backend
+    let l:save_cmd = g:llm_agent_acp_cmd
+    let l:dir = s:ToolTestDir()
+    let l:log = getcwd() . '/_llm_acp_wire.log'
+    let l:fake = s:ToolTestWriteFile('_llm_acp_fake.sh', [
+        \ '#!/bin/sh',
+        \ 'LOG=' . l:log,
+        \ ': > "$LOG"',
+        \ 'while IFS= read -r line; do',
+        \ '  echo "$line" >> "$LOG"',
+        \ 'done',
+        \ ])
+    let g:llm_agent_backend = 'acp'
+    let g:llm_agent_acp_cmd = 'sh ' . shellescape(l:fake)
+    call LLMAgent_ACPResetState()
+    call LLMAgent_EnsureACP()
+    " Use the same 'session/new' request ACPSessionNew sends, with a 1-cycle
+    " wait so the loop ends even though the fake never responds.
+    call LLMAgent_ACPRequest('session/new', {'cwd': getcwd(), 'mcpServers': []}, 1)
+    sleep 400m
+    let l:wire = join((filereadable(l:log) ? readfile(l:log) : []), "\n")
+    call s:Assert(stridx(l:wire, 'session/new') >= 0, 'wire request names session/new method')
+    call s:Assert(stridx(l:wire, 'mcpServers') >= 0, 'wire request carries mcpServers param')
+    call s:Assert(stridx(l:wire, '[]') >= 0, 'wire request sends mcpServers as an empty array')
+    call s:Assert(stridx(l:wire, 'cwd') >= 0, 'wire request carries cwd param')
+    call LLMAgent_StopACP()
+    call delete(l:log)
+    call s:ToolTestCleanup('_llm_acp_fake.sh')
+    let g:llm_agent_backend = l:save_backend
+    let g:llm_agent_acp_cmd = l:save_cmd
+endfunction
+
+function! s:Test_ACPSessionNew_captures_session_id() abort
+    " ACPSessionNew sets s:acp_session_id from the session/new result's
+    " sessionId. With no ACP process, the request returns 0; once the result
+    " is processed (as the stdout handler would), a fresh ACPSessionNew
+    " short-circuits to 1.
+    call LLMAgent_ACPResetState()
+    call s:AssertEq(LLMAgent_ACPSessionNew(), 0, 'ACPSessionNew returns 0 when s:acp_session_id is empty/no response')
+    " Feed a matching session/new result across candidate ids.
+    for l:id in range(1, 50)
+        call LLMAgent_HandleACPMessage('{"jsonrpc":"2.0","id":' . l:id . ',"result":{"sessionId":"sess-abc123"}}')
+    endfor
+    call s:AssertEq(LLMAgent_ACPSessionNew(), 1, 'ACPSessionNew succeeds once the session id is captured')
+    call LLMAgent_ACPResetState()
+endfunction
+
+" --- Job helpers: optional on_stdout + (job, ms) signature ----------------
+
+function! s:Test_JobStart_on_stdout_callback() abort
+    " LLMAgent_JobStart's optional 3rd arg is an on_stdout callback used to
+    " stream the job's stdout (needed by ACP's newline-delimited protocol).
+    let g:_stdout_capture = ''
+    function! g:_TestJobOut(...) abort
+        let g:_stdout_capture .= join(a:2, '')
+    endfunction
+    function! g:_TestJobExit2(...) abort
+    endfunction
+    let l:j = LLMAgent_JobStart('printf probe-out-42', function('g:_TestJobExit2'), function('g:_TestJobOut'))
+    if l:j isnot v:null
+        call LLMAgent_JobWaitJob(l:j, 2000)
+        sleep 200m
+    endif
+    call s:AssertEq(g:_stdout_capture, 'probe-out-42', 'on_stdout callback receives the streaming output')
+    unlet g:_stdout_capture
+    delfunction g:_TestJobOut
+    delfunction g:_TestJobExit2
+endfunction
+
+function! s:Test_JobWaitJob_signature() abort
+    " LLMAgent_JobWaitJob(job, ms) pumps the event loop for a:ms ms (nvim
+    " jobwait; vim sleep). It must run without error on a real job.
+    function! g:_TestWaitExit(...) abort
+    endfunction
+    let l:j = LLMAgent_JobStart('exit 0', function('g:_TestWaitExit'))
+    call s:Assert(l:j isnot v:null, 'job started for JobWaitJob')
+    let l:t0 = reltime()
+    call LLMAgent_JobWaitJob(l:j, 300)
+    call s:Assert(reltimefloat(reltime(l:t0)) >= 0.0, 'JobWaitJob(job, ms) runs without error')
+    delfunction g:_TestWaitExit
+endfunction
+
+" --- StripDiffProse helper ------------------------------------------------
+
+function! s:Test_StripDiffProse_strips_leading_prose() abort
+    " The recovery helper drops everything before the first diff-structure
+    " line (---/+++/@@/diff --git/index) and returns only the real diff.
+    let l:got = LLMAgent_StripDiffProse(['thought line one', 'here is a @ mention', '--- a/x', '+++ b/x', '@@ -1 +1 @@', ' ctx'])
+    call s:AssertEq(l:got, ['--- a/x', '+++ b/x', '@@ -1 +1 @@', ' ctx'], 'prose before first --- is stripped')
+    " No structure line anywhere: input returned unchanged.
+    call s:AssertEq(LLMAgent_StripDiffProse(['a', 'b']), ['a', 'b'], 'no structure line -> unchanged')
+    call s:AssertEq(LLMAgent_StripDiffProse(['   ', 'x']), ['   ', 'x'], 'blank+text with no header -> unchanged')
+endfunction
+
+" --- Command definitions (new names present, old names gone) ---------------
+
+function! s:Test_Commands_new_defined_old_removed() abort
+    " The current command family (LLMChat*/LLMAsk*) must all exist...
+    for l:c in ['LLMChat', 'LLMChatReset', 'LLMChatStop', 'LLMChatClear', 'LLMChatDebug', 'LLMChatToggle', 'LLMAsk', 'LLMAskExplain']
+        call s:Assert(exists(':' . l:c), 'command is defined: :' . l:c)
+    endfor
+    " ...and the renamed/removed names must be gone.
+    for l:c in ['LLMAgent', 'LLMExplain', 'LLMReset', 'LLMClear', 'LLMStop', 'LLMDebug', 'LLMToggle']
+        call s:Assert(!exists(':' . l:c), 'old command is gone: :' . l:c)
+    endfor
+endfunction
+
 " Resolve the path to the module under test. The test is run from the
 " project root as: `vim -e -s -u NONE -S scripts/module/test/LLMAgent_test.vim`
 " so the module is at <cwd>/scripts/module/LLMAgent.vim. If you run it
@@ -1789,7 +2001,14 @@ let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_
     \ 'ParseToolArgs_object_passthrough', 'ParseToolArgs_json_string', 'ParseToolArgs_bad_json_error', 'ParseToolArgs_non_string_types', 'ToolArgsSummary_prefers_path_then_pattern',
     \ 'ResponseMessage_shapes', 'MessageHasText_variants',
     \ 'APIRequestBody_tools_only_when_given', 'BuildCurlCmd_parts', 'ParseCompletion_shapes', 'CurlError_combines_parts',
-    \ 'JobHelpers_nojob_safety', 'JobHelpers_start_echo_job']
+    \ 'JobHelpers_nojob_safety', 'JobHelpers_start_echo_job',
+    \ 'StatusLine_api_uses_model', 'StatusLine_acp_falls_back_to_cmd', 'StatusLine_acp_uses_reported_agent_name',
+    \ 'ReloadChangedBuffers_skips_unsaved_edits',
+    \ 'RenderDiff_color_coded_lines',
+    \ 'ACPSessionNew_sends_request_shape', 'ACPSessionNew_captures_session_id',
+    \ 'JobStart_on_stdout_callback', 'JobWaitJob_signature',
+    \ 'StripDiffProse_strips_leading_prose',
+    \ 'Commands_new_defined_old_removed']
 
 for s:t in s:all_tests
     let s:fn = function('<SNR>1_Test_' . s:t)
