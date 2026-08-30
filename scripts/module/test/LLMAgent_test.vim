@@ -825,7 +825,7 @@ function! s:Test_ToolPatch_tries_patch1_before_validator_reject() abort
     call s:AssertEq(l:r['ok'], 0, 'ok false (patch(1) rejects malformed diff)')
     " The error should come from patch(1), NOT from the validator's
     " "invalid unified diff syntax" rejection.
-    call s:Assert(stridx(l:r['error'], 'patch(1) said') >= 0 || stridx(l:r['error'], 'git apply said') >= 0, 'error comes from patch(1)/git, not validator rejection')
+    call s:Assert(stridx(l:r['error'], 'patch(1) said') >= 0, 'error comes from patch(1), not validator rejection')
     call s:Assert(stridx(l:r['error'], 'malformed') >= 0 || stridx(l:r['error'], 'failed') >= 0, 'error mentions patch(1) failure')
     call delete(l:f)
 endfunction
@@ -1458,30 +1458,31 @@ function! s:Test_ToolPatch_applies_and_queues_correct_content() abort
     call s:ToolTestCleanup('_llm_patch_apply.txt')
 endfunction
 
-function! s:Test_ToolPatch_git_apply_fallback_on_malformed() abort
-    " A diff that patch(1) rejects but git apply --recount accepts (e.g.
-    " wrong line counts in the @@ header) must succeed via the fallback.
+function! s:Test_ToolPatch_tolerates_slightly_off_counts() abort
+    " The tool tolerates an LLM diff whose @@ header line counts barely
+    " mismatch the actual hunk body — patch(1) applies it anyway, so the
+    " patch should not be rejected up front.
     let l:f = s:ToolTestWriteFile('_llm_patch_recount.txt', ['p1', 'p2', 'p3'])
     call s:ToolTestMarkRead(l:f)
     " Wrong counts: header says 2 lines of context but the hunk has 3.
     let l:diff = "--- f\n+++ f\n@@ -1,2 +1,2 @@\n p1\n-p2\n+P2\n p3\n"
     let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:diff})
-    call s:AssertEq(l:r['ok'], 1, 'git apply --recount fallback succeeds where patch(1) fails')
+    call s:AssertEq(l:r['ok'], 1, 'patch(1) applies a malformed-count diff')
     if l:r['ok'] == 0
         call s:Assert(0, 'unexpected: ' . substitute(l:r['error'], '\n', ' | ', 'g'))
     endif
     call s:ToolTestCleanup('_llm_patch_recount.txt')
 endfunction
 
-function! s:Test_ToolPatch_both_fail_error_mentions_both() abort
-    " When patch(1) AND git apply both fail, the error must carry both
-    " messages plus the switch-to-write_file instruction.
+function! s:Test_ToolPatch_failure_tells_how_to_recover() abort
+    " When patch(1) (and its recovery passes) all fail, the error must tell
+    " the LLM how to recover by switching to write_file with the full content.
     let l:f = s:ToolTestWriteFile('_llm_patch_bothfail.txt', ['actual one', 'actual two'])
     call s:ToolTestMarkRead(l:f)
     " Hunk context does not exist in the file.
     let l:diff = "--- x\n+++ x\n@@ -10,2 +10,2 @@\n nonexistent line A\n-nonexistent line B\n+NEW\n"
     let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:diff})
-    call s:AssertEq(l:r['ok'], 0, 'ok false when both patchers fail')
+    call s:AssertEq(l:r['ok'], 0, 'ok false when the patch fails')
     call s:Assert(stridx(l:r['error'], 'patch(1) said') >= 0, 'includes patch(1) output')
     call s:Assert(stridx(l:r['error'], 'write_file') >= 0, 'tells the LLM to switch to write_file')
     call s:ToolTestCleanup('_llm_patch_bothfail.txt')
@@ -2065,7 +2066,7 @@ execute 'source' s:llm_agent_path
 let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'FixHunkHeader_repairs_near_misses', 'ToolPatch_sanitizes_garbage_hunk_headers', 'ToolPatch_strips_leading_prose', 'ToolPatch_normalizes_crlf_and_bom', 'ToolPatch_reconstructs_headerless_diff', 'RebuildHeaderlessDiff_unit', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking',
     \ 'ToolReadFile_missing_path_arg', 'ToolReadFile_registers_read_state', 'ToolReadFile_truncates_huge_file', 'ToolReadFile_range_past_eof_clamps',
     \ 'ToolWriteFile_missing_args', 'ToolWriteFile_rejects_git_internal_paths', 'ToolWriteFile_new_file_no_read_needed', 'ToolWriteFile_preserves_literal_escapes_with_real_newlines', 'ApplyWrites_creates_missing_dirs', 'ReloadChangedBuffers_reloads_after_external_write', 'ShowApprovalDiff_renders_change',
-    \ 'ToolPatch_missing_args', 'ToolPatch_requires_read_first', 'ToolPatch_refuses_path_traversal', 'ToolPatch_rejects_missing_file', 'ToolPatch_applies_and_queues_correct_content', 'ToolPatch_git_apply_fallback_on_malformed', 'ToolPatch_both_fail_error_mentions_both', 'ToolPatch_then_write_clears_fail_tracking',
+    \ 'ToolPatch_missing_args', 'ToolPatch_requires_read_first', 'ToolPatch_refuses_path_traversal', 'ToolPatch_rejects_missing_file', 'ToolPatch_applies_and_queues_correct_content', 'ToolPatch_tolerates_slightly_off_counts', 'ToolPatch_failure_tells_how_to_recover', 'ToolPatch_then_write_clears_fail_tracking',
     \ 'ToolLs_empty_dir', 'ToolLs_marks_dirs_with_slash', 'ToolLs_defaults_to_cwd',
     \ 'ToolFind_missing_pattern', 'ToolFind_recursive_glob', 'ToolFind_caps_at_200',
     \ 'ToolGrep_glob_filter', 'ToolGrep_match_gives_file_line_content', 'ToolGrep_missing_path_errors', 'ToolGrep_caps_at_100_matches',
