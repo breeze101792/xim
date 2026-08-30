@@ -1790,8 +1790,10 @@ function! s:Test_Spinner_animates_chat_line() abort
     silent! execute 'bwipe! LLMAgent-Chat'
     silent! execute 'bwipe! LLMAgent-Input'
     let l:braille = '⣾⣽⣻⢿⡿⣟⣯⣷'
-    let l:got_frame = stridx(l:braille, strcharpart(l:after, 0, 1)) >= 0
-    call s:Assert(l:got_frame, 'timer tick prepends an animated braille frame, got: ' . string(l:after))
+    let l:lastchar = strcharpart(l:after, strchars(l:after) - 1, 1)
+    let l:got_frame = stridx(l:braille, l:lastchar) >= 0
+    call s:Assert(strpart(l:after, 0, 7) ==# '[Agent]', 'the [Agent] tag stays at column 1, got: ' . string(l:after))
+    call s:Assert(l:got_frame, 'the timer appends an animated braille frame at the end, got: ' . string(l:after))
     call s:Assert(stridx(l:after, 'thinking') >= 0, 'message text survives behind the frame, got: ' . string(l:after))
     call s:Assert(stridx(l:after, 'done') < 0, 'a live tick is not frozen into done, got: ' . string(l:after))
 endfunction
