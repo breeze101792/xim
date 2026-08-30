@@ -222,7 +222,7 @@ function! LLMAgent_GetToolDefinitions()
     let l:read = {'type': 'function', 'function': {'name': 'read_file', 'description': 'Read file contents. By default returns the whole file with every line numbered (e.g. "  42| code"). For large files, pass start_line and end_line. Output is truncated past 50K characters.', 'parameters': l:read_params}}
 
     let l:write_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Path to the file. Same rules as read_file.'}, 'content': {'type': 'string', 'description': 'The COMPLETE new file content. Use real newlines in the JSON value; literal \n is also accepted and will be decoded.'}}, 'required': ['path', 'content']}
-    let l:write = {'type': 'function', 'function': {'name': 'write_file', 'description': 'Create or fully rewrite a file. Preferred over patch when more than a few lines change. The write is QUEUED — the file is NOT modified until the user approves the change in the sidebar. Returns the resolved path and a byte/line count.', 'parameters': l:write_params}}
+    let l:write = {'type': 'function', 'function': {'name': 'write_file', 'description': 'Create or fully rewrite a file. Use for new files, large/structural changes, or when more than ~10 lines change. REPLACES the entire file with the content you send. The write is QUEUED — the file is NOT modified until the user approves the change in the sidebar. Returns the resolved path and a byte/line count.', 'parameters': l:write_params}}
 
     let l:ls_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Directory to list. Defaults to the project root. Relative paths are resolved against the working buffer.'}}, 'required': []}
     let l:ls = {'type': 'function', 'function': {'name': 'ls', 'description': 'List a directory. Entries ending in "/" are subdirectories. Returns at most a few hundred entries.', 'parameters': l:ls_params}}
@@ -234,7 +234,7 @@ function! LLMAgent_GetToolDefinitions()
     let l:grep = {'type': 'function', 'function': {'name': 'grep', 'description': 'Grep a Vim regex inside files. Returns file:line:content triples. Stops after 100 matches.', 'parameters': l:grep_params}}
 
     let l:patch_params = {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Path to the file to patch.'}, 'diff': {'type': 'string', 'description': 'A unified diff in diff -u format with @@ ... @@ context markers. Real newlines are required.'}}, 'required': ['path', 'diff']}
-    let l:patch = {'type': 'function', 'function': {'name': 'patch', 'description': 'Apply a unified diff to an existing file. Fragile: if the diff does not match exactly, this fails. If it fails, fall back to write_file with the FULL new file content. Use only for small, well-defined edits.', 'parameters': l:patch_params}}
+    let l:patch = {'type': 'function', 'function': {'name': 'patch', 'description': 'Apply a unified diff to an existing file. Default choice for small-to-medium edits (up to ~10 lines or a few hunks). The tool sanitizes messy diffs (headerless @@, CRLF, BOM) so it is more forgiving than raw patch(1). If it fails, fall back to write_file with the FULL new file content.', 'parameters': l:patch_params}}
 
     let l:list_buffers_params = {'type': 'object', 'properties': {}, 'required': []}
     let l:list_buffers = {'type': 'function', 'function': {'name': 'list_buffers', 'description': 'List all open Vim buffers by number and name.', 'parameters': l:list_buffers_params}}
@@ -818,15 +818,13 @@ function! LLMAgent_GetAgentSystemPrompt()
     endif
     let l:rules = "\n\nWORKFLOW (follow this order):"
     let l:rules .= "\n1. If you have NOT yet called read_file on the target file in this conversation, do that first. You cannot patch or rewrite a file you have not read."
-    let l:rules .= "\n2. Prefer write_file. It is the only tool that cannot fail on whitespace, tabs, indentation, multi-line strings, or line-number mismatches. The full final content goes in 'content'."
-    let l:rules .= "\n   CRITICAL: write_file REPLACES the entire file with what you send. Never send only the changed lines — that destroys the rest of the file. Always send every line of the new file, including unchanged ones."
-    let l:rules .= "\n3. Use patch ONLY for a tiny, well-defined change (one or two adjacent lines, no tabs, no leading whitespace change). Before calling patch, you must have just read the file so you know the exact current line content."
+    let l:rules .= "\n2. Prefer patch for small-to-medium edits (up to ~10 lines or a few hunks). It sends only the changed lines, is cheap, and the tool sanitizes messy diffs (headerless @@, CRLF, BOM) so it is more forgiving than raw patch(1). Before calling patch, you must have just read the file so you know the exact current line content."
+    let l:rules .= "\n3. Use write_file for LARGE or STRUCTURAL changes: new files, rewriting most of a file, refactor / restructure / reformat, or when more than ~10 lines change. write_file REPLACES the entire file with what you send — never send only the changed lines (that destroys the rest). Always send every line of the new file, including unchanged ones."
     let l:rules .= "\n4. If patch fails once, call read_file again to refresh, then call write_file with the full file. Do NOT retry patch with a guess."
-    let l:rules .= "\n5. For refactor / restructure / reformat tasks, use write_file directly (not patch) — the whole point is structural change."
-    let l:rules .= "\n6. To find files, use find with a glob (e.g. '**/*.py'). To search, use grep with a regex. To list a directory, use ls."
-    let l:rules .= "\n7. Never put code in your text response — always modify files via tools."
-    let l:rules .= "\n8. After tools finish, give a short text summary (1-3 sentences). Do not include code blocks."
-    let l:rules .= "\n9. Stop calling tools as soon as the task is done. Do not call tools just to confirm what you already know."
+    let l:rules .= "\n5. To find files, use find with a glob (e.g. '**/*.py'). To search, use grep with a regex. To list a directory, use ls."
+    let l:rules .= "\n6. Never put code in your text response — always modify files via tools."
+    let l:rules .= "\n7. After tools finish, give a short text summary (1-3 sentences). Do not include code blocks."
+    let l:rules .= "\n8. Stop calling tools as soon as the task is done. Do not call tools just to confirm what you already know."
     let l:rules .= "\n\nRESPONSE FORMATTING RULES:"
     let l:rules .= "\n- Sidebar is narrow. Use short sentences, blank lines between them, and simple ## or - markdown only."
     let l:rules .= "\n- Do NOT use markdown tables (the sidebar renders them poorly). Use bullet lists instead."
