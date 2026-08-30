@@ -57,24 +57,29 @@ hi default LLMAgentHiDiffFile   ctermfg=246 guifg=#a6adc8
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Variables
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:llm_agent_backend         = get(g:, 'llm_agent_backend', 'api')
-let g:llm_agent_api_url         = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
-let g:llm_agent_api_key         = get(g:, 'llm_agent_api_key', '')
-let g:llm_agent_model           = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
-" let g:llm_agent_model           = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
-let g:llm_agent_streaming       = get(g:, 'llm_agent_streaming', 0)
-let g:llm_agent_enable_keymaps  = get(g:, 'llm_agent_enable_keymaps', 0)
-let g:llm_agent_system_prompt   = get(g:, 'llm_agent_system_prompt', '')
-let g:llm_agent_timeout         = get(g:, 'llm_agent_timeout', 180)
-let g:llm_agent_prompt_write    = get(g:, 'llm_agent_prompt_write', 'Write code for the following request. Return ONLY the code, no markdown fences, no explanation:')
-let g:llm_agent_prompt_explain  = get(g:, 'llm_agent_prompt_explain', 'Explain the following code concisely:')
-let g:llm_agent_prompt_fix      = get(g:, 'llm_agent_prompt_fix', 'Fix any bugs or issues in the following code. Return ONLY the corrected code, no markdown fences, no explanation:')
-let g:llm_agent_prompt_refactor = get(g:, 'llm_agent_prompt_refactor', 'Refactor the following code to be cleaner and more efficient. Return ONLY the refactored code, no markdown fences, no explanation:')
+let g:llm_agent_backend          = get(g:, 'llm_agent_backend', 'acp')
+let g:llm_agent_api_url          = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
+let g:llm_agent_api_key          = get(g:, 'llm_agent_api_key', '')
+let g:llm_agent_model            = get(g:, 'llm_agent_model', 'minimax-m3:cloud')
+" let g:llm_agent_model          = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
+let g:llm_agent_streaming        = get(g:, 'llm_agent_streaming', 0)
+let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 0)
+let g:llm_agent_system_prompt    = get(g:, 'llm_agent_system_prompt', '')
+let g:llm_agent_timeout          = get(g:, 'llm_agent_timeout', 180)
+let g:llm_agent_prompt_write     = get(g:, 'llm_agent_prompt_write', 'Write code for the following request. Return ONLY the code, no markdown fences, no explanation:')
+let g:llm_agent_prompt_explain   = get(g:, 'llm_agent_prompt_explain', 'Explain the following code concisely:')
+let g:llm_agent_prompt_fix       = get(g:, 'llm_agent_prompt_fix', 'Fix any bugs or issues in the following code. Return ONLY the corrected code, no markdown fences, no explanation:')
+let g:llm_agent_prompt_refactor  = get(g:, 'llm_agent_prompt_refactor', 'Refactor the following code to be cleaner and more efficient. Return ONLY the refactored code, no markdown fences, no explanation:')
 let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 30)
 let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
-let g:llm_agent_acp_cmd           = get(g:, 'llm_agent_acp_cmd', 'npx -y @agentclientprotocol/claude-agent-acp')
-let g:llm_agent_acp_auto_approve  = get(g:, 'llm_agent_acp_auto_approve', 0)
+let g:llm_agent_acp_cmd          = get(g:, 'llm_agent_acp_cmd', 'opencode acp')
+let g:llm_agent_acp_auto_approve = get(g:, 'llm_agent_acp_auto_approve', 0)
+" Example: use opencode as the ACP backend (comment out the default above and
+" uncomment one of these):
+"   let g:llm_agent_backend = 'acp'
+"   let g:llm_agent_acp_cmd = 'opencode acp'
+"   let g:llm_agent_acp_cmd = 'npx -y @agentclientprotocol/claude-agent-acp'
 " Debug mode. When enabled, every API request and response is appended to
 " g:llm_agent_debug_file as JSON, one event per line. You can then share
 " the log to debug why the LLM is misbehaving. Default off (no log file).
@@ -97,14 +102,25 @@ endfunction
 "     so redirects like `2>` would be passed to the program as literal argv.
 "   - Nvim's jobstart(string) runs via the shell, but the List form works
 "     there too and keeps both editors identical.
-" Returns a job handle or v:null if the job could not be started.
-function! LLMAgent_JobStart(cmd, on_exit)
+" a:on_stdout is optional; when given, the job's stdout is streamed to it
+" (needed for ACP's newline-delimited JSON protocol). Returns a job handle
+" or v:null if the job could not be started.
+function! LLMAgent_JobStart(cmd, on_exit, ...)
+    let l:OnStdout = get(a:, 1, '')
     let l:argv = ['bash', '-c', a:cmd]
     if has('nvim')
-        let l:job = jobstart(l:argv, {'on_exit': a:on_exit})
+        let l:opts = {'on_exit': a:on_exit}
+        if !empty(l:OnStdout)
+            let l:opts['on_stdout'] = l:OnStdout
+        endif
+        let l:job = jobstart(l:argv, l:opts)
         return (type(l:job) == v:t_number && l:job > 0) ? l:job : v:null
     endif
-    let l:job = job_start(l:argv, {'exit_cb': a:on_exit, 'mode': 'nl'})
+    let l:opts = {'exit_cb': a:on_exit, 'mode': 'nl'}
+    if !empty(l:OnStdout)
+        let l:opts['out_cb'] = l:OnStdout
+    endif
+    let l:job = job_start(l:argv, l:opts)
     return (job_status(l:job) ==# 'fail') ? v:null : l:job
 endfunction
 
@@ -137,7 +153,7 @@ endfunction
 
 " Pump the event loop while a callback-driven job works. Nvim needs
 " jobwait(); Vim dispatches job callbacks on timers/input, so sleep.
-function! LLMAgent_JobWaitJob(ms)
+function! LLMAgent_JobWaitJob(job, ms)
     if has('nvim')
         call jobwait([a:job], a:ms)
     else
@@ -1132,7 +1148,7 @@ function! LLMAgent_EnsureACP()
         return 1
     endif
 
-    let s:acp_job_id = LLMAgent_JobStart(g:llm_agent_acp_cmd, function('LLMAgent_ACPOnStdout'))
+    let s:acp_job_id = LLMAgent_JobStart(g:llm_agent_acp_cmd, function('LLMAgent_ACPOnExit'), function('LLMAgent_ACPOnStdout'))
     if s:acp_job_id is v:null
         return 0
     endif
@@ -1442,12 +1458,17 @@ function! LLMAgent_ACPSessionNew()
     if !empty(s:acp_session_id)
         return 1
     endif
-    " Wait for session to be created
-    let l:waited = 0
-    while empty(s:acp_session_id) && LLMAgent_ACPOpen() && l:waited < 50
-        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
-        let l:waited += 1
-    endwhile
+    " Send session/new and wait for the response. opencode requires
+    " mcpServers to be an array (omitting it makes session/new fail with
+    " "Invalid params"); cwd is the project root.
+    let l:cwd = getcwd()
+    let l:res = LLMAgent_ACPRequest('session/new', {'cwd': l:cwd, 'mcpServers': []}, 50)
+    if l:res is v:null
+        return 0
+    endif
+    if has_key(l:res, 'error')
+        return 0
+    endif
     return !empty(s:acp_session_id)
 endfunction
 
@@ -1532,6 +1553,10 @@ function! LLMAgent_RunWithToolsACP(prompt)
     " Write approval — sync to shared write list for approval callbacks
     let s:llm_agent_write_list = s:acp_write_list
     call LLMAgent_FinishAgentTurn('')
+
+    " The ACP agent (e.g. opencode) writes files directly to disk, bypassing
+    " our write queue, so reload any open buffer whose file changed on disk.
+    call LLMAgent_ReloadChangedBuffers()
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -3152,6 +3177,41 @@ function! LLMAgent_ReloadWrittenBuffers(write_list)
                 edit!
                 execute l:cur_win . 'wincmd w'
             endif
+        endif
+    endfor
+endfunction
+
+" Reload every open buffer whose file content differs from what's on disk.
+" Used after an ACP turn, where the agent (e.g. opencode) writes files
+" directly to disk and bypasses our write queue, so the Vim buffers go
+" stale. Skips buffers with unsaved local changes (warns instead).
+" Compares content (not mtime) so it also catches same-second writes.
+function! LLMAgent_ReloadChangedBuffers()
+    for l:i in range(1, bufnr('$'))
+        if !buflisted(l:i)
+            continue
+        endif
+        let l:path = bufname(l:i)
+        if empty(l:path) || !filereadable(l:path)
+            continue
+        endif
+        if getbufvar(l:i, '&modified')
+            " Unsaved local edits: don't clobber them.
+            continue
+        endif
+        " Compare the buffer's lines against the file on disk.
+        let l:buf_lines = getbufline(l:i, 1, '$')
+        let l:disk_lines = readfile(l:path)
+        if l:buf_lines ==# l:disk_lines
+            continue
+        endif
+        " Reload the buffer silently.
+        let l:cur_win = winnr()
+        let l:buf_win = bufwinnr(l:i)
+        if l:buf_win > 0
+            execute l:buf_win . 'wincmd w'
+            edit!
+            execute l:cur_win . 'wincmd w'
         endif
     endfor
 endfunction
