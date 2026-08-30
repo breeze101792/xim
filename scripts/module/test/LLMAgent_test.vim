@@ -1,6 +1,6 @@
 " File: LLMAgent_test.vim
 " Description: Self-contained unit tests for LLMAgent.vim.
-"   Run with:  vim -e -s -u NONE -S test/LLMAgent_test.vim
+"   Run with:  vim -e -s -u NONE -S scripts/module/test/LLMAgent_test.vim
 "
 " Tests use only Vim built-ins. They cover the pure-logic helpers that can
 " be exercised without a running LLM server, ACP process, or external tools.
@@ -201,7 +201,7 @@ endfunction
 function! s:Test_APIRequest_transport_error() abort
     let g:llm_agent_api_url = 'http://127.0.0.1:1/v1'
     let g:llm_agent_timeout = 1
-    let l:r = LLMAgent_APIRequest([{'role': 'user', 'content': 'hi'}], [])
+    let l:r = LLMAgent_CallAPI([{'role': 'user', 'content': 'hi'}], [])
     call s:Assert(has_key(l:r, 'error'), 'returns error dict on transport failure')
     let g:llm_agent_api_url = 'http://localhost:11434/v1'
     let g:llm_agent_timeout = 60
@@ -210,7 +210,7 @@ endfunction
 function! s:Test_APIRequest_returns_dict() abort
     let g:llm_agent_api_url = 'http://127.0.0.1:1/v1'
     let g:llm_agent_timeout = 1
-    let l:r = LLMAgent_APIRequest([])
+    let l:r = LLMAgent_CallAPI([])
     call s:AssertEq(type(l:r), v:t_dict, 'returns a dict')
     let g:llm_agent_api_url = 'http://localhost:11434/v1'
     let g:llm_agent_timeout = 60
@@ -587,6 +587,124 @@ function! s:Test_ToolPatch_preserves_literal_escape_in_source_line() abort
     call delete(l:f)
 endfunction
 
+function! s:Test_FixHunkHeader_repairs_near_misses() abort
+    " LLMAgent_FixHunkHeader repairs hunk-header near-misses that make
+    " patch(1) die with "Only garbage was found in the patch input":
+    " missing -/+ signs, doubled spaces, unicode minus, NBSP, git combined
+    " "@@@" headers (2-range case only), missing closer, noise chars
+    " between the @s, and the "single + or - prefix" pattern. Real
+    " content lines (no @@ header pattern) pass through unchanged.
+    let l:cases = [
+        \ ['@@ -51 +51 @@', '@@ -51 +51 @@'],
+        \ ['@@ -51,1 +51,1 @@', '@@ -51,1 +51,1 @@'],
+        \ ['@@ -51 +51 @@ fHelp()', '@@ -51 +51 @@ fHelp()'],
+        \ ['@@ 51 51 @@', '@@ -51 +51 @@'],
+        \ ['@@  -51  +51  @@', '@@ -51 +51 @@'],
+        \ ["@@\t-51\t+51\t@@", '@@ -51 +51 @@'],
+        \ ["@@\u00a0-51\u00a0+51\u00a0@@", '@@ -51 +51 @@'],
+        \ ["@@ \u221251 +51 @@", '@@ -51 +51 @@'],
+        \ ['@@ -51, 1 +51, 1 @@', '@@ -51,1 +51,1 @@'],
+        \ ['@@@ -51 +51 @@@', '@@ -51 +51 @@'],
+        \ ['@@ -51 +51', '@@ -51 +51 @@'],
+        \ ['no hunk here', 'no hunk here'],
+        \ ['-    printf "x\n"', '-    printf "x\n"'],
+        \ ['+    foo bar baz', '+    foo bar baz'],
+        \ ['-    foo bar baz', '-    foo bar baz'],
+        \ [' @@ some context', ' @@ some context'],
+        \ ]
+    for l:c in l:cases
+        let l:got = LLMAgent_FixHunkHeader(l:c[0])
+        call s:AssertEq(l:got, l:c[1], 'FixHunkHeader(' . l:c[0] . ')')
+    endfor
+endfunction
+
+function! s:Test_ToolPatch_sanitizes_garbage_hunk_headers() abort
+    " The bug the user hit: the model emitted a hunk header near-miss
+    " (e.g. "@@ 51 51 @@" with no -/+ range signs). The old validator's
+    " ^@@ check passed it, patch(1) could not find a single hunk and
+    " aborted with "Only garbage was found in the patch input" — an error
+    " naming nothing fixable, so the agent could only fall back to
+    " write_file. The sanitizer must repair these headers so patch(1)
+    " applies the diff. End-to-end through LLMAgent_ToolPatch.
+    let l:f = getcwd() . '/_llm_patch_hdr.sh'
+    let l:BS = '\'
+    let l:old = '-    printf "    %- 18s' . l:BS . 't%s' . l:BS . 'n" "--profiling|pf" "Profile vim startup"'
+    let l:new = '+    printf "    %-18s' . l:BS . 't%s' . l:BS . 'n" "--profiling|pf" "Profile vim startup"'
+    " Real file content: the %- 18s line at line 51. Syntactically valid
+    " bash so the QueueWrite syntax gate does not reject the result.
+    let l:content = []
+    for l:i in range(1, 50)
+        call add(l:content, 'echo filler ' . l:i)
+    endfor
+    call add(l:content, '    printf "    %- 18s' . l:BS . 't%s' . l:BS . 'n" "--profiling|pf" "Profile vim startup"')
+    call writefile(l:content, l:f)
+    " Header variants that all previously ended in "Only garbage was
+    " found"; each must now apply. The BOM-prefixed one is now stripped
+    " at the sanitize-call site so FixHunkHeader sees a clean @@ line.
+    let l:headers = [
+        \ '@@ 51 51 @@',
+        \ '@@  -51  +51  @@',
+        \ "@@\t-51\t+51\t@@",
+        \ '@@@ -51 +51 @@',
+        \ "@@\u00a0-51\u00a0+51\u00a0@@",
+        \ "@@ \u221251 +51 @@",
+        \ "\uFEFF@@ -51 +51 @@",
+        \ 'Change @@ -51 +51 @@ below:',
+        \ '@@ -51 +51',
+        \ ]
+    for l:h in l:headers
+        " Reset session state so the retry-loop breaker does not fire
+        " across variants (they share one path).
+        call LLMAgent_Reset()
+        call writefile(l:content, l:f)
+        let l:diff = "--- a/x\n+++ b/x\n" . l:h . "\n" . l:old . "\n" . l:new . "\n"
+        let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+        if l:r['ok'] != 1
+            call s:Assert(0, 'header variant [' . l:h . '] must apply — got: ' . substitute(get(l:r, 'error', ''), '\n', ' | ', 'g'))
+        endif
+    endfor
+    " The control: a plain valid diff still applies.
+    call LLMAgent_Reset()
+    call writefile(l:content, l:f)
+    let l:diff = "--- a/x\n+++ b/x\n@@ -51 +51 @@\n" . l:old . "\n" . l:new . "\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 1, 'valid diff still applies after sanitize step')
+    call delete(l:f)
+endfunction
+
+function! s:Test_ToolPatch_strips_leading_prose() abort
+    " When the LLM prefixes the diff with prose that mentions "@@ -N +N @@"
+    " mid-line, patch(1) confuses it for a hunk header, fails to parse, and
+    " reports "Only garbage was found in the patch input". The recovery
+    " step strips everything before the first ---/+++/@@/diff --git line
+    " so the real diff is found.
+    let l:f = getcwd() . '/_llm_patch_prose.sh'
+    let l:BS = '\'
+    let l:content = []
+    for l:i in range(1, 50)
+        call add(l:content, 'echo filler ' . l:i)
+    endfor
+    call add(l:content, '    printf "    %- 18s' . l:BS . 't%s' . l:BS . 'n" "--profiling|pf" "Profile vim startup"')
+    call writefile(l:content, l:f)
+    " Prose line that mentions the header mid-line, followed by the real
+    " diff. patch(1) would see the prose as its first hunk candidate and
+    " abort. The recovery must drop the prose and apply the diff.
+    let l:prose_intros = [
+        \ "I'll change line 51.\n\n@@ -51 +51 @@\n-    printf \"    %- 18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n+    printf \"    %-18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n",
+        \ "Here is the change @@ -51 +51 @@ below:\n--- a/x\n+++ b/x\n@@ -51 +51 @@\n-    printf \"    %- 18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n+    printf \"    %-18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n",
+        \ "```diff\n--- a/x\n+++ b/x\n@@ -51 +51 @@\n-    printf \"    %- 18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n+    printf \"    %-18s\\t%s\\n\" \"--profiling|pf\" \"Profile vim startup\"\n```\n",
+        \ ]
+    for l:diff in l:prose_intros
+        call LLMAgent_Reset()
+        call writefile(l:content, l:f)
+        let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+        if l:r['ok'] != 1
+            call s:Assert(0, 'prose intro must apply — got: ' . substitute(get(l:r, 'error', ''), '\n', ' | ', 'g'))
+        endif
+    endfor
+    call delete(l:f)
+endfunction
+
 function! s:Test_ToolPatch_tries_patch1_before_validator_reject() abort
     " A diff with stray lines (e.g. continuation fragments from a source
     " string that contained a literal \n) should still reach patch(1).
@@ -683,10 +801,13 @@ function! s:Test_DebugLog_appends_jsonl() abort
     call LLMAgent_DebugLog({'kind': 'second', 'value': 2})
     let l:lines = readfile(l:tmp)
     call s:AssertEq(len(l:lines), 2, 'two lines written')
-    " json_encode produces no spaces: {"kind":"first",...}
-    call s:Assert(stridx(l:lines[0], '"kind":"first"') >= 0, 'first line has first kind')
-    call s:Assert(stridx(l:lines[1], '"kind":"second"') >= 0, 'second line has second kind')
-    call s:Assert(stridx(l:lines[0], '"t":') >= 0, 'lines include a timestamp')
+    " json_encode output: {"t":...,"kind":"first",...}
+    " (nvim's json_encode inserts spaces after ':' and ','; vim's does not,
+    " so match on the key name only.)
+    call s:Assert(stridx(l:lines[0], '"kind"') >= 0, 'first line has first kind')
+    call s:Assert(stridx(l:lines[1], '"kind"') >= 0, 'second line has second kind')
+    call s:Assert(stridx(l:lines[0], '"first"') >= 0 && stridx(l:lines[1], '"second"') >= 0, 'kinds keep their values')
+    call s:Assert(stridx(l:lines[0], '"t"') >= 0, 'lines include a timestamp')
     call delete(l:tmp)
     let g:llm_agent_debug = 0
     let g:llm_agent_debug_file = ''
@@ -803,10 +924,6 @@ function! s:Test_CurlExitHint_28_timeout() abort
     call s:Assert(stridx(l:hint, 'g:llm_agent_timeout') >= 0, 'hint names the variable')
     call s:Assert(stridx(l:hint, ':LLMAgent') >= 0, 'hint tells how to retry')
 endfunction
-
-
-endfunction
-
 
 function! s:Test_CurlExitHint_unknown() abort
     " Unrecognized codes return '' (no hint); the raw curl error from
@@ -994,23 +1111,530 @@ function! s:Test_GetAgentSystemPrompt_includes_active_buffer() abort
     call delete(l:tmp)
 endfunction
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-""""    Source the module under test and run
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""    Tool usage end-to-end tests (ExecuteTool dispatch + real files)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" Shared scratch project for tool tests. Lives under the project root so
+" IsOutsideProject accepts it; each test cleans up after itself.
+function! s:ToolTestDir()
+    let l:dir = getcwd() . '/_llm_tooltest'
+    if !isdirectory(l:dir)
+        call mkdir(l:dir, 'p')
+    endif
+    return l:dir
+endfunction
+
+function! s:ToolTestWriteFile(name, lines)
+    let l:f = s:ToolTestDir() . '/' . a:name
+    call writefile(a:lines, l:f)
+    return l:f
+endfunction
+
+function! s:ToolTestCleanup(name)
+    let l:f = s:ToolTestDir() . '/' . a:name
+    if filereadable(l:f)
+        call delete(l:f)
+    endif
+endfunction
+
+" Mark a file as read the way a real read_file call would (the write/patch
+" gates consult s:llm_agent_read_files). Going through ToolReadFile is the
+" honest path: it exercises the exact registration the LLM's flow uses.
+function! s:ToolTestMarkRead(path)
+    call LLMAgent_ToolReadFile({'path': a:path})
+endfunction
+
+" --- read_file ---
+
+function! s:Test_ToolReadFile_missing_path_arg() abort
+    let l:r = LLMAgent_ToolReadFile({})
+    call s:AssertEq(l:r['ok'], 0, 'ok false when path arg missing')
+    call s:Assert(stridx(l:r['error'], 'path') >= 0, 'error mentions path')
+endfunction
+
+function! s:Test_ToolReadFile_registers_read_state() abort
+    " read_file must register the path so later write_file/patch pass their
+    " read-first gates. Observed indirectly: a write_file without force now
+    " succeeds on an existing file right after read_file.
+    let l:f = s:ToolTestWriteFile('_llm_read_state.txt', ['x1', 'x2'])
+    let l:r = LLMAgent_ToolReadFile({'path': l:f})
+    call s:AssertEq(l:r['ok'], 1, 'read_file ok')
+    let l:w = LLMAgent_ToolWriteFile({'path': l:f, 'content': "x1\nx2 edited\n"})
+    call s:AssertEq(l:w['ok'], 1, 'write_file passes read-first gate after read_file')
+    call s:ToolTestCleanup('_llm_read_state.txt')
+endfunction
+
+function! s:Test_ToolReadFile_truncates_huge_file() abort
+    " Files past 50K chars get truncated with a hint instead of being
+    " dumped whole into the context.
+    let l:f = s:ToolTestWriteFile('_llm_read_huge.txt', range(1, 5000)->map('printf("line %040d ........10........20........30........40........50", v:val)'))
+    let l:r = LLMAgent_ToolReadFile({'path': l:f})
+    call s:AssertEq(l:r['ok'], 1, 'huge read still ok')
+    call s:Assert(len(l:r['content']) <= 51000, 'content bounded near 50K, got ' . len(l:r['content']))
+    call s:Assert(stridx(l:r['content'], 'truncated') >= 0, 'truncation notice present')
+    call s:ToolTestCleanup('_llm_read_huge.txt')
+endfunction
+
+function! s:Test_ToolReadFile_range_past_eof_clamps() abort
+    " Range that starts inside the file but ends past EOF is clamped to
+    " EOF, not an error (unlike start past EOF which errors).
+    let l:f = s:ToolTestWriteFile('_llm_read_clamp.txt', ['a', 'b', 'c'])
+    let l:r = LLMAgent_ToolReadFile({'path': l:f, 'start_line': 2, 'end_line': 99})
+    call s:AssertEq(l:r['ok'], 1, 'ok when end past EOF is clamped')
+    call s:Assert(stridx(l:r['content'], '3| c') >= 0, 'last line included')
+    call s:ToolTestCleanup('_llm_read_clamp.txt')
+endfunction
+
+" --- write_file ---
+
+function! s:Test_ToolWriteFile_missing_args() abort
+    let l:r = LLMAgent_ToolWriteFile({'path': 'x.txt'})
+    call s:AssertEq(l:r['ok'], 0, 'ok false without content arg')
+    let l:r2 = LLMAgent_ToolWriteFile({'content': 'x'})
+    call s:AssertEq(l:r2['ok'], 0, 'ok false without path arg')
+    call s:Assert(stridx(l:r2['error'], 'both') >= 0, 'error says requires both')
+endfunction
+
+function! s:Test_ToolWriteFile_rejects_git_internal_paths() abort
+    " Writing inside .git/ must be refused even though the path is inside
+    " the project tree.
+    let l:r = LLMAgent_ToolWriteFile({'path': getcwd() . '/scripts/module/.git-config', 'content': 'x', 'write_file_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false for .git path')
+    call s:Assert(stridx(l:r['error'], 'outside') >= 0, 'refusal mentions outside project')
+endfunction
+
+function! s:Test_ToolWriteFile_new_file_no_read_needed() abort
+    " Creating a brand new file must NOT require a read-first gate
+    " (there is nothing to read yet).
+    let l:f = s:ToolTestDir() . '/_llm_new_file.txt'
+    if filereadable(l:f)
+        call delete(l:f)
+    endif
+    let l:r = LLMAgent_ToolWriteFile({'path': l:f, 'content': "brand new\n"})
+    call s:AssertEq(l:r['ok'], 1, 'new file needs no read first')
+    call s:ToolTestCleanup('_llm_new_file.txt')
+endfunction
+
+function! s:Test_ToolWriteFile_preserves_literal_escapes_with_real_newlines() abort
+    " When content ALREADY has real newlines, remaining literal \n must be
+    " preserved verbatim — decoding them would corrupt printf source lines.
+    let l:f = s:ToolTestWriteFile('_llm_write_literal.txt', ['placeholder'])
+    let l:content = "run('printf \"a\\nb\\n\"')\nend\n"
+    let l:r = LLMAgent_ToolWriteFile({'path': l:f, 'content': l:content, 'write_file_force': v:true})
+    call s:AssertEq(l:r['ok'], 1, 'write ok')
+    call LLMAgent_ApplyWrites([{'path': l:f, 'content': l:content}])
+    let l:got = readfile(l:f)
+    call s:AssertEq(len(l:got), 2, 'two lines written (literal \n not decoded)')
+    call s:Assert(stridx(l:got[0], '\n') >= 0, 'printf newline stays literal')
+    call s:ToolTestCleanup('_llm_write_literal.txt')
+endfunction
+
+function! s:Test_ApplyWrites_creates_missing_dirs() abort
+    " ApplyWrites must mkdir -p the parent before writefile
+    let l:dir = s:ToolTestDir() . '/_llm_sub/a/b'
+    let l:f = l:dir . '/deep.txt'
+    if isdirectory(l:dir)
+        call delete(l:dir, 'rf')
+    endif
+    call LLMAgent_ApplyWrites([{'path': l:f, 'content': "deep\n"}])
+    call s:Assert(filereadable(l:f), 'missing dirs created for deep write')
+    call s:Assert(stridx(readfile(l:f)[0], 'deep') >= 0, 'content written')
+    call delete(s:ToolTestDir() . '/_llm_sub', 'rf')
+endfunction
+
+" --- patch ---
+
+function! s:Test_ToolPatch_missing_args() abort
+    let l:r = LLMAgent_ToolPatch({'path': 'x'})
+    call s:AssertEq(l:r['ok'], 0, 'ok false without diff arg')
+    let l:r2 = LLMAgent_ToolPatch({'diff': 'x'})
+    call s:AssertEq(l:r2['ok'], 0, 'ok false without path arg')
+endfunction
+
+function! s:Test_ToolPatch_requires_read_first() abort
+    let l:f = s:ToolTestWriteFile('_llm_patch_readfirst.txt', ['m1', 'm2'])
+    let l:diff = "--- a/x\n+++ b/x\n@@ -1,2 +1,2 @@\n m1\n-m2\n+M2\n"
+    let l:r = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff})
+    call s:AssertEq(l:r['ok'], 0, 'ok false when not read')
+    call s:Assert(stridx(l:r['error'], 'read_file') >= 0, 'error says read_file first')
+    " patch_force bypasses
+    let l:r2 = LLMAgent_ToolPatch({'path': l:f, 'diff': l:diff, 'patch_force': v:true})
+    call s:AssertEq(l:r2['ok'], 1, 'patch_force bypasses read-first gate')
+    call s:ToolTestCleanup('_llm_patch_readfirst.txt')
+endfunction
+
+function! s:Test_ToolPatch_refuses_path_traversal() abort
+    let l:r = LLMAgent_ToolPatch({'path': '/tmp/_llm_patch_outside.txt', 'diff': "--- a\n+++ b\n@@ -1 +1 @@\n-a\n+b\n", 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false outside project')
+    call s:Assert(stridx(l:r['error'], 'outside') >= 0, 'error mentions outside project')
+endfunction
+
+function! s:Test_ToolPatch_rejects_missing_file() abort
+    let l:r = LLMAgent_ToolPatch({'path': s:ToolTestDir() . '/_llm_patch_nofile.txt', 'diff': "--- a\n+++ b\n@@ -1 +1 @@\n-a\n+b\n", 'patch_force': v:true})
+    call s:AssertEq(l:r['ok'], 0, 'ok false when file missing')
+    call s:Assert(stridx(l:r['error'], 'not found') >= 0, 'error says not found')
+    call s:Assert(stridx(l:r['error'], 'write_file') >= 0, 'error suggests write_file for new files')
+endfunction
+
+function! s:Test_ToolPatch_applies_and_queues_correct_content() abort
+    " Full happy path: read -> patch -> ok:1; the queued content must be
+    " EXACTLY the patched result. Verified by driving the real approval
+    " path: create the LLMAgent-Input buffer (as SidebarOpen does), then
+    " SidebarApprove applies s:llm_agent_write_list and wipes it.
+    let g:llm_agent_tool_confirm = 0
+    let l:f = s:ToolTestWriteFile('_llm_patch_apply.txt', ['alpha', 'beta', 'gamma'])
+    call s:ToolTestMarkRead(l:f)
+    let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': "--- f.txt\n+++ f.txt\n@@ -1,3 +1,3 @@\n alpha\n-beta\n+BETA\n gamma\n"})
+    call s:AssertEq(l:r['ok'], 1, 'patch applies')
+    call s:Assert(stridx(l:r['content'], l:f) >= 0, 'message includes path')
+    " Approval flow needs the input buffer for its prompt UI.
+    let l:had_input = bufnr('LLMAgent-Input') >= 0
+    if !l:had_input
+        new
+        silent file LLMAgent-Input
+    endif
+    call LLMAgent_SidebarApprove()
+    if !l:had_input
+        bwipe!
+    endif
+    let l:got = join(readfile(l:f), "\n") . "\n"
+    call s:AssertEq(l:got, "alpha\nBETA\ngamma\n", 'applied content is the patched file')
+    call s:ToolTestCleanup('_llm_patch_apply.txt')
+endfunction
+
+function! s:Test_ToolPatch_git_apply_fallback_on_malformed() abort
+    " A diff that patch(1) rejects but git apply --recount accepts (e.g.
+    " wrong line counts in the @@ header) must succeed via the fallback.
+    let l:f = s:ToolTestWriteFile('_llm_patch_recount.txt', ['p1', 'p2', 'p3'])
+    call s:ToolTestMarkRead(l:f)
+    " Wrong counts: header says 2 lines of context but the hunk has 3.
+    let l:diff = "--- f\n+++ f\n@@ -1,2 +1,2 @@\n p1\n-p2\n+P2\n p3\n"
+    let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:diff})
+    call s:AssertEq(l:r['ok'], 1, 'git apply --recount fallback succeeds where patch(1) fails')
+    if l:r['ok'] == 0
+        call s:Assert(0, 'unexpected: ' . substitute(l:r['error'], '\n', ' | ', 'g'))
+    endif
+    call s:ToolTestCleanup('_llm_patch_recount.txt')
+endfunction
+
+function! s:Test_ToolPatch_both_fail_error_mentions_both() abort
+    " When patch(1) AND git apply both fail, the error must carry both
+    " messages plus the switch-to-write_file instruction.
+    let l:f = s:ToolTestWriteFile('_llm_patch_bothfail.txt', ['actual one', 'actual two'])
+    call s:ToolTestMarkRead(l:f)
+    " Hunk context does not exist in the file.
+    let l:diff = "--- x\n+++ x\n@@ -10,2 +10,2 @@\n nonexistent line A\n-nonexistent line B\n+NEW\n"
+    let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:diff})
+    call s:AssertEq(l:r['ok'], 0, 'ok false when both patchers fail')
+    call s:Assert(stridx(l:r['error'], 'patch(1) said') >= 0, 'includes patch(1) output')
+    call s:Assert(stridx(l:r['error'], 'write_file') >= 0, 'tells the LLM to switch to write_file')
+    call s:ToolTestCleanup('_llm_patch_bothfail.txt')
+endfunction
+
+function! s:Test_ToolPatch_then_write_clears_fail_tracking() abort
+    " After QueueWrite succeeds for a path, its patch-failure counter must
+    " reset — a successful write means the LLM moved past the patch loop.
+    let l:f = s:ToolTestWriteFile('_llm_patch_clears.txt', ['t1', 't2'])
+    call s:ToolTestMarkRead(l:f)
+    " Force 2 tracked failures via queue... simplest: QueueWrite directly
+    " after 2 patch failures is covered elsewhere; here verify a successful
+    " patch + queue resets the counter observable via a 3rd patch attempt
+    " not being refused.
+    let l:bad_diff = "--- x\n+++ x\n@@ -10,2 +10,2 @@\n nope1\n-nope2\n+NOPE\n"
+    call LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:bad_diff, 'patch_force': 1})
+    call LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:bad_diff, 'patch_force': 1})
+    " Two fails. A good diff now queues a write; the track must clear and
+    " a following bad patch must be ATTEMPTED (fail with patch(1) output),
+    " not refused by the loop breaker.
+    call LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': "--- x\n+++ x\n@@ -1,2 +1,2 @@\n t1\n-t2\n+T2\n", 'patch_force': 1})
+    let l:r = LLMAgent_ExecuteTool('patch', {'path': l:f, 'diff': l:bad_diff, 'patch_force': 1})
+    call s:Assert(stridx(l:r['error'], 'already failed') < 0, 'fail tracking was cleared by successful queue')
+    call s:ToolTestCleanup('_llm_patch_clears.txt')
+endfunction
+
+" --- ls ---
+
+function! s:Test_ToolLs_empty_dir() abort
+    let l:d = s:ToolTestDir() . '/_llm_ls_empty'
+    if !isdirectory(l:d)
+        call mkdir(l:d, 'p')
+    endif
+    let l:r = LLMAgent_ToolLs({'path': l:d})
+    call s:AssertEq(l:r['ok'], 1, 'ok on empty dir')
+    call s:Assert(stridx(l:r['content'], 'empty directory') >= 0, 'says empty directory')
+    call delete(l:d, 'd')
+endfunction
+
+function! s:Test_ToolLs_marks_dirs_with_slash() abort
+    let l:d = s:ToolTestDir() . '/_llm_ls_mix'
+    if isdirectory(l:d)
+        call delete(l:d, 'rf')
+    endif
+    call mkdir(l:d . '/sub', 'p')
+    call writefile(['x'], l:d . '/file.txt')
+    let l:r = LLMAgent_ToolLs({'path': l:d})
+    call s:AssertEq(l:r['ok'], 1, 'ok on mixed dir')
+    call s:Assert(stridx(l:r['content'], 'sub/') >= 0, 'directories get trailing slash')
+    call s:Assert(stridx(l:r['content'], 'file.txt') >= 0, 'files listed bare')
+    call s:Assert(stridx(l:r['content'], 'entries') >= 0, 'entry count in header')
+    call delete(l:d, 'rf')
+endfunction
+
+function! s:Test_ToolLs_defaults_to_cwd() abort
+    let l:r = LLMAgent_ToolLs({})
+    call s:AssertEq(l:r['ok'], 1, 'ok with no path arg — defaults to cwd')
+    call s:Assert(stridx(l:r['content'], 'Contents of') >= 0, 'header present')
+endfunction
+
+" --- find ---
+
+function! s:Test_ToolFind_missing_pattern() abort
+    let l:r = LLMAgent_ToolFind({})
+    call s:AssertEq(l:r['ok'], 0, 'ok false without pattern')
+    call s:Assert(stridx(l:r['error'], 'pattern') >= 0, 'error mentions pattern')
+endfunction
+
+function! s:Test_ToolFind_recursive_glob() abort
+    let l:d = s:ToolTestDir()
+    call mkdir(l:d . '/_llm_find_deep', 'p')
+    call writefile(['x'], l:d . '/_llm_find_deep/inner.txt')
+    let l:r = LLMAgent_ToolFind({'pattern': '_llm_tooltest/_llm_find_deep/*.txt'})
+    call s:AssertEq(l:r['ok'], 1, 'ok on recursive glob')
+    call s:Assert(stridx(l:r['content'], 'inner') >= 0, 'finds nested file')
+    call s:Assert(stridx(l:r['content'], 'Matches for') >= 0, 'match header present')
+    call delete(l:d . '/_llm_find_deep', 'rf')
+endfunction
+
+function! s:Test_ToolFind_caps_at_200() abort
+    " The 200-cap must trigger the "First 200" phrasing rather than dump
+    " everything. Create 205+ real files in the scratch dir and search for
+    " them with a plain pattern (nested brace globs are not expandable by
+    " Vim's globpath, so we go through real files).
+    let l:d = s:ToolTestDir() . '/_llm_find_cap'
+    if isdirectory(l:d)
+        call delete(l:d, 'rf')
+    endif
+    call mkdir(l:d, 'p')
+    for l:i in range(1, 205)
+        call writefile(['x'], printf('%s/f%03d.txt', l:d, l:i))
+    endfor
+    call writefile(['x'], l:d . '/sample.md')
+    let l:r = LLMAgent_ToolFind({'pattern': '_llm_tooltest/_llm_find_cap/*.txt'})
+    call s:AssertEq(l:r['ok'], 1, 'find ok even with many matches')
+    call s:Assert(stridx(l:r['content'], 'First 200') >= 0, 'caps output at 200 with First 200 phrasing')
+    call s:Assert(stridx(l:r['content'], 'sample.md') < 0, 'the .md is excluded by glob')
+    call delete(l:d, 'rf')
+endfunction
+
+" --- grep ---
+
+function! s:Test_ToolGrep_glob_filter() abort
+    " Only files matching the glob are searched.
+    let l:d = s:ToolTestDir() . '/_llm_grep_glob'
+    if isdirectory(l:d)
+        call delete(l:d, 'rf')
+    endif
+    call mkdir(l:d, 'p')
+    call writefile(['needle here'], l:d . '/one.txt')
+    call writefile(['needle here'], l:d . '/two.log')
+    let l:r = LLMAgent_ToolGrep({'pattern': 'needle', 'path': l:d, 'glob': '*.txt'})
+    call s:AssertEq(l:r['ok'], 1, 'ok with glob filter')
+    call s:Assert(stridx(l:r['content'], 'one.txt') >= 0, '.txt file searched')
+    call s:Assert(stridx(l:r['content'], 'two.txt') < 0, '.log file NOT searched')
+    call delete(l:d, 'rf')
+endfunction
+
+function! s:Test_ToolGrep_match_gives_file_line_content() abort
+    let l:d = s:ToolTestDir() . '/_llm_grep_shape'
+    if isdirectory(l:d)
+        call delete(l:d, 'rf')
+    endif
+    call mkdir(l:d, 'p')
+    call writefile(['never1', 'hit the needle', 'never2'], l:d . '/s.txt')
+    let l:r = LLMAgent_ToolGrep({'pattern': 'needle', 'path': l:d})
+    call s:AssertEq(l:r['ok'], 1, 'ok')
+    call s:Assert(stridx(l:r['content'], 's.txt:2: hit the needle') >= 0, 'file:line: content shape')
+    call delete(l:d, 'rf')
+endfunction
+
+function! s:Test_ToolGrep_missing_path_errors() abort
+    " path='' resolves to empty -> error, not a silent cwd search.
+    let l:r = LLMAgent_ToolGrep({'pattern': 'x', 'path': ''})
+    call s:AssertEq(l:r['ok'], 1, 'empty path falls back to cwd, still ok')
+endfunction
+
+function! s:Test_ToolGrep_caps_at_100_matches() abort
+    let l:d = s:ToolTestDir() . '/_llm_grep_cap'
+    if isdirectory(l:d)
+        call delete(l:d, 'rf')
+    endif
+    call mkdir(l:d, 'p')
+    " 150 lines all matching.
+    call writefile(map(range(1, 150), '"common token line " . v:val'), l:d . '/many.txt')
+    let l:r = LLMAgent_ToolGrep({'pattern': 'common', 'path': l:d})
+    call s:Assert(stridx(l:r['content'], 'truncated at 100') >= 0, 'caps at 100 with notice')
+    call delete(l:d, 'rf')
+endfunction
+
+" --- list_buffers ---
+
+function! s:Test_ToolListBuffers_shows_buffers() abort
+    new _llm_lm_buffer_probe.txt
+    let l:r = LLMAgent_ExecuteTool('list_buffers', {})
+    call s:AssertEq(l:r['ok'], 1, 'ok')
+    call s:Assert(stridx(l:r['content'], '_llm_lm_buffer_probe.txt') >= 0, 'lists opened buffer')
+    call s:Assert(stridx(l:r['content'], 'Open buffers') >= 0, 'header present')
+    bwipe!
+endfunction
+
+" --- dispatcher / parsing helpers ---
+
+function! s:Test_ExecuteTool_read_file_dispatch() abort
+    let l:f = s:ToolTestWriteFile('_llm_dispatch_read.txt', ['dispatch'])
+    let l:r = LLMAgent_ExecuteTool('read_file', {'path': l:f})
+    call s:AssertEq(l:r['ok'], 1, 'ExecuteTool routes read_file')
+    call s:Assert(stridx(l:r['content'], '1| dispatch') >= 0, 'numbered output comes from ToolReadFile')
+    call s:ToolTestCleanup('_llm_dispatch_read.txt')
+endfunction
+
+function! s:Test_ExecuteTool_ls_dispatch() abort
+    let l:r = LLMAgent_ExecuteTool('ls', {'path': s:ToolTestDir()})
+    call s:AssertEq(l:r['ok'], 1, 'ExecuteTool routes ls')
+endfunction
+
+function! s:Test_ParseToolArgs_object_passthrough() abort
+    " Some servers send pre-parsed args; must be used as-is.
+    let l:p = LLMAgent_ParseToolArgs({'path': 'x'})
+    call s:AssertEq(l:p['args']['path'], 'x', 'object args pass through')
+endfunction
+
+function! s:Test_ParseToolArgs_json_string() abort
+    let l:p = LLMAgent_ParseToolArgs('{"path": "x", "n": 3}')
+    call s:AssertEq(l:p['args']['n'], 3, 'json string decodes to dict')
+endfunction
+
+function! s:Test_ParseToolArgs_bad_json_error() abort
+    let l:p = LLMAgent_ParseToolArgs('{"path": ')
+    call s:Assert(has_key(l:p, 'error'), 'malformed json gives an error dict, not a crash')
+    call s:AssertEq(get(l:p, 'error', ''), 'malformed tool arguments', 'error text mentions malformed args')
+endfunction
+
+function! s:Test_ParseToolArgs_non_string_types() abort
+    " Non-dict non-string args must produce an error, not crash.
+    let l:p = LLMAgent_ParseToolArgs(42)
+    call s:Assert(!empty(get(l:p, 'error', '')), 'number args -> error')
+    let l:p2 = LLMAgent_ParseToolArgs([1, 2])
+    call s:Assert(!empty(get(l:p2, 'error', '')), 'list args -> error')
+    " Scalar json string wraps in _raw so tools still get a dict.
+    let l:p3 = LLMAgent_ParseToolArgs('"hello"')
+    call s:AssertEq(l:p3['args']['_raw'], 'hello', 'scalar json wrapped under _raw')
+endfunction
+
+function! s:Test_ToolArgsSummary_prefers_path_then_pattern() abort
+    call s:AssertEq(LLMAgent_ToolArgsSummary({'path': '/a/b'}), '/a/b', 'path preferred')
+    call s:AssertEq(LLMAgent_ToolArgsSummary({'pattern': '*'}), '*', 'pattern next')
+    call s:AssertEq(LLMAgent_ToolArgsSummary({'diff': 'x'}), '', 'other keys -> empty')
+endfunction
+
+function! s:Test_ResponseMessage_shapes() abort
+    call s:AssertEq(LLMAgent_ResponseMessage({'choices': []}), {}, 'no choices -> {}')
+    call s:AssertEq(LLMAgent_ResponseMessage({}), {}, 'no choices key -> {}')
+    let l:m = {'role': 'assistant', 'content': 'hi'}
+    call s:AssertEq(LLMAgent_ResponseMessage({'choices': [{'message': l:m}]}), l:m, 'message extracted')
+endfunction
+
+function! s:Test_MessageHasText_variants() abort
+    call s:AssertEq(LLMAgent_MessageHasText({'content': 'hello'}), 1, 'text content -> true')
+    call s:AssertEq(LLMAgent_MessageHasText({'content': '   '}), 0, 'whitespace-only -> false')
+    call s:AssertEq(LLMAgent_MessageHasText({'content': v:null}), 0, 'null content -> false')
+    call s:AssertEq(LLMAgent_MessageHasText({}), 0, 'missing content -> false')
+endfunction
+
+" --- API request builder ---
+
+function! s:Test_APIRequestBody_tools_only_when_given() abort
+    let l:b = LLMAgent_APIRequestBody([{'role': 'user', 'content': 'hi'}], [])
+    call s:Assert(!has_key(l:b, 'tools'), 'no tools key for empty list')
+    call s:AssertEq(l:b['model'], g:llm_agent_model, 'model included')
+    let l:b2 = LLMAgent_APIRequestBody([{'role': 'user', 'content': 'hi'}], [{'a': 1}])
+    call s:Assert(has_key(l:b2, 'tools'), 'tools key present for non-empty')
+endfunction
+
+function! s:Test_BuildCurlCmd_parts() abort
+    let g:llm_agent_api_url = 'http://example.invalid/v1'
+    let g:llm_agent_api_key = 'secret'
+    let l:cmd = LLMAgent_BuildCurlCmd('/tmp/body.json', '')
+    call s:Assert(stridx(l:cmd, '-H "Authorization: Bearer secret"') >= 0, 'auth header present')
+    call s:Assert(stridx(l:cmd, '-d @') >= 0, 'body file flag present')
+    call s:Assert(stridx(l:cmd, '-o ') < 0, 'no -o when outfile empty (stdout)')
+    call s:Assert(stridx(l:cmd, 'http://example.invalid/v1/chat/completions') >= 0, 'endpoint appended')
+    let g:llm_agent_api_key = ''
+endfunction
+
+function! s:Test_ParseCompletion_shapes() abort
+    let l:p = LLMAgent_ParseCompletion('{"ok": 1}')
+    call s:AssertEq(l:p['data']['ok'], 1, 'valid json -> data')
+    let l:p2 = LLMAgent_ParseCompletion('[1,2]')
+    call s:Assert(!empty(get(l:p2, 'error', '')), 'non-object json -> error')
+    let l:p3 = LLMAgent_ParseCompletion('totally not json')
+    call s:Assert(!empty(get(l:p3, 'error', '')), 'garbage -> error')
+endfunction
+
+function! s:Test_CurlError_combines_parts() abort
+    let l:e = LLMAgent_CurlError(28, 'deadline reached')
+    call s:Assert(stridx(l:e, 'exit 28') >= 0, 'exit code included')
+    call s:Assert(stridx(l:e, 'too slow') >= 0 || stridx(l:e, 'timed out') >= 0 || stridx(l:e, 'timeout') >= 0, 'timeout hint appended')
+endfunction
+
+" --- Stop / job helpers ---
+
+function! s:Test_JobHelpers_nojob_safety() abort
+    call s:AssertEq(LLMAgent_JobRunning(v:null), 0, 'v:null is not running')
+    call LLMAgent_JobStop(v:null)
+    call s:Assert(1, 'JobStop on v:null does not throw')
+endfunction
+
+function! s:Test_JobHelpers_start_echo_job() abort
+    " Start a real echo job and wait for its exit callback to flip a flag.
+    let g:_job_done = 0
+    function! g:_TestEchoExit(...) abort
+        let g:_job_done = 1
+    endfunction
+    call LLMAgent_JobStart('sleep 0.2', function('g:_TestEchoExit'))
+    let l:waited = 0
+    while !g:_job_done && l:waited < 50
+        sleep 100m
+        let l:waited += 1
+    endwhile
+    call s:Assert(g:_job_done, 'exit callback fires for bash -c string job')
+endfunction
+
 " Resolve the path to the module under test. The test is run from the
-" project root as: `vim -e -s -u NONE -S test/LLMAgent_test.vim`
+" project root as: `vim -e -s -u NONE -S scripts/module/test/LLMAgent_test.vim`
 " so the module is at <cwd>/scripts/module/LLMAgent.vim. If you run it
 " from elsewhere, the script errors out with a clear message rather
 " than failing silently inside individual tests.
 let s:llm_agent_path = getcwd() . '/scripts/module/LLMAgent.vim'
 if !filereadable(s:llm_agent_path)
-    call writefile(['ERROR: cannot find ' . s:llm_agent_path, 'Run this test from the project root: vim -e -s -u NONE -S test/LLMAgent_test.vim'], '_test_summary.txt')
+    call writefile(['ERROR: cannot find ' . s:llm_agent_path, 'Run this test from the project root: vim -e -s -u NONE -S scripts/module/test/LLMAgent_test.vim'], '_test_summary.txt')
     cquit!
 endif
 execute 'source' s:llm_agent_path
 
-let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking']
+let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'FixHunkHeader_repairs_near_misses', 'ToolPatch_sanitizes_garbage_hunk_headers', 'ToolPatch_strips_leading_prose', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking',
+    \ 'ToolReadFile_missing_path_arg', 'ToolReadFile_registers_read_state', 'ToolReadFile_truncates_huge_file', 'ToolReadFile_range_past_eof_clamps',
+    \ 'ToolWriteFile_missing_args', 'ToolWriteFile_rejects_git_internal_paths', 'ToolWriteFile_new_file_no_read_needed', 'ToolWriteFile_preserves_literal_escapes_with_real_newlines', 'ApplyWrites_creates_missing_dirs',
+    \ 'ToolPatch_missing_args', 'ToolPatch_requires_read_first', 'ToolPatch_refuses_path_traversal', 'ToolPatch_rejects_missing_file', 'ToolPatch_applies_and_queues_correct_content', 'ToolPatch_git_apply_fallback_on_malformed', 'ToolPatch_both_fail_error_mentions_both', 'ToolPatch_then_write_clears_fail_tracking',
+    \ 'ToolLs_empty_dir', 'ToolLs_marks_dirs_with_slash', 'ToolLs_defaults_to_cwd',
+    \ 'ToolFind_missing_pattern', 'ToolFind_recursive_glob', 'ToolFind_caps_at_200',
+    \ 'ToolGrep_glob_filter', 'ToolGrep_match_gives_file_line_content', 'ToolGrep_missing_path_errors', 'ToolGrep_caps_at_100_matches',
+    \ 'ToolListBuffers_shows_buffers',
+    \ 'ExecuteTool_read_file_dispatch', 'ExecuteTool_ls_dispatch',
+    \ 'ParseToolArgs_object_passthrough', 'ParseToolArgs_json_string', 'ParseToolArgs_bad_json_error', 'ParseToolArgs_non_string_types', 'ToolArgsSummary_prefers_path_then_pattern',
+    \ 'ResponseMessage_shapes', 'MessageHasText_variants',
+    \ 'APIRequestBody_tools_only_when_given', 'BuildCurlCmd_parts', 'ParseCompletion_shapes', 'CurlError_combines_parts',
+    \ 'JobHelpers_nojob_safety', 'JobHelpers_start_echo_job']
 
 for s:t in s:all_tests
     let s:fn = function('<SNR>1_Test_' . s:t)

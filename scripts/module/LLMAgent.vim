@@ -19,13 +19,19 @@
 " Dependencies: curl (for API mode), Node.js (for claude-agent-acp)
 " Supported: Vim 8+, Neovim
 
+" This file uses backslash line continuations; make sure they parse
+" regardless of the user's 'cpoptions' (standard plugin pattern: drop 'C'
+" while sourcing, restore at the bottom of the file).
+let s:save_cpo = &cpoptions
+set cpoptions-=C
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Settings
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 augroup LLMAgentGroup
     autocmd!
     autocmd VimResized * call LLMAgent_OnResize()
-    autocmd VimLeavePre * call LLMAgent_StopACP() | call LLMAgent_Stop()
+    autocmd VimLeavePre * call LLMAgent_Stop() | call LLMAgent_StopACP()
 augroup END
 
 " Sidebar log prefix colors. The mapping in LLMAgent_PrefixHiGroup returns
@@ -77,6 +83,62 @@ function! LLMAgent_GetInputHeight()
     return max([5, min([10, float2nr(&lines * 0.15)])])
 endfunction
 
+""""    Editor-compat job helpers (vim 8 job API vs nvim job API)
+
+" Start a background command. a:cmd is a shell command string; it is always
+" run through `bash -c` as ONE argument (a List argv, so no tokenization):
+"   - Vim's job_start(string) word-splits and execs directly — no shell —
+"     so redirects like `2>` would be passed to the program as literal argv.
+"   - Nvim's jobstart(string) runs via the shell, but the List form works
+"     there too and keeps both editors identical.
+" Returns a job handle or v:null if the job could not be started.
+function! LLMAgent_JobStart(cmd, on_exit)
+    let l:argv = ['bash', '-c', a:cmd]
+    if has('nvim')
+        let l:job = jobstart(l:argv, {'on_exit': a:on_exit})
+        return (type(l:job) == v:t_number && l:job > 0) ? l:job : v:null
+    endif
+    let l:job = job_start(l:argv, {'exit_cb': a:on_exit, 'mode': 'nl'})
+    return (job_status(l:job) ==# 'fail') ? v:null : l:job
+endfunction
+
+" True if the job handle is a running process. Nvim stores a channel id
+" (number); Vim stores a Job object, so guard the type before calling
+" job_status (a direct call on a number throws E121/E1176 under Vim).
+function! LLMAgent_JobRunning(job)
+    if a:job is v:null
+        return 0
+    endif
+    if has('nvim')
+        return type(a:job) == v:t_number && a:job > 0
+    endif
+    return type(a:job) == v:t_job && job_status(a:job) ==# 'run'
+endfunction
+
+" Stop a job. Safe to call on stale/-1/v:null handles; failures are
+" swallowed (the process may have exited between the check and the stop).
+function! LLMAgent_JobStop(job)
+    if has('nvim')
+        if type(a:job) == v:t_number && a:job > 0
+            try | call jobstop(a:job) | catch | endtry
+        endif
+    else
+        if type(a:job) == v:t_job
+            try | call job_stop(a:job) | catch | endtry
+        endif
+    endif
+endfunction
+
+" Pump the event loop while a callback-driven job works. Nvim needs
+" jobwait(); Vim dispatches job callbacks on timers/input, so sleep.
+function! LLMAgent_JobWaitJob(ms)
+    if has('nvim')
+        call jobwait([a:job], a:ms)
+    else
+        execute 'sleep ' . a:ms . 'm'
+    endif
+endfunction
+
 " Script-local state for multi-turn conversation
 let s:llm_agent_messages = []
 let s:llm_agent_write_list = []
@@ -85,14 +147,33 @@ let s:llm_agent_response_text = ''
 " conversation. Used to strongly nudge the next turn toward write_file.
 let s:llm_agent_patch_fails = {}
 
+" The diff text that last failed for each path. The retry-loop breaker
+    " only refuses an identical re-submission of a diff that failed several
+    " times — a fresh, different diff is always allowed through so a good
+    " attempt can clear the tracker instead of being locked out.
+let s:llm_agent_patch_fail_diffs = {}
+
+" Bump the patch-failure counter for a path and remember the diff that
+" failed, so the retry-loop breaker at LLMAgent_ToolPatch can refuse only
+" an identical re-submission.
+function! LLMAgent_RecordPatchFail(path, diff)
+    let s:llm_agent_patch_fails[a:path] = get(s:llm_agent_patch_fails, a:path, 0) + 1
+    let s:llm_agent_patch_fail_diffs[a:path] = a:diff
+endfunction
+
 " Paths that the LLM has read in this conversation. patch and write_file
 " check this to enforce "read before modify".
 let s:llm_agent_read_files = {}
 
 " ACP (Agent Client Protocol) state
-let s:acp_job_id = -1
+" s:acp_job_id is a job handle: nvim channel id (number) or Vim Job object;
+" v:null when idle. Never compare it with numbers — use LLMAgent_ACPOpen().
+let s:acp_job_id = v:null
 let s:acp_session_id = ''
 let s:acp_pending_reqs = {}
+" Responses to requests we sent, keyed by request id. The blocking
+" LLMAgent_ACPRequest loop consumes these.
+let s:acp_completed = {}
 let s:acp_prompt_resolved = 0
 " Set to 1 once the ACP initialize/initialized handshake completes. The
 " server refuses session/new until this is done.
@@ -104,10 +185,13 @@ let s:acp_next_req_id = 1
 let s:acp_terminal_output = ''
 
 " Async API (curl) job state for the 'api' backend. While a request is in
-" flight, s:llm_agent_api_job > 0 and the entry points refuse to start a new
-" turn (use :LLMStop to cancel). The callback is a Funcref invoked with the
-" parsed response dict (same shape LLMAgent_APIRequest used to return).
-let s:llm_agent_api_job = -1
+" flight s:llm_agent_api_job is a live job handle (nvim: channel id number,
+" vim: Job object) and the entry points refuse to start a new turn (use
+" :LLMStop to cancel). v:null means idle. The callback is a Funcref invoked
+" with the parsed response dict (same shape LLMAgent_CallAPI returns).
+" NOTE: never compare the job handle with `> 0` — under Vim it is a Job
+" object and any arithmetic comparison throws E910.
+let s:llm_agent_api_job = v:null
 let s:llm_agent_api_cb = ''
 let s:llm_agent_api_outfile = ''
 let s:llm_agent_api_errfile = ''
@@ -178,6 +262,23 @@ function! LLMAgent_DebugLog(event)
     catch
         " Swallow — debug logging must not affect the agent.
     endtry
+endfunction
+
+" One-line api_request debug event (model, url, counts, full body). Used by
+" both the sync and async request paths so the log shape stays identical.
+function! LLMAgent_DebugLogApiRequest(body_json, tools)
+    if !g:llm_agent_debug || empty(g:llm_agent_debug_file)
+        return
+    endif
+    let l:url = g:llm_agent_api_url . '/chat/completions'
+    call LLMAgent_DebugLog({
+        \ 'kind': 'api_request',
+        \ 'model': g:llm_agent_model,
+        \ 'url': l:url,
+        \ 'timeout': g:llm_agent_timeout,
+        \ 'request_body': LLMAgent_PrettyJson(a:body_json),
+        \ 'tools_count': len(a:tools),
+        \ })
 endfunction
 
 " Debug JSON view: pretty-print a JSON string for human reading.
@@ -286,6 +387,9 @@ function! LLMAgent_QueueWrite(path, content)
     if has_key(s:llm_agent_patch_fails, a:path)
         call remove(s:llm_agent_patch_fails, a:path)
     endif
+    if has_key(s:llm_agent_patch_fail_diffs, a:path)
+        call remove(s:llm_agent_patch_fail_diffs, a:path)
+    endif
     return ''
 endfunction
 
@@ -317,6 +421,111 @@ function! LLMAgent_DecodeEscapes(s)
     let l:out = substitute(l:out, '\\"',  '"',  'g')
     let l:out = substitute(l:out, '\\\\', '\', 'g')
     return l:out
+endfunction
+
+" Repair a near-miss unified-diff hunk header line. patch(1) requires
+" "@@ -N[,M] +A[,B] @@" to start the line; anything else containing @@
+" makes it die with "Only garbage was found in the patch input". LLMs
+" produce recognizable near-misses, so fix them in place:
+"   - BOM or stray text glued before the @@ (keep only from the @@ on)
+"   - double spaces, tabs, NBSP, unicode minus/en-dash in the numbers
+"   - missing -/+ range signs ("@@ 51 51 @@")
+"   - git combined-diff "@@@ -a -b +c @@@" (drop to plain "@@ ... @@")
+" Non-hunk lines pass through untouched.
+function! LLMAgent_FixHunkHeader(line)
+    " Skip real diff content lines: a context line starting with ' ',
+    " added line '+' with content, removed line '-', or no-newline "\".
+    " Heuristic: the rest of the line MUST contain at least one @ to be
+    " a header candidate. A bare '+ foo bar' added line never contains @
+    " unless it's literally quoting a header; if so, the LLM should have
+    " used @@ on a fresh line. Likewise '- foo bar' is a removed line.
+    if a:line =~# '^[ +\\-]'
+        if stridx(a:line, '@') < 0
+            return a:line
+        endif
+        " '+' or '-' followed by a recognizable "@@ -N +N @@" header on
+        " the rest of the line: rewrite. Otherwise it is genuine content
+        " carrying an @ symbol — leave alone.
+        let l:tail = substitute(a:line, '^[ +-]', '', '')
+        if l:tail !~# '@@'
+            return a:line
+        endif
+    endif
+    " Normalize look-alike characters and whitespace on the whole line
+    " first, so the header-shape patterns below can recognize the parts.
+    let l:line = substitute(a:line, '[\u2012\u2013\u2212\uFE58\uFF0D]', '-', 'g')
+    let l:line = substitute(l:line, '[\u00A0\u202F\u2007\u2002\u2003\u2004\u2005\u2006\u2009\u200A\u3000]', ' ', 'g')
+    let l:line = substitute(l:line, '[\uFEFF\u200B]', '', 'g')
+    let l:line = substitute(l:line, '\t', ' ', 'g')
+    " Find the first @-run followed by a signed or bare number — the
+    " header opening. A BOM or prose glued in front of it is dropped by
+    " working from there.
+    let l:open = match(l:line, '@\+\s*[+\-]\?\d')
+    if l:open < 0
+        " No header pattern at all. Leave the line alone — StripDiffProse
+        " should have removed it earlier; if it didn't, better to keep
+        " the line than risk corrupting it.
+        return a:line
+    endif
+    let l:body = strpart(l:line, l:open)
+    " Split at the LAST @-run: it is the closer; anything after it is the
+    " section heading. When the only @-run is the opener, the closer is
+    " missing and we re-add one below.
+    let l:last_at = strridx(l:body, '@')
+    let l:run_start = l:last_at
+    while l:run_start > 0 && l:body[l:run_start - 1] ==# '@'
+        let l:run_start -= 1
+    endwhile
+    let l:heading = ''
+    if l:run_start > l:open
+        let l:heading = strpart(l:body, l:last_at + 1)
+        let l:body = strpart(l:body, 0, l:run_start)
+    endif
+    " Drop stray noise chars that ended up between the @ runs. After the
+    " split, the body is "@@ -N +N @@"; anything else between the two
+    " @@ runs is LLM chatty punctuation we should discard.
+    let l:keep = '@+-0123456789, '
+    let l:body2 = ''
+    let l:i = 0
+    while l:i < strlen(l:body)
+        let l:ch = strpart(l:body, l:i, 1)
+        if stridx(l:keep, l:ch) >= 0
+            let l:body2 .= l:ch
+        endif
+        let l:i += 1
+    endwhile
+    let l:body = l:body2
+    " Drop any chars that wedged themselves between two @ runs, like the
+    " "5" in "@5@@" -> "@@". Vim regex: from one @ through the next @,
+    " remove anything that is not a sign, comma, digit or whitespace.
+    let l:body = substitute(l:body, '@[^@+-0-9 ,]\+@', '@@', 'g')
+    let l:body = substitute(l:body, '@[^@+-0-9 ,]\+@', '@@', 'g')
+    " Combined-diff "@@@" openers/closers collapse to "@@".
+    let l:body = substitute(l:body, '@\+', '@@', 'g')
+    " Squeeze runs of spaces to one, and spaces after commas to none.
+    let l:body = substitute(l:body, '\s\+', ' ', 'g')
+    let l:body = substitute(l:body, ',\s*', ',', 'g')
+    " Canonical spacing: one space after the opening @@ and before the
+    " closing @@; none after commas.
+    let l:body = substitute(l:body, '^@+\s*', '@@ ', '')
+    let l:body = substitute(l:body, '\s\+$', '', '')
+    " Missing range signs: "@@ 51 51" -> "@@ -51 +51" (bare line numbers).
+    let l:body = substitute(l:body, '^@@\s\+\(\d\+\)\(\,\d\+\)\=\s\+\(\d\+\)\(\,\d\+\)\= *$', '@@ -\1\2 +\3\4 @@', '')
+    if l:body !~# '@@$'
+        let l:body .= ' @@'
+    endif
+    let l:body = substitute(l:body, '\s\+@@$', ' @@', '')
+    " If, after the rewrite, the header still doesn't look valid, leave
+    " the original line alone — patch(1) or git apply will give a more
+    " useful error than our sanitizer guessing.
+    if l:body !~# '^@@ \-\d\+\(,\d\+\)\? +\d\+\(,\d\+\)\? @@\(.*\)$'
+        return a:line
+    endif
+    " Re-attach the heading (with any trailing whitespace that was there
+    " originally — useful for "fHelp()" style section names that patch
+    " preserves verbatim). The validator may add a closing @@ if the
+    " original had none; the heading remains in both cases.
+    return l:body . l:heading
 endfunction
 
 " Resolve a path the LLM gives us against the working buffer's directory
@@ -354,6 +563,11 @@ endfunction
 
 " True if a:path (already absolute and simplified) lives above the
 " project root. Used to refuse parent-traversal after path resolution.
+" The project root comes from `git -C <a:path>` when a:path is inside a
+" repo (falls back to cwd otherwise). Note we pass the file's DIRECTORY,
+" not the file itself: `git -C <file>` fails with "Not a directory" even
+" when the file is inside a repo, which used to make the check fall back
+" to cwd and wrongly refuse files outside the cwd.
 function! LLMAgent_IsOutsideProject(path)
     if a:path =~ '^\.\.'
         return 1
@@ -362,7 +576,10 @@ function! LLMAgent_IsOutsideProject(path)
         " Relative — caller should have resolved this; treat as unsafe.
         return 1
     endif
-    let l:root = system('git -C ' . shellescape(a:path) . ' rev-parse --show-toplevel 2>/dev/null')
+    " Prefer the file's own directory; when it isn't a directory (or the
+    " file was deleted), fall back to its parent via fnamemodify.
+    let l:probe = isdirectory(a:path) ? a:path : fnamemodify(a:path, ':h')
+    let l:root = system('git -C ' . shellescape(l:probe) . ' rev-parse --show-toplevel 2>/dev/null')
     let l:root = substitute(l:root, '\n\+$', '', '')
     if v:shell_error != 0 || empty(l:root)
         " No git repo. Fall back to cwd as the project root.
@@ -515,6 +732,7 @@ function! LLMAgent_Reset()
     let s:llm_agent_write_list = []
     let s:llm_agent_response_text = ''
     let s:llm_agent_patch_fails = {}
+    let s:llm_agent_patch_fail_diffs = {}
     let s:llm_agent_read_files = {}
     let s:acp_response_text = ''
     let s:acp_write_list = []
@@ -619,132 +837,85 @@ endfunction
 """"    Private Functions - Backend
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Issue one chat-completion request against the configured API and return the
-" decoded response as a dict. Pass a:tools (a list) to enable function-calling;
-" omit it for a plain text completion. On transport / parse / protocol errors
-" the function returns {'error': '...'} so callers can branch on it.
-function! LLMAgent_APIRequest(messages, ...)
+" Build the JSON body for a chat-completion request. a:tools is a list of
+" tool definitions (omit / pass [] for a plain text completion).
+function! LLMAgent_APIRequestBody(messages, tools)
     let l:body = {'model': g:llm_agent_model, 'messages': a:messages}
-    if a:0 > 0 && !empty(a:1)
-        let l:body['tools'] = a:1
+    if !empty(a:tools)
+        let l:body['tools'] = a:tools
     endif
-    let l:tmpfile = tempname()
-    let l:body_json = json_encode(l:body)
-    call writefile([l:body_json], l:tmpfile)
+    return l:body
+endfunction
 
-    " Debug: log the request. The body can be large; if g:llm_agent_debug
-    " is enabled we capture it. Otherwise just record a one-line marker.
-    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
-        let l:_evt = {}
-        let l:_evt.kind = 'api_request'
-        let l:_evt.model = g:llm_agent_model
-        let l:_evt.url = g:llm_agent_api_url . '/chat/completions'
-        let l:_evt.timeout = g:llm_agent_timeout
-        let l:_evt.messages_count = len(a:messages)
-        let l:_evt.tools_count = a:0 > 0 ? len(a:1) : 0
-        let l:_evt.request_body = LLMAgent_PrettyJson(l:body_json)
-        call LLMAgent_DebugLog(l:_evt)
-    endif
-
+" Build the curl command that POSTs a:bodyfile to the chat endpoint. When
+" a:outfile is empty the response goes to stdout (used by the blocking
+" LLMAgent_CallAPI); otherwise it is written to a:outfile (-o).
+function! LLMAgent_BuildCurlCmd(bodyfile, outfile)
+    let l:url = g:llm_agent_api_url . '/chat/completions'
     let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
     if !empty(g:llm_agent_api_key)
         let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
     endif
     let l:curl_cmd .= ' -H "Content-Type: application/json"'
-    let l:curl_cmd .= ' -d @' . shellescape(l:tmpfile)
-    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
+    let l:curl_cmd .= ' -d @' . shellescape(a:bodyfile)
+    if !empty(a:outfile)
+        let l:curl_cmd .= ' -o ' . shellescape(a:outfile)
+    endif
+    let l:curl_cmd .= ' ' . shellescape(l:url)
+    return l:curl_cmd
+endfunction
 
+" Issue one chat-completion request against the configured API and return the
+" decoded response as a dict, or {'error': '...'} on transport / parse errors.
+" This is the synchronous path: system() blocks, but it works everywhere and
+" is used as the fallback when background jobs are unavailable.
+function! LLMAgent_CallAPI(messages, ...)
+    let l:tools = (a:0 > 0 && type(a:1) == type([])) ? a:1 : []
+    let l:body_json = json_encode(LLMAgent_APIRequestBody(a:messages, l:tools))
+    let l:tmpfile = tempname()
+    call writefile([l:body_json], l:tmpfile)
+    call LLMAgent_DebugLogApiRequest(l:body_json, l:tools)
+
+    let l:curl_cmd = LLMAgent_BuildCurlCmd(l:tmpfile, '')
     let l:response = system(l:curl_cmd)
     call delete(l:tmpfile)
 
+    let l:data = {}
     if v:shell_error != 0
-        let l:_evt = {}
-        let l:_evt.kind = 'api_error'
-        let l:_evt.stage = 'curl'
-        let l:_evt.exit = v:shell_error
-        let l:_evt.stderr = strpart(l:response, 0, 2000)
-        call LLMAgent_DebugLog(l:_evt)
-        let l:hint = LLMAgent_CurlExitHint(v:shell_error)
-        let l:msg = 'curl failed (exit ' . v:shell_error . ')'
-        if !empty(l:response)
-            let l:msg .= ': ' . substitute(l:response, '\n\+$', '', '')
-        endif
-        if !empty(l:hint)
-            let l:msg .= '  ' . l:hint
-        endif
-        return {'error': l:msg}
+        let l:data = {'error': LLMAgent_CurlError(v:shell_error, l:response)}
+    else
+        let l:parsed = LLMAgent_ParseCompletion(l:response)
+        let l:data = (has_key(l:parsed, 'error')) ? l:parsed : l:parsed['data']
     endif
-    try
-        let l:data = json_decode(l:response)
-    catch
-        let l:_evt = {}
-        let l:_evt.kind = 'api_error'
-        let l:_evt.stage = 'json_decode'
-        let l:_evt.body = strpart(l:response, 0, 4000)
-        call LLMAgent_DebugLog(l:_evt)
-        return {'error': 'Failed to parse JSON response'}
-    endtry
-    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
-        let l:_evt = {}
-        let l:_evt.kind = 'api_response'
-        let l:_evt.body = LLMAgent_PrettyJson(l:response)
-        call LLMAgent_DebugLog(l:_evt)
-    endif
+    call LLMAgent_DebugLog({'kind': 'api_response', 'body': LLMAgent_PrettyJson(l:response), 'error': get(l:data, 'error', '')})
     return l:data
 endfunction
 
-" Async, non-blocking version of LLMAgent_APIRequest. Instead of system() (which
-" freezes all of Vim/Nvim until curl returns), launch curl as a background job
-" that writes its response body to a temp file (-o) and stderr to another
-" (2>). When the job exits, LLMAgent_OnAPIExit reads the file, parses the JSON,
-" and invokes Callback with the same dict shape LLMAgent_APIRequest returns.
-" Callback is a Funcref called as call(Callback, [data]).
-"
-" a:tools_opt may be a list of tool defs (passed through) or 0/empty for none.
-" If the job cannot be started (e.g. Vim without +job/+channel), fall back to
-" the synchronous LLMAgent_APIRequest so the feature still works there — it
-" just blocks as it always did.
+" Async, non-blocking version of LLMAgent_CallAPI. Launches curl as a
+" background job that writes the response body to a temp file (-o) and
+" stderr to another (2>); LLMAgent_OnAPIExit parses the result and invokes
+" Callback (a Funcref) with the same dict LLMAgent_CallAPI returns.
+" Falls back to the blocking LLMAgent_CallAPI when jobs are unavailable —
+" identical results, it just freezes Vim while the request runs.
 function! LLMAgent_APIRequestAsync(messages, tools_opt, Callback)
-    " Refuse to overlap a request already in flight; the entry points guard too,
-    " but this is the last line of defense for shared script state.
-    if s:llm_agent_api_job > 0
+    " Refuse to overlap a request already in flight; the entry points guard
+    " too, but this is the last line of defense for shared script state.
+    if s:llm_agent_api_job isnot v:null && LLMAgent_JobRunning(s:llm_agent_api_job)
         call call(a:Callback, [{'error': 'an API request is already in flight; use :LLMStop to cancel'}])
         return
     endif
 
-    let l:body = {'model': g:llm_agent_model, 'messages': a:messages}
-    if type(a:tools_opt) == type([]) && !empty(a:tools_opt)
-        let l:body['tools'] = a:tools_opt
-    endif
+    let l:tools = (type(a:tools_opt) == type([])) ? a:tools_opt : []
+    let l:body_json = json_encode(LLMAgent_APIRequestBody(a:messages, l:tools))
     let l:bodyfile = tempname()
-    call writefile([json_encode(l:body)], l:bodyfile)
-
-    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
-        let l:_evt = {}
-        let l:_evt.kind = 'api_request'
-        let l:_evt.model = g:llm_agent_model
-        let l:_evt.url = g:llm_agent_api_url . '/chat/completions'
-        let l:_evt.timeout = g:llm_agent_timeout
-        let l:_evt.messages_count = len(a:messages)
-        let l:_evt.tools_count = (type(a:tools_opt) == type([])) ? len(a:tools_opt) : 0
-        let l:_evt.request_body = LLMAgent_PrettyJson(json_encode(l:body))
-        call LLMAgent_DebugLog(l:_evt)
-    endif
+    call writefile([l:body_json], l:bodyfile)
+    call LLMAgent_DebugLogApiRequest(l:body_json, l:tools)
 
     let l:outfile = tempname()
     let l:errfile = tempname()
-    let l:curl_cmd = 'curl -s -m ' . g:llm_agent_timeout
-    if !empty(g:llm_agent_api_key)
-        let l:curl_cmd .= ' -H "Authorization: Bearer ' . g:llm_agent_api_key . '"'
-    endif
-    let l:curl_cmd .= ' -H "Content-Type: application/json"'
-    let l:curl_cmd .= ' -d @' . shellescape(l:bodyfile)
-    let l:curl_cmd .= ' -o ' . shellescape(l:outfile)
-    let l:curl_cmd .= ' ' . shellescape(g:llm_agent_api_url . '/chat/completions')
-    " Redirect stderr to a file so LLMAgent_OnAPIExit can report curl errors.
-    " Run via a shell so the 2> redirect works under both jobstart (string) and
-    " job_start (string), mirroring the ACP backend's shell-string usage.
-    let l:shell_cmd = l:curl_cmd . ' 2> ' . shellescape(l:errfile)
+    " Run via a shell so the 2> redirect works under both jobstart (string
+    " command) and job_start (string command).
+    let l:shell_cmd = LLMAgent_BuildCurlCmd(l:bodyfile, l:outfile) . ' 2> ' . shellescape(l:errfile)
 
     " Stash state for the exit callback.
     let s:llm_agent_api_cb = a:Callback
@@ -752,98 +923,88 @@ function! LLMAgent_APIRequestAsync(messages, tools_opt, Callback)
     let s:llm_agent_api_errfile = l:errfile
     let s:llm_agent_api_bodyfile = l:bodyfile
 
-    if has('nvim')
-        let l:job = jobstart(l:shell_cmd, {'on_exit': function('LLMAgent_OnAPIExit')})
-        if l:job <= 0
-            call LLMAgent_APIRequestAsyncFallback(a:messages, a:tools_opt, a:Callback, l:bodyfile, l:outfile, l:errfile)
-            return
-        endif
-        let s:llm_agent_api_job = l:job
-    else
-        let l:job = job_start(l:shell_cmd, {'exit_cb': function('LLMAgent_OnAPIExit'), 'mode': 'nl'})
-        if job_status(l:job) == 'fail'
-            call LLMAgent_APIRequestAsyncFallback(a:messages, a:tools_opt, a:Callback, l:bodyfile, l:outfile, l:errfile)
-            return
-        endif
-        let s:llm_agent_api_job = l:job
-    endif
-endfunction
-
-" Synchronous fallback when a job could not be started. Runs the blocking
-" LLMAgent_APIRequest (identical to pre-async behavior) and invokes the
-" callback with its result. Cleans up the temp files the async path created.
-function! LLMAgent_APIRequestAsyncFallback(messages, tools_opt, Callback, bodyfile, outfile, errfile)
-    call delete(a:bodyfile)
-    call delete(a:outfile)
-    call delete(a:errfile)
-    let s:llm_agent_api_cb = ''
-    let s:llm_agent_api_outfile = ''
-    let s:llm_agent_api_errfile = ''
-    let s:llm_agent_api_bodyfile = ''
-    let l:data = LLMAgent_APIRequest(a:messages, (type(a:tools_opt) == type([]) && !empty(a:tools_opt)) ? a:tools_opt : 0)
-    call call(a:Callback, [l:data])
-endfunction
-
-" Job exit callback (nvim: on_exit(job_id, exit_code, event);
-" vim: exit_cb(job, status)). Reads the response file, builds the same dict
-" LLMAgent_APIRequest returns, and invokes the stashed callback. Then clears
-" job state so a new turn can start.
-function! LLMAgent_OnAPIExit(job, exit_code, event)
-    " Snapshot state, then clear the in-flight marker first so the callback is
-    " free to start the next turn (it sets a new s:llm_agent_api_job).
-    let l:Cb = s:llm_agent_api_cb
-    let l:outfile = s:llm_agent_api_outfile
-    let l:errfile = s:llm_agent_api_errfile
-    let l:bodyfile = s:llm_agent_api_bodyfile
-    " If the request was already cancelled/cleaned by LLMAgent_Stop before this
-    " exit callback fired, state is empty. Bail out: there is nothing to read or
-    " delete, and delete('') / call('', ...) would throw E474/E117 under nvim.
-    if empty(l:Cb) && empty(l:outfile)
-        let s:llm_agent_api_job = -1
+    let l:job = LLMAgent_JobStart(l:shell_cmd, function('LLMAgent_OnAPIExit'))
+    if l:job is v:null
+        " No job support: clean up and run the blocking request instead.
+        call LLMAgent_APIClearJobState()
+        let l:data = LLMAgent_CallAPI(a:messages, l:tools)
+        call call(a:Callback, [l:data])
         return
     endif
-    let s:llm_agent_api_job = -1
+    let s:llm_agent_api_job = l:job
+endfunction
+
+" Clear the async request state and delete its temp files.
+function! LLMAgent_APIClearJobState()
+    for l:key in ['outfile', 'errfile', 'bodyfile']
+        let l:f = s:llm_agent_api_{l:key}
+        if !empty(l:f) | call delete(l:f) | endif
+        let s:llm_agent_api_{l:key} = ''
+    endfor
+    let s:llm_agent_api_job = v:null
     let s:llm_agent_api_cb = ''
-    let s:llm_agent_api_outfile = ''
-    let s:llm_agent_api_errfile = ''
-    let s:llm_agent_api_bodyfile = ''
+endfunction
 
-    if a:exit_code != 0
-        let l:err = filereadable(l:errfile) ? join(readfile(l:errfile), "\n") : ''
-        let l:_evt = {'kind': 'api_error', 'stage': 'curl', 'exit': a:exit_code, 'stderr': strpart(l:err, 0, 2000)}
-        call LLMAgent_DebugLog(l:_evt)
-        let l:hint = LLMAgent_CurlExitHint(a:exit_code)
-        let l:msg = 'curl failed (exit ' . a:exit_code . ')'
-        if !empty(l:err)
-            let l:msg .= ': ' . substitute(l:err, '\n\+$', '', '')
-        endif
-        if !empty(l:hint)
-            let l:msg .= '  ' . l:hint
-        endif
-        call delete(l:bodyfile)
-        call delete(l:outfile)
-        call delete(l:errfile)
-        call call(l:Cb, [{'error': l:msg}])
-        return
+" Build the same error dict LLMAgent_CallAPI / LLMAgent_OnAPIExit use for a
+" curl failure, so sync and async paths report problems identically.
+function! LLMAgent_CurlError(exit_code, stderr)
+    let l:hint = LLMAgent_CurlExitHint(a:exit_code)
+    let l:msg = 'curl failed (exit ' . a:exit_code . ')'
+    if !empty(a:stderr)
+        let l:msg .= ': ' . substitute(a:stderr, '\n\+$', '', '')
     endif
+    if !empty(l:hint)
+        let l:msg .= '  ' . l:hint
+    endif
+    return l:msg
+endfunction
 
-    let l:response = filereadable(l:outfile) ? join(readfile(l:outfile), "\n") : ''
-    if g:llm_agent_debug && !empty(g:llm_agent_debug_file)
-        let l:_evt = {'kind': 'api_response', 'body': LLMAgent_PrettyJson(l:response)}
-        call LLMAgent_DebugLog(l:_evt)
-    endif
-    call delete(l:bodyfile)
-    call delete(l:outfile)
-    call delete(l:errfile)
+" Decode a chat-completion response body. Returns {'data': <dict>} or
+" {'error': '...'} when the body is not valid JSON.
+function! LLMAgent_ParseCompletion(response)
     try
-        let l:data = json_decode(l:response)
+        let l:data = json_decode(a:response)
+        if type(l:data) != type({})
+            throw 'not an object'
+        endif
+        return {'data': l:data}
     catch
-        let l:_evt = {'kind': 'api_error', 'stage': 'json_decode', 'body': strpart(l:response, 0, 4000)}
-        call LLMAgent_DebugLog(l:_evt)
-        call call(l:Cb, [{'error': 'Failed to parse JSON response'}])
-        return
+        call LLMAgent_DebugLog({'kind': 'api_error', 'stage': 'json_decode', 'body': strpart(a:response, 0, 4000)})
+        return {'error': 'Failed to parse JSON response'}
     endtry
-    call call(l:Cb, [l:data])
+endfunction
+
+" Job exit callback (nvim: on_exit(job_id, exit_code, event); vim:
+" exit_cb(job, status)). Reads the response file, builds the same dict
+" LLMAgent_CallAPI returns, and invokes the stashed callback. Then clears
+" job state so a new turn can start.
+function! LLMAgent_OnAPIExit(...)
+    " a:1 = job id / job handle, a:2 = exit code. If the request was already
+    " cancelled by LLMAgent_Stop before this callback fired, state is empty:
+    " bail out, there is nothing to read or delete.
+    if empty(s:llm_agent_api_cb) && empty(s:llm_agent_api_outfile)
+        let s:llm_agent_api_job = v:null
+        return
+    endif
+    let l:Cb = s:llm_agent_api_cb
+    let l:exit_code = a:2
+
+    " Read what curl left on disk BEFORE cleaning up: APIClearJobState()
+    " deletes the temp files, so they must be consumed first.
+    if l:exit_code != 0
+        let l:err = filereadable(s:llm_agent_api_errfile) ? join(readfile(s:llm_agent_api_errfile), "\n") : ''
+        call LLMAgent_DebugLog({'kind': 'api_error', 'stage': 'curl', 'exit': l:exit_code, 'stderr': strpart(l:err, 0, 2000)})
+        call LLMAgent_APIClearJobState()
+        call call(l:Cb, [{'error': LLMAgent_CurlError(l:exit_code, l:err)}])
+        return
+    endif
+
+    let l:response = filereadable(s:llm_agent_api_outfile) ? join(readfile(s:llm_agent_api_outfile), "\n") : ''
+    call LLMAgent_APIClearJobState()
+
+    let l:parsed = LLMAgent_ParseCompletion(l:response)
+    call LLMAgent_DebugLog({'kind': 'api_response', 'body': LLMAgent_PrettyJson(l:response), 'error': get(l:parsed, 'error', '')})
+    call call(l:Cb, [(has_key(l:parsed, 'error')) ? l:parsed : l:parsed['data']])
 endfunction
 
 " One-shot query via the ACP backend, used by the single-shot commands
@@ -867,44 +1028,14 @@ function! LLMAgent_ACPOneShot(prompt)
         return {'error': 'Failed to create ACP session'}
     endif
 
-    let s:acp_response_text = ''
-    let s:acp_turn_error = ''
-    let s:acp_prompt_resolved = 0
-
-    let l:id = s:acp_next_req_id
-    let s:acp_next_req_id += 1
-    let s:acp_pending_reqs[l:id] = 'session/prompt'
-    call LLMAgent_SendACP({
-        \ 'jsonrpc': '2.0',
-        \ 'method': 'session/prompt',
-        \ 'params': {'sessionId': s:acp_session_id, 'prompt': [{'type': 'text', 'text': a:prompt}]},
-        \ 'id': l:id,
-        \ })
-
-    let l:waited = 0
-    let l:max_wait = g:llm_agent_timeout * 10
-    while !s:acp_prompt_resolved && LLMAgent_ACPOpen() && l:waited < l:max_wait
-        if has('nvim')
-            call jobwait([s:acp_job_id], 100)
-        else
-            sleep 100m
-        endif
-        let l:waited += 1
-    endwhile
-
-    let l:content = s:acp_response_text
-    let l:err = s:acp_turn_error
-    if !s:acp_prompt_resolved && !LLMAgent_ACPOpen() && empty(l:err)
-        let l:err = 'ACP process died during turn'
+    if !LLMAgent_ACPSendPrompt([{'type': 'text', 'text': a:prompt}])
+        return {'error': empty(s:acp_turn_error) ? 'ACP session/prompt failed' : s:acp_turn_error}
     endif
+    let l:content = s:acp_response_text
     " Reset per-turn state and drop the session so the next call starts fresh.
     let s:acp_response_text = ''
     let s:acp_turn_error = ''
-    let s:acp_prompt_resolved = 0
     let s:acp_session_id = ''
-    if !empty(l:err)
-        return {'error': l:err}
-    endif
     return {'content': l:content}
 endfunction
 
@@ -917,23 +1048,78 @@ endfunction
 " comparison throws E910 ("Using a Job as a Number") under Vim. Use this
 " helper for every "is the process alive?" check so both editors work.
 function! LLMAgent_ACPOpen()
+    if s:acp_job_id is v:null
+        return 0
+    endif
     if has('nvim')
-        return s:acp_job_id > 0
+        return type(s:acp_job_id) == v:t_number && s:acp_job_id > 0
     endif
     return type(s:acp_job_id) == v:t_job && job_status(s:acp_job_id) ==# 'run'
 endfunction
 
+" Send one JSON-RPC request over the ACP connection and block until its
+" response arrives (the stdout handler resolves the pending entry and the
+" wait loop pumps the event loop). Returns the 'result' dict on success,
+" or v:null on timeout / connection loss / JSON-RPC error (an error message
+" is logged to the sidebar).
+function! LLMAgent_ACPRequest(method, params, max_100ms_cycles)
+    let l:id = s:acp_next_req_id
+    let s:acp_next_req_id += 1
+    let s:acp_pending_reqs[l:id] = a:method
+    call LLMAgent_SendACP({
+        \ 'jsonrpc': '2.0',
+        \ 'method': a:method,
+        \ 'params': a:params,
+        \ 'id': l:id,
+        \ })
+    let l:waited = 0
+    while !has_key(s:acp_completed, string(l:id)) && LLMAgent_ACPOpen() && l:waited < a:max_100ms_cycles
+        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
+        let l:waited += 1
+    endwhile
+    if !has_key(s:acp_completed, string(l:id))
+        return v:null
+    endif
+    let l:res = s:acp_completed[l:id]
+    call remove(s:acp_completed, string(l:id))
+    return l:res
+endfunction
+
+" Send a session/prompt turn and wait for it to resolve. The agent streams
+" updates via session/update (handled by the stdout callbacks, which append
+" to s:acp_response_text / s:acp_write_list) and finally answers the
+" session/prompt request. Returns 1 on success; on any failure
+" s:acp_turn_error holds the message.
+function! LLMAgent_ACPSendPrompt(content_blocks)
+    let s:acp_response_text = ''
+    let s:acp_turn_error = ''
+    let l:res = LLMAgent_ACPRequest('session/prompt', {'sessionId': s:acp_session_id, 'prompt': a:content_blocks}, g:llm_agent_timeout * 10)
+    if l:res is v:null
+        if LLMAgent_ACPOpen()
+            let s:acp_turn_error = (empty(s:acp_turn_error) ? 'ACP turn timed out' : s:acp_turn_error)
+        elseif empty(s:acp_turn_error)
+            let s:acp_turn_error = 'ACP process died during turn'
+        endif
+        return 0
+    endif
+    if !empty(s:acp_turn_error)
+        return 0
+    endif
+    return 1
+endfunction
+
 function! LLMAgent_EnsureACP()
+    " Drop a stale handle so we start a fresh process when the agent died.
     if LLMAgent_ACPOpen()
         if has('nvim')
             try
                 call jobpid(s:acp_job_id)
             catch
-                let s:acp_job_id = -1
+                let s:acp_job_id = v:null
             endtry
         else
-            if job_status(s:acp_job_id) == 'fail'
-                let s:acp_job_id = -1
+            if job_status(s:acp_job_id) ==# 'fail'
+                let s:acp_job_id = v:null
             endif
         endif
     endif
@@ -942,43 +1128,20 @@ function! LLMAgent_EnsureACP()
         return 1
     endif
 
-    if has('nvim')
-        let l:cmd_parts = split(g:llm_agent_acp_cmd)
-        let s:acp_job_id = jobstart(l:cmd_parts, {
-            \ 'on_stdout': function('LLMAgent_ACPOnStdout'),
-            \ 'on_stderr': function('LLMAgent_ACPOnStderr'),
-            \ 'on_exit': function('LLMAgent_ACPOnExit'),
-            \ })
-        if !LLMAgent_ACPOpen()
-            return 0
-        endif
-    else
-        let s:acp_job_id = job_start(g:llm_agent_acp_cmd, {
-            \ 'out_cb': function('LLMAgent_ACPOnStdout'),
-            \ 'err_cb': function('LLMAgent_ACPOnStderr'),
-            \ 'exit_cb': function('LLMAgent_ACPOnExit'),
-            \ 'mode': 'nl',
-            \ })
-        if job_status(s:acp_job_id) == 'fail'
-            let s:acp_job_id = -1
-            return 0
-        endif
+    let s:acp_job_id = LLMAgent_JobStart(g:llm_agent_acp_cmd, function('LLMAgent_ACPOnStdout'))
+    if s:acp_job_id is v:null
+        return 0
     endif
 
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
+    let s:acp_completed = {}
     let s:acp_prompt_resolved = 0
     return 1
 endfunction
 
 function! LLMAgent_StopACP()
-    if LLMAgent_ACPOpen()
-        if has('nvim')
-            call jobstop(s:acp_job_id)
-        else
-            call job_stop(s:acp_job_id)
-        endif
-    endif
+    call LLMAgent_JobStop(s:acp_job_id)
     call LLMAgent_ACPResetState()
 endfunction
 
@@ -986,28 +1149,11 @@ endfunction
 " tool-loop state so a new turn can start. Safe to call when nothing is running.
 " Mirrors LLMAgent_StopACP for the ACP backend.
 function! LLMAgent_Stop()
-    if s:llm_agent_api_job > 0
-        if has('nvim')
-            try
-                call jobstop(s:llm_agent_api_job)
-            catch
-            endtry
-        else
-            try
-                call job_stop(s:llm_agent_api_job)
-            catch
-            endtry
-        endif
+    if s:llm_agent_api_cb isnot '' || LLMAgent_JobRunning(s:llm_agent_api_job)
         call LLMAgent_SidebarLog('Stopped', 'System')
     endif
-    let s:llm_agent_api_job = -1
-    let s:llm_agent_api_cb = ''
-    if !empty(s:llm_agent_api_outfile) | call delete(s:llm_agent_api_outfile) | endif
-    if !empty(s:llm_agent_api_errfile) | call delete(s:llm_agent_api_errfile) | endif
-    if !empty(s:llm_agent_api_bodyfile) | call delete(s:llm_agent_api_bodyfile) | endif
-    let s:llm_agent_api_outfile = ''
-    let s:llm_agent_api_errfile = ''
-    let s:llm_agent_api_bodyfile = ''
+    call LLMAgent_JobStop(s:llm_agent_api_job)
+    call LLMAgent_APIClearJobState()
     let s:llm_agent_turn = 0
     let s:llm_agent_single_ctx = {}
 endfunction
@@ -1015,9 +1161,10 @@ endfunction
 " Reset ALL ACP transient state. Called on stop, before a new session, and on
 " unclean exit. Keeps s:acp_next_req_id so request IDs don't collide.
 function! LLMAgent_ACPResetState()
-    let s:acp_job_id = -1
+    let s:acp_job_id = v:null
     let s:acp_session_id = ''
     let s:acp_pending_reqs = {}
+    let s:acp_completed = {}
     let s:acp_prompt_resolved = 0
     let s:acp_initialized = 0
     let s:acp_write_list = []
@@ -1042,10 +1189,10 @@ endfunction
 """"    Private Functions - ACP Message Handler
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Variadic so the same function serves both editors: Nvim calls job callbacks
-" as (job_id, data, event) — 3 args — while Vim's out_cb/err_cb/exit_cb call
-" them as (channel, msg) / (channel, status) — 2 args. A fixed 3-arg signature
-" throws E119 under Vim; a:1/a:2 map to the same positions either way.
+" Variadic so the same function serves both editors: Nvim calls the job's
+" on_stdout as (job_id, data, event) — 3 list-args — while Vim's out_cb calls
+" it as (channel, msg). a:2 is the payload either way. A fixed 3-arg
+" signature throws E119 under Vim.
 function! LLMAgent_ACPOnStdout(...)
     if has('nvim')
         let l:lines = a:2
@@ -1070,12 +1217,17 @@ function! LLMAgent_ACPOnStderr(...)
 endfunction
 
 function! LLMAgent_ACPOnExit(...)
+    " Variadic exit callback: nvim's on_exit passes (job_id, exit_code, event);
+    " Vim's exit_cb passes (job, status) — a:1/a:2 line up either way.
+    "
     " Ignore a stale exit callback from a job we already stopped and replaced.
-    " Nvim's on_exit passes the job id (a number); Vim's exit_cb passes the
-    " exiting job (per :help exit_cb). Only act when the callback is for the
-    " job we currently track — otherwise a killed predecessor's late callback
-    " would clobber a freshly started replacement (e.g. :LLMReset then an
-    " immediate :LLMAgent), leaving the new job orphaned and init stuck.
+    " Only act when the callback is for the job we currently track — otherwise
+    " a killed predecessor's late callback would clobber a freshly started
+    " replacement (e.g. :LLMReset then an immediate :LLMAgent), leaving the new
+    " job orphaned and init stuck.
+    if s:acp_job_id is v:null
+        return
+    endif
     if has('nvim')
         if a:1 != s:acp_job_id
             return
@@ -1085,9 +1237,13 @@ function! LLMAgent_ACPOnExit(...)
             if type(s:acp_job_id) != v:t_job || a:1 isnot s:acp_job_id
                 return
             endif
-        elseif LLMAgent_ACPOpen()
-            " a:1 is a channel and a newer job is already running: stale, skip.
-            return
+        else
+            " a:1 is a channel (string command via shell produced channel-style
+            " arg in some Vim builds): only treat as stale when a newer job
+            " already replaced the one we track.
+            if LLMAgent_ACPOpen() && type(s:acp_job_id) == v:t_job && a:1 isnot s:acp_job_id
+                return
+            endif
         endif
     endif
     call LLMAgent_ACPResetState()
@@ -1119,6 +1275,9 @@ function! LLMAgent_HandleACPMessage(line)
         let l:req = get(s:acp_pending_reqs, l:id, '')
         if !empty(l:req)
             call remove(s:acp_pending_reqs, l:id)
+            " Record the raw response so the blocking LLMAgent_ACPRequest
+            " loop can pick it up; per-request flags below are derived state.
+            let s:acp_completed[l:id] = has_key(l:msg, 'error') ? {'error': l:msg['error']} : {'result': l:msg['result']}
             if has_key(l:msg, 'error')
                 call LLMAgent_ACPHandleError(l:id, l:req, l:msg['error'])
                 return
@@ -1127,9 +1286,6 @@ function! LLMAgent_HandleACPMessage(line)
                 let s:acp_initialized = 1
             elseif l:req == 'session/new'
                 let s:acp_session_id = l:msg['result']['sessionId']
-                let s:acp_prompt_resolved = 0
-            elseif l:req == 'session/prompt'
-                let s:acp_prompt_resolved = 1
             endif
             return
         endif
@@ -1256,9 +1412,6 @@ function! LLMAgent_ACPInitialize()
     if s:acp_initialized
         return 1
     endif
-    if !LLMAgent_ACPOpen()
-        return 0
-    endif
     let l:id = s:acp_next_req_id
     let s:acp_next_req_id += 1
     let s:acp_pending_reqs[l:id] = 'initialize'
@@ -1269,12 +1422,8 @@ function! LLMAgent_ACPInitialize()
         \ 'params': {'protocolVersion': 1, 'clientCapabilities': {}},
         \ })
     let l:waited = 0
-    while !s:acp_initialized && LLMAgent_ACPOpen() && l:waited < 30
-        if has('nvim')
-            call jobwait([s:acp_job_id], 100)
-        else
-            sleep 100m
-        endif
+    while !s:acp_initialized && LLMAgent_ACPOpen() && l:waited < 50
+        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
         let l:waited += 1
     endwhile
     if !s:acp_initialized
@@ -1286,37 +1435,52 @@ function! LLMAgent_ACPInitialize()
 endfunction
 
 function! LLMAgent_ACPSessionNew()
-    if empty(s:acp_session_id)
-        let l:id = s:acp_next_req_id
-        let s:acp_next_req_id += 1
-        let s:acp_pending_reqs[l:id] = 'session/new'
-        let s:acp_prompt_resolved = 0
-        let l:cwd = getcwd()
-        call LLMAgent_SendACP({
-            \ 'jsonrpc': '2.0',
-            \ 'method': 'session/new',
-            \ 'params': {'cwd': l:cwd, 'mcpServers': []},
-            \ 'id': l:id,
-            \ })
-        " Wait for session to be created
-        let l:waited = 0
-        while empty(s:acp_session_id) && LLMAgent_ACPOpen() && l:waited < 50
-            if has('nvim')
-                call jobwait([s:acp_job_id], 100)
-            else
-                sleep 100m
-            endif
-            let l:waited += 1
-        endwhile
+    if !empty(s:acp_session_id)
+        return 1
     endif
+    " Wait for session to be created
+    let l:waited = 0
+    while empty(s:acp_session_id) && LLMAgent_ACPOpen() && l:waited < 50
+        call LLMAgent_JobWaitJob(s:acp_job_id, 100)
+        let l:waited += 1
+    endwhile
     return !empty(s:acp_session_id)
+endfunction
+
+" Render the conversation history as labelled text, the way ACP turns must be
+" sent (ACP has no message list — everything is one prompt string).
+" Tool messages are skipped: their effects are already reflected in the files.
+function! LLMAgent_ACPBuildPromptBlocks(prompt)
+    let l:system_prompt = LLMAgent_GetAgentSystemPrompt()
+    let l:body = ''
+    if empty(s:llm_agent_messages)
+        " New conversation: system prompt + user prompt.
+        let l:body = empty(a:prompt) ? '' : a:prompt
+    else
+        " Continue existing conversation - send full message history as
+        " formatted text. Tool messages are skipped: their effects were
+        " already summarized in assistant turns.
+        for l:msg in s:llm_agent_messages
+            if l:msg['role'] == 'system'
+                let l:body .= '[System]' . "\n" . l:msg['content'] . "\n\n"
+            elseif l:msg['role'] == 'user'
+                let l:body .= '[User]' . "\n" . l:msg['content'] . "\n\n"
+            elseif l:msg['role'] == 'assistant'
+                let l:body .= '[Assistant]' . "\n" . l:msg['content'] . "\n\n"
+            endif
+        endfor
+        if !empty(a:prompt)
+            let l:body .= '[User]' . "\n" . a:prompt
+        endif
+    endif
+    let l:text = empty(l:body) ? l:system_prompt : l:system_prompt . "\n\n---\n\n" . l:body
+    return [{'type': 'text', 'text': l:text}]
 endfunction
 
 function! LLMAgent_RunWithToolsACP(prompt)
     let s:acp_response_text = ''
     let s:acp_write_list = []
     let s:acp_turn_error = ''
-    let s:acp_prompt_resolved = 0
 
     " Start ACP process if not running
     if !LLMAgent_EnsureACP()
@@ -1336,76 +1500,10 @@ function! LLMAgent_RunWithToolsACP(prompt)
         return
     endif
 
-    " Build prompt content blocks
-    let l:content_blocks = []
-
-    " Add system prompt if starting new conversation
-    if !empty(a:prompt)
-        let l:system_prompt = LLMAgent_GetAgentSystemPrompt()
-    endif
-
-    " Add conversation history from s:llm_agent_messages
-    if empty(s:llm_agent_messages)
-        " New conversation - build from system_prompt + user prompt
-        if !empty(l:system_prompt)
-            call add(l:content_blocks, {'type': 'text', 'text': l:system_prompt . "\n\n---\n\n" . a:prompt})
-        else
-            call add(l:content_blocks, {'type': 'text', 'text': a:prompt})
-        endif
-    else
-        " Continue existing conversation - send full message history as formatted text
-        let l:history = ''
-        for l:msg in s:llm_agent_messages
-            if l:msg['role'] == 'system'
-                let l:history .= '[System]' . "\n" . l:msg['content'] . "\n\n"
-            elseif l:msg['role'] == 'user'
-                let l:history .= '[User]' . "\n" . l:msg['content'] . "\n\n"
-            elseif l:msg['role'] == 'assistant'
-                let l:history .= '[Assistant]' . "\n" . l:msg['content'] . "\n\n"
-            elseif l:msg['role'] == 'tool'
-                " Skip tool messages - they were side-effects
-                continue
-            endif
-        endfor
-        if !empty(a:prompt)
-            let l:history .= '[User]' . "\n" . a:prompt
-        endif
-        if !empty(l:system_prompt)
-            let l:history = l:system_prompt . "\n\n---\n\n" . l:history
-        endif
-        call add(l:content_blocks, {'type': 'text', 'text': l:history})
-    endif
-
-    " Send prompt
-    let l:id = s:acp_next_req_id
-    let s:acp_next_req_id += 1
-    let s:acp_pending_reqs[l:id] = 'session/prompt'
-    call LLMAgent_SendACP({
-        \ 'jsonrpc': '2.0',
-        \ 'method': 'session/prompt',
-        \ 'params': {'sessionId': s:acp_session_id, 'prompt': l:content_blocks},
-        \ 'id': l:id,
-        \ })
-
-    " Wait for the turn to complete (agent may call us back for tools)
-    let l:waited = 0
-    let l:max_wait = g:llm_agent_timeout * 10  " timeout * 10 polling cycles
-    while !s:acp_prompt_resolved && LLMAgent_ACPOpen() && l:waited < l:max_wait
-        if has('nvim')
-            call jobwait([s:acp_job_id], 100)
-        else
-            sleep 100m
-        endif
-        let l:waited += 1
-    endwhile
-
-    if !s:acp_prompt_resolved && !LLMAgent_ACPOpen()
-        call LLMAgent_SidebarLog('ACP process died during turn', 'Error')
-        return
-    endif
-
-    if !empty(s:acp_turn_error)
-        call LLMAgent_SidebarLog(s:acp_turn_error, 'Error')
+    " Send the turn and wait for it to resolve (the agent may call us back
+    " for fs/terminal tools while it runs).
+    if !LLMAgent_ACPSendPrompt(LLMAgent_ACPBuildPromptBlocks(a:prompt))
+        call LLMAgent_SidebarLog(empty(s:acp_turn_error) ? 'ACP process died during turn' : s:acp_turn_error, 'Error')
         return
     endif
 
@@ -1683,7 +1781,7 @@ function! LLMAgent_ToolWriteFile(args)
     if empty(l:path)
         return {'ok': 0, 'error': 'write_file: missing or empty "path"'}
     endif
-    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '/\.git/'
+    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '\.git\(/\|$\|-\)'
         return {'ok': 0, 'error': 'write_file: refused to write outside project (' . l:path . ')'}
     endif
     " Refuse to write a file the LLM has not read in this conversation.
@@ -1747,7 +1845,7 @@ function! LLMAgent_ToolPatch(args)
     if empty(l:path)
         return {'ok': 0, 'error': 'patch: missing or empty "path"'}
     endif
-    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '/\.git/'
+    if LLMAgent_IsOutsideProject(l:path) || l:path =~ '\.git\(/\|$\|-\)'
         return {'ok': 0, 'error': 'patch: refused to write outside project (' . l:path . ')'}
     endif
     " Decode escape sequences ONLY if the diff has no real newlines. When
@@ -1773,11 +1871,15 @@ function! LLMAgent_ToolPatch(args)
         return {'ok': 0, 'error': 'patch: refused — you have not called read_file on ' . l:path . ' in this conversation. Call read_file first so you know the EXACT current line content, then either (a) build a precise patch or (b) switch to write_file with the full new content. To override this safety check, pass patch_force: true.'}
     endif
     " Retry-loop breaker: if this path has already failed patch 2+ times
-    " this session, refuse to try again. The LLM is stuck in a patch-retry
-    " loop (common with files that have source lines containing literal \n
-    " — the LLM can't produce a valid diff). Force it to switch to write_file.
+    " this session AND the submitted diff is identical to the one that just
+    " failed, refuse to try again — the LLM is re-submitting the same broken
+    " diff in a loop (common with files that have source lines containing a
+    " literal \n). A different diff is always allowed through so a fresh,
+    " valid attempt can clear the tracker. Force only the identical-retry
+    " case toward write_file.
     if get(s:llm_agent_patch_fails, l:path, 0) >= 2
-        return {'ok': 0, 'error': 'patch: ' . l:path . ' has already failed patch ' . s:llm_agent_patch_fails[l:path] . ' time(s) this session. patch is not going to work for this file — it likely has source lines with literal newlines (e.g. printf "...\n...") that you keep splitting across diff lines. STOP calling patch on this file. Call read_file to get the current content, then call write_file with the COMPLETE new file in `content`.'}
+                \ && get(s:llm_agent_patch_fail_diffs, l:path, '') ==# l:diff
+        return {'ok': 0, 'error': 'patch: ' . l:path . ' has already failed exactly ' . get(s:llm_agent_patch_fails, l:path, 0) . ' times with this same diff. It will not be applied — the file likely has source lines with literal newlines (e.g. printf "...\n...") that you keep splitting across diff lines. STOP re-sending this diff; call read_file to get the EXACT current content, then call write_file with the COMPLETE new file in `content`.'}
     endif
 
     " --- Pre-validate the diff -----------------------------------------
@@ -1785,7 +1887,7 @@ function! LLMAgent_ToolPatch(args)
     " error message is specific and actionable instead of "malformed patch".
     let l:lines = split(l:diff, "\n", 1)
     if empty(l:lines)
-        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        call LLMAgent_RecordPatchFail(l:path, l:diff)
         return {'ok': 0, 'error': 'patch: empty diff. If you only need to rewrite the file, use write_file.'}
     endif
     " Strip a single leading/trailing blank line the LLM often adds.
@@ -1796,9 +1898,31 @@ function! LLMAgent_ToolPatch(args)
         let l:lines = l:lines[:-2]
     endwhile
     if empty(l:lines)
-        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        call LLMAgent_RecordPatchFail(l:path, l:diff)
         return {'ok': 0, 'error': 'patch: diff contains only blank lines. If you only need to rewrite the file, use write_file.'}
     endif
+    " --- Strip leading prose ---------------------------------------------
+    " patch(1) "Only garbage was found" can be triggered by a line before
+    " the first ---/+++ pair that mentions "@@ -N +N @@" mid-line (e.g. an
+    " LLM's prose preface). Drop everything before the first structural
+    " line first, then sanitize the hunk headers themselves.
+    let l:lines = LLMAgent_StripDiffProse(l:lines)
+
+    " --- Sanitize hunk headers -------------------------------------------
+    " patch(1) only accepts "@@ -N[,M] +A[,B] @@" at the START of a line.
+    " LLMs emit near-misses that pass a naive ^@@ check: missing -/+
+    " signs ("@@ 51 51 @@"), double spaces or tabs around the numbers,
+    " NBSP / unicode minus characters, a BOM glued onto the @@, or git
+    " combined-diff "@@@ -N -N +N @@@" headers. All of these make patch(1)
+    " abort with "Only garbage was found in the patch input" — a dead end
+    " for the LLM, since the error names nothing fixable. Normalize every
+    " hunk header we can recognize; leave every other line untouched.
+    let l:fixed_lines = []
+    for l:line in l:lines
+        call add(l:fixed_lines, LLMAgent_FixHunkHeader(l:line))
+    endfor
+    let l:lines = l:fixed_lines
+
     " A valid unified diff must have at least one @@ hunk.
     " Allowed line prefixes: @@ hunk header, --- /+++ file headers, context
     " line (space), + /- added/removed, \ "No newline" marker, blank line,
@@ -1810,21 +1934,57 @@ function! LLMAgent_ToolPatch(args)
     " can apply diffs with stray lines (e.g. continuation fragments from
     " source strings that contained a literal \n). Rejecting early caused
     " false positives where the LLM kept retrying the same diff.
-    let l:hunk_count = 0
+let l:hunk_count = 0
     let l:bad_prefix_count = 0
     for l:line in l:lines
-        if l:line =~ '^@@'
+        " Count a BOM-prefixed "@@ ..." as a hunk header too — the
+        " sanitizer just stripped that BOM so the line is usable.
+        let l:line_nobom = substitute(l:line, '^' . "\uFEFF", '', '')
+        if l:line =~# '^@@' || l:line_nobom =~# '^@@'
             let l:hunk_count += 1
         elseif l:line !~ '^\(@@\|---\|+++\|diff \|index \|old mode \|new mode \|deleted file \|new file \|similarity \|rename \|copy \|[\\ +-]\|$\)'
             let l:bad_prefix_count += 1
         endif
     endfor
     if l:hunk_count == 0
-        let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+        call LLMAgent_RecordPatchFail(l:path, l:diff)
         return {'ok': 0, 'error': 'patch: diff has no @@ hunk header. Unified diffs must contain at least one "@@ -X,Y +A,B @@" line. If you only need to rewrite the file, use write_file.'}
     endif
 
-    " --- Try `patch` (POSIX) first ------------------------------------------
+    " --- Try `git apply` first ---------------------------------------------
+    " git apply --recount is strictly more forgiving than patch(1): it
+    " tolerates missing/fuzzy context, accepts git extended-diff headers,
+    " and re-derives hunk counts. Only when it gives up do we fall back
+    " to patch(1), which can be helpful when git is missing or the file
+    " isn't in a git tree.
+    let l:git_used = 0
+    let l:git_err = ''
+    if executable('git') && filereadable(l:path)
+        let l:diff_file2 = tempname()
+        call writefile(l:lines, l:diff_file2)
+        let l:cmd2 = 'cd ' . shellescape(fnamemodify(l:path, ':p:h')) . ' && git apply --recount --whitespace=fix ' . shellescape(l:diff_file2) . ' 2>&1'
+        let l:err2 = system(l:cmd2)
+        call delete(l:diff_file2)
+        if v:shell_error == 0
+            let l:git_used = 1
+            let l:patched = readfile(l:path)
+            let l:content = join(l:patched, "\n")
+            let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
+            if !empty(l:queue_err)
+                call LLMAgent_RecordPatchFail(l:path, l:diff)
+                return {'ok': 0, 'error': 'patch: applied by git apply but ' . l:queue_err}
+            endif
+            let l:msg = 'Patch applied via git apply --recount and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
+            return {'ok': 1, 'content': l:msg}
+        endif
+        let l:git_err = l:err2
+    else
+        let l:git_err = 'git not available'
+    endif
+
+    " --- Try `patch` (POSIX) -----------------------------------------------
+    " patch(1) is the strict parser: it rejects combined "@@@" headers,
+    " NBSP, BOM, and most near-misses that git apply happens to fix.
     let l:original = readfile(l:path)
     let l:diff_file = tempname()
     let l:orig_file = tempname()
@@ -1844,7 +2004,7 @@ function! LLMAgent_ToolPatch(args)
         let l:content = join(l:patched, "\n")
         let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
         if !empty(l:queue_err)
-            let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+            call LLMAgent_RecordPatchFail(l:path, l:diff)
             return {'ok': 0, 'error': 'patch: applied by patch(1) but ' . l:queue_err}
         endif
         let l:msg = 'Patch applied via patch(1) and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
@@ -1852,33 +2012,44 @@ function! LLMAgent_ToolPatch(args)
     endif
     call delete(l:out_file)
 
-    " --- Try `git apply` (more forgiving with whitespace) -------------------
-    if executable('git') && filereadable(l:path)
-        let l:diff_file2 = tempname()
-        call writefile(l:lines, l:diff_file2)
-        let l:cmd2 = 'cd ' . shellescape(fnamemodify(l:path, ':p:h')) . ' && git apply --recount --whitespace=fix ' . shellescape(l:diff_file2) . ' 2>&1'
-        let l:err2 = system(l:cmd2)
-        call delete(l:diff_file2)
+    " --- Recovery: drop leading prose / code fences / out-of-place lines ---
+    " patch(1) "Only garbage was found" comes from a line earlier in the
+    " diff that GNU patch decides could be a hunk header but isn't. Strip
+    " every line before the first real header ("---", "+++", "@@", or
+    " "diff --git") and retry. This rescues diffs the LLM wrapped in
+    " markdown fences or prefaced with prose that @@@ mentions misfire on.
+    let l:recovered = LLMAgent_StripDiffProse(l:lines)
+    if l:recovered !=# l:lines
+        let l:diff_file3 = tempname()
+        let l:out_file3 = tempname()
+        call writefile(l:recovered, l:diff_file3)
+        call writefile(l:original, l:orig_file)
+        let l:cmd3 = 'patch -s -o ' . shellescape(l:out_file3) . ' ' . shellescape(l:orig_file) . ' ' . shellescape(l:diff_file3) . ' 2>&1'
+        let l:err3 = system(l:cmd3)
+        call delete(l:diff_file3)
         if v:shell_error == 0
-            let l:patched = readfile(l:path)
+            let l:patched = readfile(l:out_file3)
+            call delete(l:out_file3)
             let l:content = join(l:patched, "\n")
             let l:queue_err = LLMAgent_QueueWrite(l:path, l:content)
             if !empty(l:queue_err)
-                let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
-                return {'ok': 0, 'error': 'patch: applied by git apply but ' . l:queue_err}
+                call LLMAgent_RecordPatchFail(l:path, l:diff)
+                return {'ok': 0, 'error': 'patch: applied after stripping prose but ' . l:queue_err}
             endif
-            let l:msg = 'Patch applied via git apply --recount and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
+            let l:msg = 'Patch applied (after stripping leading prose) and queued for approval: ' . l:path . ' (' . len(l:content) . ' bytes).'
             return {'ok': 1, 'content': l:msg}
         endif
-        let l:git_err = l:err2
-    else
-        let l:git_err = 'git not available'
+        call delete(l:out_file3)
     endif
 
     " --- Both failed: tell the LLM what to do next --------------------------
     " Record this path so the dispatcher can see at a glance that the LLM
     " is in a patch-loop, and the system prompt can be reinforced.
-    let s:llm_agent_patch_fails[l:path] = get(s:llm_agent_patch_fails, l:path, 0) + 1
+    call LLMAgent_RecordPatchFail(l:path, l:diff)
+    " Always capture the raw diff to a debug file so we can diagnose the
+    " failure even without the LLM turning on :LLMDebug. The path is stable
+    " so the user can grab it next time patch fails.
+    call LLMAgent_DebugDumpPatchDiff(l:path, l:lines, l:err, l:git_err)
     let l:hint = 'patch failed. patch(1) said: ' . substitute(l:err, "\n", ' ', 'g')
     if !empty(l:git_err) && l:git_err != 'git not available'
         let l:hint .= ' | git apply said: ' . substitute(l:git_err, "\n", ' ', 'g')
@@ -1887,7 +2058,76 @@ function! LLMAgent_ToolPatch(args)
         let l:hint .= "\n\nThe diff also has " . l:bad_prefix_count . " line(s) that don't look like valid unified diff syntax (expected prefixes: \" \", \"+\", \"-\", \"\\\", \"@@\", \"---\", \"+++\", or a git extended header). This often happens when a SOURCE LINE contains a literal newline (e.g. printf \"...\\n\"...\") and you split it across two diff lines without a trailing \"\\\\\". patch(1) could not apply the diff as written."
     endif
     let l:hint .= "\n\nDO NOT RETRY patch with a guess. Call read_file on " . l:path . " to get the EXACT current content, then call write_file with the COMPLETE new file in `content`."
+    let l:hint .= "\n\n(The raw failing diff was saved to /tmp/LLMAgent_LastPatchFail.diff — share it if you want help diagnosing.)"
     return {'ok': 0, 'error': l:hint}
+endfunction
+
+" Strip everything before the first diff-structure line and drop pure
+" prose / markdown fences, returning a cleaner copy of the diff. Used as
+" a recovery step when patch(1) reports "Only garbage was found".
+function! LLMAgent_StripDiffProse(lines)
+    let l:i = 0
+    let l:start = -1
+    while l:i < len(a:lines)
+        if a:lines[l:i] =~# '^---\s' || a:lines[l:i] =~# '^+++\s'
+            let l:start = l:i
+            break
+        endif
+        if a:lines[l:i] =~# '^@@\s'
+            let l:start = l:i
+            break
+        endif
+        if a:lines[l:i] =~# '^diff \-\-git'
+            let l:start = l:i
+            break
+        endif
+        if a:lines[l:i] =~# '^index\s'
+            let l:start = l:i
+            break
+        endif
+        let l:i += 1
+    endwhile
+    if l:start <= 0
+        return a:lines
+    endif
+    " Drop a leading "@@@ -a +b @@@" mis-fire: if the first kept line is
+    " a combined-diff header AND there's no ---/+++ pair in the remainder,
+    " the diff is really prose with a fake header — bail out and return
+    " the original (recover failed).
+    let l:tail = a:lines[l:start : ]
+    let l:has_hdr = 0
+    for l:line in l:tail
+        if l:line =~# '^---\s' || l:line =~# '^diff \-\-git' || l:line =~# '^index\s'
+            let l:has_hdr = 1
+            break
+        endif
+    endfor
+    if !l:has_hdr
+        return a:lines
+    endif
+    return l:tail
+endfunction
+
+" Save the failing diff for diagnosis. /tmp/LLMAgent_LastPatchFail.diff is
+" overwritten on every failure and is the most useful artifact when
+" "patch fails every time" — it shows exactly what the LLM sent.
+function! LLMAgent_DebugDumpPatchDiff(path, lines, patch_err, git_err)
+    try
+        call writefile([
+            \ 'LLMAgent patch failure at ' . strftime('%Y-%m-%dT%H:%M:%S'),
+            \ 'target path: ' . a:path,
+            \ '',
+            \ 'patch(1) said:',
+            \ a:patch_err,
+            \ '',
+            \ 'git apply said:',
+            \ a:git_err,
+            \ '',
+            \ 'raw diff lines (' . len(a:lines) . '):',
+            \ ] + a:lines,
+            \ '/tmp/LLMAgent_LastPatchFail.diff')
+    catch
+    endtry
 endfunction
 
 function! LLMAgent_ToolLs(args)
@@ -1951,9 +2191,9 @@ function! LLMAgent_ToolGrep(args)
         return {'ok': 0, 'error': 'grep: missing "pattern" argument'}
     endif
     let l:pattern = a:args['pattern']
-    let l:raw_path = get(a:args, 'path', '.')
+    let l:raw_path = get(a:args, 'path', '')
     let l:glob_filter = get(a:args, 'glob', '*')
-    let l:path = empty(l:raw_path) ? '.' : LLMAgent_ResolveToolPath(l:raw_path)
+    let l:path = empty(l:raw_path) ? getcwd() : LLMAgent_ResolveToolPath(l:raw_path)
     if empty(l:path)
         return {'ok': 0, 'error': 'grep: missing "path"'}
     endif
@@ -1969,11 +2209,8 @@ function! LLMAgent_ToolGrep(args)
     let l:files = globpath(l:path, '**/' . l:glob_filter, 0, 1)
     let l:results = []
     let l:match_count = 0
+    let l:capped = 0
     for l:file in l:files
-        if l:match_count >= 100
-            call add(l:results, '... (truncated at 100 matches; narrow the pattern or glob to see more)')
-            break
-        endif
         if !filereadable(l:file) || isdirectory(l:file)
             continue
         endif
@@ -1987,11 +2224,12 @@ function! LLMAgent_ToolGrep(args)
             let l:line_num += 1
             try
                 if l:line =~ l:pattern
-                    call add(l:results, l:file . ':' . l:line_num . ': ' . l:line)
-                    let l:match_count += 1
                     if l:match_count >= 100
+                        let l:capped = 1
                         break
                     endif
+                    call add(l:results, l:file . ':' . l:line_num . ': ' . l:line)
+                    let l:match_count += 1
                 endif
             catch
                 " Invalid Vim regex for this file's content; skip just this
@@ -1999,7 +2237,13 @@ function! LLMAgent_ToolGrep(args)
                 break
             endtry
         endfor
+        if l:capped
+            break
+        endif
     endfor
+    if l:capped
+        call add(l:results, '... (truncated at 100 matches; narrow the pattern or glob to see more)')
+    endif
     if empty(l:results)
         return {'ok': 1, 'content': 'No matches for /' . l:pattern . '/ under ' . l:path . ' (glob ' . l:glob_filter . ')'}
     endif
@@ -2042,6 +2286,56 @@ function! LLMAgent_ExecuteTool(name, args)
     else
         return {'ok': 0, 'error': 'Unknown tool name: "' . a:name . '". Available: read_file, write_file, patch, ls, find, grep, list_buffers.'}
     endif
+endfunction
+
+" Decode one tool call's arguments. OpenAI sends 'arguments' as a JSON
+" string, but some servers send a pre-parsed object. Returns
+" {'args': <dict>} on success or {'error': '...'} — a malformed arguments
+" string must NOT crash the turn with an uncaught E474.
+function! LLMAgent_ParseToolArgs(raw_args)
+    if type(a:raw_args) == type({})
+        return {'args': a:raw_args}
+    endif
+    if type(a:raw_args) == type('')
+        try
+            let l:decoded = json_decode(a:raw_args)
+            if type(l:decoded) != type({})
+                let l:decoded = {'_raw': l:decoded}
+            endif
+            return {'args': l:decoded}
+        catch
+            return {'error': 'malformed tool arguments'}
+        endtry
+    endif
+    return {'error': 'unexpected tool arguments type'}
+endfunction
+
+" Short one-line summary of tool arguments for the sidebar log.
+function! LLMAgent_ToolArgsSummary(args)
+    if has_key(a:args, 'path')
+        return a:args['path']
+    endif
+    if has_key(a:args, 'pattern')
+        return a:args['pattern']
+    endif
+    return ''
+endfunction
+
+" The assistant message that must be appended to the conversation history
+" from one OpenAI chat-completion response (or {} when the response carries
+" no choices at all). Keeping the raw message preserves tool_calls ids, the
+" content, and any provider-specific extras the next request round-trips.
+function! LLMAgent_ResponseMessage(data)
+    if !has_key(a:data, 'choices') || empty(a:data['choices'])
+        return {}
+    endif
+    return a:data['choices'][0]['message']
+endfunction
+
+" True when an OpenAI response message carries a non-empty content string.
+function! LLMAgent_MessageHasText(message)
+    let l:content = get(a:message, 'content', '')
+    return type(l:content) == type('') ? !empty(trim(l:content)) : !empty(l:content)
 endfunction
 
 " Normalize a tool result into a flat string for sending back to the LLM.
@@ -2387,8 +2681,8 @@ endfunction
 function! LLMAgent_ContinueChat(user_text)
     " In-flight guard (api backend): don't append a follow-up while a curl job
     " is running — it would collide on shared state. ACP has its own pending
-    " state and is unaffected (s:llm_agent_api_job stays -1 there).
-    if s:llm_agent_api_job > 0
+    " state and is unaffected (s:llm_agent_api_job stays v:null there).
+    if LLMAgent_JobRunning(s:llm_agent_api_job)
         call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
         return
     endif
@@ -2432,7 +2726,7 @@ function! LLMAgent_RunWithTools(prompt)
 
     " In-flight guard: don't start a second turn while a curl job is running.
     " ACP has its own pending state and is handled by its own backend.
-    if s:llm_agent_api_job > 0
+    if LLMAgent_JobRunning(s:llm_agent_api_job)
         call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
         return
     endif
@@ -2481,18 +2775,10 @@ function! LLMAgent_HandleAPIResponse(data)
     " An empty/missing choices array (content-filter, length-capped, some
     " server quirks) is the same class of "nothing output" as an empty reply.
     " Guard it instead of crashing on a:data['choices'][0].
-    if !has_key(a:data, 'choices') || empty(a:data['choices'])
-        let l:message = {}
-    else
-        let l:message = a:data['choices'][0]['message']
-    endif
-
+    let l:message = LLMAgent_ResponseMessage(a:data)
     let l:has_tools = has_key(l:message, 'tool_calls') && !empty(l:message['tool_calls'])
     let l:content = get(l:message, 'content', '')
-    " content may be null on a tool-only turn; treat whitespace-only as empty.
-    let l:has_text = type(l:content) == type('')
-                \ ? !empty(trim(l:content))
-                \ : !empty(l:content)
+    let l:has_text = LLMAgent_MessageHasText(l:message)
 
     if l:has_tools
         let s:llm_agent_empty_count = 0
@@ -2500,35 +2786,16 @@ function! LLMAgent_HandleAPIResponse(data)
 
         for l:tool_call in l:message['tool_calls']
             let l:tool_name = l:tool_call['function']['name']
-            " Arguments normally arrive as a JSON string (OpenAI spec), but some
-            " servers send a pre-parsed object. Decode defensively: a malformed
-            " arguments string must NOT crash the turn with an uncaught E474.
-            let l:raw_args = get(l:tool_call['function'], 'arguments', '')
-            let l:tool_args = {}
-            let l:args_err = ''
-            if type(l:raw_args) == type({})
-                let l:tool_args = l:raw_args
-            elseif type(l:raw_args) == type('')
-                try
-                    let l:tool_args = json_decode(l:raw_args)
-                    if type(l:tool_args) != type({})
-                        let l:tool_args = {'_raw': l:tool_args}
-                    endif
-                catch
-                    let l:args_err = 'malformed tool arguments'
-                endtry
-            else
-                let l:args_err = 'unexpected tool arguments type'
-            endif
+            " Arguments normally arrive as a JSON string (OpenAI spec), but
+            " some servers send a pre-parsed object. Decode defensively via
+            " LLMAgent_ParseToolArgs: a malformed arguments string must NOT
+            " crash the turn with an uncaught E474.
+            let l:parsed = LLMAgent_ParseToolArgs(get(l:tool_call['function'], 'arguments', ''))
+            let l:tool_args = get(l:parsed, 'args', {})
+            let l:args_err = get(l:parsed, 'error', '')
 
             " Log the tool call
-            let l:args_summary = ''
-            if has_key(l:tool_args, 'path')
-                let l:args_summary = l:tool_args['path']
-            elseif has_key(l:tool_args, 'pattern')
-                let l:args_summary = l:tool_args['pattern']
-            endif
-            call LLMAgent_SidebarLog(l:tool_name . '(' . l:args_summary . ')', 'Tool')
+            call LLMAgent_SidebarLog(l:tool_name . '(' . LLMAgent_ToolArgsSummary(l:tool_args) . ')', 'Tool')
 
             " Debug: record what the LLM asked for.
             let l:_evt = {}
@@ -2541,8 +2808,7 @@ function! LLMAgent_HandleAPIResponse(data)
             if !empty(l:args_err)
                 " Could not parse arguments: report the error back to the model
                 " as a tool result so it can retry, instead of throwing E474.
-                let l:snippet = strpart(type(l:raw_args) == type('') ? l:raw_args : string(l:raw_args), 0, 200)
-                call LLMAgent_SidebarLog(l:args_err . ': ' . l:snippet, 'Error')
+                call LLMAgent_SidebarLog(l:args_err, 'Error')
                 let l:_evt = {'kind': 'tool_result', 'tool': l:tool_name, 'ok': 0, 'result_preview': l:args_err}
                 call LLMAgent_DebugLog(l:_evt)
                 let l:result_text = 'Error: ' . l:args_err . '. Please resend ' . l:tool_name . ' with valid JSON arguments.'
@@ -2580,7 +2846,7 @@ function! LLMAgent_HandleAPIResponse(data)
     elseif l:has_text
         " Final response - no more tool calls and we have a real answer.
         let s:llm_agent_empty_count = 0
-        let s:llm_agent_response_text = l:content
+        let s:llm_agent_response_text = get(l:message, 'content', '')
         call add(s:llm_agent_messages, l:message)
         call LLMAgent_FinishAgentTurn(s:llm_agent_response_text)
     else
@@ -2605,9 +2871,10 @@ endfunction
 
 " Resume after the max-rounds final summary request.
 function! LLMAgent_HandleFinalResponse(data)
-    if !has_key(a:data, 'error') && has_key(a:data, 'choices') && len(a:data['choices']) > 0
-        let s:llm_agent_response_text = a:data['choices'][0]['message']['content']
-        call add(s:llm_agent_messages, a:data['choices'][0]['message'])
+    let l:message = has_key(a:data, 'error') ? {} : LLMAgent_ResponseMessage(a:data)
+    if !empty(l:message)
+        let s:llm_agent_response_text = get(l:message, 'content', '')
+        call add(s:llm_agent_messages, l:message)
     elseif has_key(a:data, 'error')
         call LLMAgent_SidebarLog(a:data['error'], 'Error')
     else
@@ -2708,7 +2975,7 @@ function! LLMAgent_Execute(action, context, user_input, mode)
     if g:llm_agent_backend == 'api'
         " Async, non-blocking: stash the display params for the callback, then
         " return control to Vim while curl runs.
-        if s:llm_agent_api_job > 0
+        if LLMAgent_JobRunning(s:llm_agent_api_job)
             call LLMAgent_SidebarLog('A turn is already running; use :LLMStop to cancel.', 'Warning')
             return
         endif
@@ -2743,13 +3010,13 @@ function! LLMAgent_OnSingleResponse(data)
         echo 'LLMAgent error: ' . a:data['error']
         return
     endif
-    if !has_key(a:data, 'choices') || empty(a:data['choices'])
+    let l:message = LLMAgent_ResponseMessage(a:data)
+    if empty(l:message)
         echo 'LLMAgent error: empty response'
         return
     endif
-    let l:content = a:data['choices'][0]['message']['content']
     redraw
-    call LLMAgent_DisplayOpen(l:content, l:ctx['source_buf'], l:ctx['source_range'], l:ctx['mode'])
+    call LLMAgent_DisplayOpen(get(l:message, 'content', ''), l:ctx['source_buf'], l:ctx['source_range'], l:ctx['mode'])
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -2921,3 +3188,7 @@ if g:llm_agent_enable_keymaps
     nnoremap <silent> <Leader>le :LLMExplain<CR>
     nnoremap <silent> <Leader>lg :LLMAgent<CR>
 endif
+
+" Restore the user's 'cpoptions'.
+let &cpoptions = s:save_cpo
+unlet s:save_cpo
