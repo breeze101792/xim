@@ -3320,9 +3320,8 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " LLMChat - Open the chat sidebar (tool-enabled AI agent: read_file,
-" write_file, ls, find, grep, list_buffers). LLMAgent is kept as an alias.
+" write_file, ls, find, grep, list_buffers).
 command! -nargs=? -range LLMChat call LLMAgent_CommandChat(<q-args>)
-command! -nargs=? -range LLMAgent call LLMAgent_CommandChat(<q-args>)
 function! LLMAgent_CommandChat(args)
     let l:buf = bufnr('%')
     let l:sel = LLMAgent_CaptureSelection()
@@ -3380,9 +3379,7 @@ function! LLMAgent_CommandAsk(args)
 endfunction
 
 " LLMAskExplain - One-shot: explain selected code or word under cursor.
-" LLMExplain is kept as an alias.
 command! -range LLMAskExplain call LLMAgent_CommandExplain()
-command! -range LLMExplain call LLMAgent_CommandExplain()
 function! LLMAgent_CommandExplain()
     let l:buf = bufnr('%')
     let s:llm_agent_working_buf = l:buf
@@ -3409,27 +3406,20 @@ endfunction
 
 " LLMChatReset - Wipe in-memory conversation state (multi-turn history,
 " write queue, working-buffer pin). The sidebar display buffer is preserved;
-" use :LLMChatClear to wipe that too. LLMReset is kept as an alias.
+" use :LLMChatClear to wipe that too.
 command! LLMChatReset call LLMAgent_Reset() | call LLMAgent_SidebarLog('Session reset (history cleared)', 'System')
-command! LLMReset call LLMAgent_Reset() | call LLMAgent_SidebarLog('Session reset (history cleared)', 'System')
 
 " LLMChatStop - Cancel an in-flight agent turn (the async curl job) and
-" free the tool loop so a new turn can start immediately. LLMStop is kept
-" as an alias.
+" free the tool loop so a new turn can start immediately.
 command! LLMChatStop call LLMAgent_Stop()
-command! LLMStop call LLMAgent_Stop()
 
-" LLMChatClear - Clear chat history (sidebar display only). LLMClear is
-" kept as an alias.
+" LLMChatClear - Clear chat history (sidebar display only).
 command! LLMChatClear call LLMAgent_ClearChat()
-command! LLMClear call LLMAgent_ClearChat()
 
 " LLMChatDebug [on|off|path] - Toggle or set the debug log location. When
 " on, every API request/response and every tool call is appended as a JSON
 " line to the log file, so you can share the log to debug misbehavior.
-" LLMDebug is kept as an alias.
 command! -nargs=? LLMChatDebug call LLMAgent_DebugCmd(<q-args>)
-command! -nargs=? LLMDebug call LLMAgent_DebugCmd(<q-args>)
 function! LLMAgent_DebugCmd(arg)
     if a:arg ==# 'off' || a:arg ==# '0'
         let g:llm_agent_debug = 0
@@ -3457,9 +3447,8 @@ function! LLMAgent_DebugCmd(arg)
     endif
 endfunction
 
-" LLMChatToggle - Toggle sidebar open/close. LLMToggle is kept as an alias.
+" LLMChatToggle - Toggle sidebar open/close.
 command! LLMChatToggle call LLMAgent_ToggleSidebar()
-command! LLMToggle call LLMAgent_ToggleSidebar()
 function! LLMAgent_ToggleSidebar()
     let l:chat_buf = bufnr('LLMAgent-Chat')
     if l:chat_buf > 0
