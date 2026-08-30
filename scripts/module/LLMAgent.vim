@@ -47,6 +47,12 @@ hi default LLMAgentHiAgent   ctermfg=141 guifg=#cba6f7
 hi default LLMAgentHiError   ctermfg=203 guifg=#f38ba8
 hi default LLMAgentHiWarning ctermfg=228 guifg=#f9e2af
 hi default LLMAgentHiOther   ctermfg=246 guifg=#a6adc8
+" Diff preview colors: green for added lines, red for removed lines, and a
+" muted header for the @@ hunk markers and file header.
+hi default LLMAgentHiDiffAdd    ctermfg=114 guifg=#a6e3a1
+hi default LLMAgentHiDiffDel    ctermfg=203 guifg=#f38ba8
+hi default LLMAgentHiDiffHunk   ctermfg=141 guifg=#cba6f7
+hi default LLMAgentHiDiffFile   ctermfg=246 guifg=#a6adc8
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Variables
@@ -2751,7 +2757,9 @@ endfunction
 
 " Show a unified diff (current on-disk content vs proposed content) for each
 " queued write, so the user can see exactly what will change before approving.
-" Logs to the chat buffer; no-op if the file doesn't exist yet (new file).
+" Renders into the chat buffer with per-line highlighting: green for added
+" lines, red for removed lines, purple for @@ hunk markers, gray for the
+" file header. No-op if the file doesn't exist yet (new file).
 function! LLMAgent_ShowApprovalDiff(write_list)
     for l:entry in a:write_list
         let l:path = l:entry['path']
@@ -2770,8 +2778,45 @@ function! LLMAgent_ShowApprovalDiff(write_list)
             continue
         endif
         call LLMAgent_SidebarLog('Diff for ' . l:path . ':', 'System')
-        call LLMAgent_SidebarLog(substitute(l:diff, '\n$', '', ''), '')
+        call LLMAgent_RenderDiff(l:diff)
     endfor
+endfunction
+
+" Append a unified diff to the chat buffer, one line at a time, with
+" per-line highlight groups so additions/removals/hunks are color-coded.
+function! LLMAgent_RenderDiff(diff)
+    let l:buf = bufnr('LLMAgent-Chat')
+    if l:buf < 0
+        return
+    endif
+    let l:cur_win = winnr()
+    let l:chat_win = bufwinnr(l:buf)
+    if l:chat_win != winnr()
+        execute l:chat_win . 'wincmd w'
+    endif
+    setlocal modifiable
+    let l:lines = split(a:diff, "\n", 1)
+    for l:line in l:lines
+        call append('$', l:line)
+        let l:ln = line('$')
+        let l:hi = ''
+        if l:line =~# '^@@'
+            let l:hi = 'LLMAgentHiDiffHunk'
+        elseif l:line =~# '^---\|^+++'
+            let l:hi = 'LLMAgentHiDiffFile'
+        elseif l:line =~# '^+'
+            let l:hi = 'LLMAgentHiDiffAdd'
+        elseif l:line =~# '^-'
+            let l:hi = 'LLMAgentHiDiffDel'
+        endif
+        if !empty(l:hi)
+            call matchaddpos(l:hi, [[l:ln, 1, len(l:line)]], 10, -1, {'window': l:chat_win})
+        endif
+    endfor
+    normal! G
+    setlocal nomodifiable
+    execute l:cur_win . 'wincmd w'
+    redraw
 endfunction
 
 function! LLMAgent_SidebarShowApproval(write_list)
