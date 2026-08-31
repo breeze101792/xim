@@ -75,6 +75,33 @@ function! s:Test_DisplaySetupBuffer_sets_markdown_filetype() abort
     call nvim_buf_delete(l:buf, {})
 endfunction
 
+function! s:Test_Agent_switch_changes_prompt_and_title() abort
+    " Default agent is assistant; switching to debugger changes the system
+    " prompt and the chat title bar.
+    call LLMAgent_SetAgent('assistant')
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'coding assistant') >= 0, 'assistant prompt is the default')
+    call LLMAgent_SetAgent('debugger')
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'debugging') >= 0, 'debugger prompt is used after switch')
+    call LLMAgent_SetAgent('reviewer')
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'code reviewer') >= 0, 'reviewer prompt is used after switch')
+    " Unknown agent is rejected and leaves the current agent unchanged.
+    call LLMAgent_SetAgent('nope')
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'code reviewer') >= 0, 'unknown agent is rejected')
+    call LLMAgent_SetAgent('assistant')
+endfunction
+
+function! s:Test_Agent_cycle_wraps_through_roles() abort
+    " Shift+Tab cycles assistant -> debugger -> reviewer -> assistant.
+    call LLMAgent_SetAgent('assistant')
+    call LLMAgent_CycleAgent()
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'debugging') >= 0, 'cycle 1 -> debugger')
+    call LLMAgent_CycleAgent()
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'code reviewer') >= 0, 'cycle 2 -> reviewer')
+    call LLMAgent_CycleAgent()
+    call s:Assert(stridx(LLMAgent_GetSystemPrompt(), 'coding assistant') >= 0, 'cycle 3 wraps to assistant')
+    call LLMAgent_SetAgent('assistant')
+endfunction
+
 function! s:Test_SidebarNextPanel_toggles_between_panels() abort
     " Tab jumps between the two sidebar panels and only acts there.
     silent! execute 'bwipe! LLMAgent-Chat'
@@ -2126,12 +2153,14 @@ endfunction
 
 function! s:Test_Commands_new_defined_old_removed() abort
     " The current command family (LLMChat*/LLMAsk*) must all exist...
-    for l:c in ['LLMChat', 'LLMChatReset', 'LLMChatStop', 'LLMChatClear', 'LLMChatDebug', 'LLMChatToggle', 'LLMAsk', 'LLMAskExplain']
+    for l:c in ['LLMChat', 'LLMChatReset', 'LLMChatStop', 'LLMChatClear', 'LLMChatDebug', 'LLMChatToggle', 'LLMAsk', 'LLMAskExplain', 'LLMAgentSet']
         call s:Assert(exists(':' . l:c), 'command is defined: :' . l:c)
     endfor
-    " ...and the renamed/removed names must be gone.
+    " ...and the renamed/removed names must be gone. exists(':X') does prefix
+    " matching, so compare against the exact :command list instead.
+    let l:defined = map(split(execute('command'), "\n"), 'matchstr(v:val, ''^\s*\S*:\zs\S*'')')
     for l:c in ['LLMAgent', 'LLMExplain', 'LLMReset', 'LLMClear', 'LLMStop', 'LLMDebug', 'LLMToggle']
-        call s:Assert(!exists(':' . l:c), 'old command is gone: :' . l:c)
+        call s:Assert(index(l:defined, l:c) < 0, 'old command is gone: :' . l:c)
     endfor
 endfunction
 
@@ -2147,7 +2176,7 @@ if !filereadable(s:llm_agent_path)
 endif
 execute 'source' s:llm_agent_path
 
-let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'SetWindowTitle_sets_winbar_on_nvim', 'DisplaySetupBuffer_sets_markdown_filetype', 'SidebarNextPanel_toggles_between_panels', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'FixHunkHeader_repairs_near_misses', 'ToolPatch_sanitizes_garbage_hunk_headers', 'ToolPatch_strips_leading_prose', 'ToolPatch_normalizes_crlf_and_bom', 'ToolPatch_reconstructs_headerless_diff', 'RebuildHeaderlessDiff_unit', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking',
+let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'SetWindowTitle_sets_winbar_on_nvim', 'DisplaySetupBuffer_sets_markdown_filetype', 'Agent_switch_changes_prompt_and_title', 'Agent_cycle_wraps_through_roles', 'SidebarNextPanel_toggles_between_panels', 'GetContext_explicit_range', 'GetContext_single_line_returns_full_file', 'GetSystemPrompt_default', 'GetSystemPrompt_custom', 'GetAgentSystemPrompt_includes_components', 'GetToolDefinitions_shape', 'GetToolDefinitions_expected_names', 'ExecuteTool_unknown', 'ExecuteTool_list_buffers', 'ToolLs_real_dir', 'ToolLs_missing', 'ToolLs_rejects_parent_traversal', 'ToolFind_match', 'ToolFind_no_match', 'ToolGrep_finds_match', 'ToolGrep_no_match', 'ToolGrep_rejects_parent_traversal', 'ToolReadFile_known', 'ToolReadFile_line_range', 'ToolReadFile_missing', 'ToolReadFile_rejects_parent_traversal', 'ToolWriteFile_queues_no_disk', 'CallAPI_transport_error', 'APIRequest_transport_error', 'APIRequest_returns_dict', 'StopACP_is_idempotent', 'FinishAgentTurn_handles_empty_state', 'ResolveBufPath_handles_unknown_buf', 'ResolveBufPath_handles_agent_buffers', 'BuildLocationContext_none_mode', 'BuildLocationContext_cursor_mode', 'BuildLocationContext_range_mode', 'BuildLocationContext_includes_filetype', 'CaptureSelection_no_visual', 'CaptureSelection_with_visual', 'CaptureSelection_preserves_register', 'CaptureSelection_finds_marks', 'Reset_clears_messages', 'Reset_is_idempotent', 'GetAgentSystemPrompt_includes_active_buffer', 'DecodeEscapes_passthrough', 'DecodeEscapes_converts', 'ResolveToolPath_absolute', 'ResolveToolPath_empty', 'ResolveToolPath_relative', 'IsOutsideProject_inside', 'IsOutsideProject_outside', 'IsOutsideProject_dotdot', 'ToolReadFile_numbered_output', 'ToolReadFile_line_range_header', 'ToolReadFile_out_of_range', 'ToolWriteFile_escaped_newlines', 'ToolWriteFile_rejects_path_traversal', 'ToolWriteFile_empty_content', 'ToolWriteFile_requires_read_first', 'ToolWriteFile_rejects_diff_as_content', 'ToolWriteFile_rejects_partial_content', 'ToolGrep_plain_text_as_literal', 'FormatToolResult_ok', 'FormatToolResult_error', 'FormatToolResult_legacy_shape', 'DebugLog_off_by_default', 'DebugLog_appends_jsonl', 'DebugLog_swallows_errors', 'PrettyJson_roundtrip', 'ValidateSyntax_bash_ok', 'ValidateSyntax_bash_bad', 'ValidateSyntax_python_ok', 'ValidateSyntax_python_bad', 'ValidateSyntax_json_bad', 'ValidateSyntax_unknown_ext', 'QueueWrite_blocks_syntax_error', 'WriteFile_rejects_syntax_error', 'WriteFile_allows_valid_syntax', 'CurlExitHint_zero', 'CurlExitHint_28_timeout', 'CurlExitHint_unknown', 'PrefixHiGroup_known_prefixes', 'PrefixHiGroup_you_vs_agent_distinct', 'PrefixHiGroup_returns_nonempty', 'ToolPatch_rejects_empty_diff', 'ToolPatch_rejects_diff_with_no_hunks', 'ToolPatch_rejects_diff_with_chatty_lines', 'ToolPatch_valid_diff_succeeds', 'ToolPatch_wrong_context_fails_with_hint', 'ToolPatch_failure_tracked_in_session', 'ToolPatch_allows_no_newline_marker', 'ToolPatch_allows_git_extended_headers', 'ToolPatch_preserves_literal_escape_in_source_line', 'FixHunkHeader_repairs_near_misses', 'ToolPatch_sanitizes_garbage_hunk_headers', 'ToolPatch_strips_leading_prose', 'ToolPatch_normalizes_crlf_and_bom', 'ToolPatch_reconstructs_headerless_diff', 'RebuildHeaderlessDiff_unit', 'ToolPatch_tries_patch1_before_validator_reject', 'ToolPatch_breaks_retry_loop_after_two_fails', 'ToolWriteFile_clears_patch_fail_tracking',
     \ 'ToolReadFile_missing_path_arg', 'ToolReadFile_registers_read_state', 'ToolReadFile_truncates_huge_file', 'ToolReadFile_range_past_eof_clamps',
     \ 'ToolWriteFile_missing_args', 'ToolWriteFile_rejects_git_internal_paths', 'ToolWriteFile_new_file_no_read_needed', 'ToolWriteFile_preserves_literal_escapes_with_real_newlines', 'ApplyWrites_creates_missing_dirs', 'ReloadChangedBuffers_reloads_after_external_write', 'ShowApprovalDiff_renders_change',
     \ 'ToolPatch_missing_args', 'ToolPatch_requires_read_first', 'ToolPatch_refuses_path_traversal', 'ToolPatch_rejects_missing_file', 'ToolPatch_applies_and_queues_correct_content', 'ToolPatch_tolerates_slightly_off_counts', 'ToolPatch_failure_tells_how_to_recover', 'ToolPatch_then_write_clears_fail_tracking',

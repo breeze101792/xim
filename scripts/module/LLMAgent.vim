@@ -189,6 +189,15 @@ endfunction
 let s:llm_agent_messages = []
 let s:llm_agent_write_list = []
 let s:llm_agent_response_text = ''
+
+" Agent roles: each is a distinct system-prompt persona. The active one is
+" s:llm_agent_current (default 'assistant'); switch with :LLMAgentSet.
+let s:llm_agent_roles = {
+    \ 'assistant': 'You are a helpful coding assistant. Be concise and direct. When asked to generate or fix code, return only the code.',
+    \ 'debugger': 'You are a senior debugging specialist. Reproduce the bug, trace the code path to its root cause, then apply a minimal fix and verify it. Be rigorous and precise.',
+    \ 'reviewer': 'You are a code reviewer. Read for correctness, security, and style. Report issues with file:line references and concrete suggestions.',
+    \ }
+let s:llm_agent_current = 'assistant'
 " Paths that the LLM has just tried (and failed) to patch in this
 " conversation. Used to strongly nudge the next turn toward write_file.
 let s:llm_agent_patch_fails = {}
@@ -843,7 +852,7 @@ function! LLMAgent_GetSystemPrompt()
     if !empty(g:llm_agent_system_prompt)
         return g:llm_agent_system_prompt
     endif
-    return 'You are a helpful coding assistant. Be concise and direct. When asked to generate or fix code, return only the code.'
+    return get(s:llm_agent_roles, s:llm_agent_current, s:llm_agent_roles['assistant'])
 endfunction
 
 function! LLMAgent_GetFileContext()
@@ -2704,6 +2713,18 @@ function! LLMAgent_WinBar()
     return l:bar
 endfunction
 
+" Refresh the chat panel's title bar to reflect the current agent. Called on
+" :LLMAgentSet so the winbar updates without reopening the sidebar.
+function! LLMAgent_RefreshTitle()
+    let l:chat_win = bufwinnr(bufnr('LLMAgent-Chat'))
+    if l:chat_win > 0
+        let l:cur = winnr()
+        execute l:chat_win . 'wincmd w'
+        call LLMAgent_SetWindowTitle('LLM Chat [' . s:llm_agent_current . ']', '')
+        execute l:cur . 'wincmd w'
+    endif
+endfunction
+
 function! LLMAgent_SidebarOpen()
     let l:sidebar_width = LLMAgent_GetSidebarWidth()
     let l:input_height = LLMAgent_GetInputHeight()
@@ -2749,7 +2770,7 @@ function! LLMAgent_SidebarOpen()
     setlocal breakindentopt=shift:2
     setlocal showbreak=
     setlocal filetype=markdown
-    call LLMAgent_SetWindowTitle('LLM Chat', '')
+    call LLMAgent_SetWindowTitle('LLM Chat [' . s:llm_agent_current . ']', '')
     if line('$') == 1 && getline(1) == ''
         call setline(1, LLMAgent_StatusLine())
         call append(1, '')
@@ -2758,6 +2779,9 @@ function! LLMAgent_SidebarOpen()
     " Tab jumps to the other sidebar panel (input).
     nnoremap <buffer> <silent> <Tab> :call LLMAgent_SidebarNextPanel()<CR>
     inoremap <buffer> <silent> <Tab> <Esc>:call LLMAgent_SidebarNextPanel()<CR>
+    " Shift+Tab cycles the agent persona.
+    nnoremap <buffer> <silent> <S-Tab> :call LLMAgent_CycleAgent()<CR>
+    inoremap <buffer> <silent> <S-Tab> <Esc>:call LLMAgent_CycleAgent()<CR>
 
     " Bottom area: Input buffer
     below new
@@ -2778,6 +2802,9 @@ function! LLMAgent_SidebarOpen()
     " Tab jumps to the other sidebar panel (chat).
     nnoremap <buffer> <silent> <Tab> :call LLMAgent_SidebarNextPanel()<CR>
     inoremap <buffer> <silent> <Tab> <Esc>:call LLMAgent_SidebarNextPanel()<CR>
+    " Shift+Tab cycles the agent persona.
+    nnoremap <buffer> <silent> <S-Tab> :call LLMAgent_CycleAgent()<CR>
+    inoremap <buffer> <silent> <S-Tab> <Esc>:call LLMAgent_CycleAgent()<CR>
 
     " Focus goes to input buffer
     let l:input_buf = bufnr('LLMAgent-Input')
@@ -3746,6 +3773,33 @@ function! LLMAgent_ToggleSidebar()
     endif
     " Sidebar not visible, open it
     call LLMAgent_SidebarOpen()
+endfunction
+
+" LLMAgentSet [name] - Switch the active agent persona (assistant, debugger,
+" reviewer). With no argument, show the current agent. The conversation
+" history is kept; only the system prompt for the next turn changes.
+command! -nargs=? LLMAgentSet call LLMAgent_SetAgent(<q-args>)
+function! LLMAgent_SetAgent(name)
+    if empty(a:name)
+        echo 'Current agent: ' . s:llm_agent_current . ' (available: ' . join(keys(s:llm_agent_roles), ', ') . ')'
+        return
+    endif
+    if !has_key(s:llm_agent_roles, a:name)
+        echo 'Unknown agent: ' . a:name . ' (available: ' . join(keys(s:llm_agent_roles), ', ') . ')'
+        return
+    endif
+    let s:llm_agent_current = a:name
+    call LLMAgent_RefreshTitle()
+    echo 'Agent switched to: ' . a:name
+endfunction
+
+" Cycle to the next agent persona (assistant -> debugger -> reviewer -> ...).
+" Bound to Shift+Tab in the sidebar panels.
+function! LLMAgent_CycleAgent()
+    let l:names = keys(s:llm_agent_roles)
+    let l:idx = index(l:names, s:llm_agent_current)
+    let l:next = l:names[(l:idx + 1) % len(l:names)]
+    call LLMAgent_SetAgent(l:next)
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
