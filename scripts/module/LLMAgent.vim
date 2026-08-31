@@ -5,6 +5,14 @@
 "              write_file, patch, ls, find, grep, list_buffers)
 "   LLMAsk   - one-shot free-form question / request
 "   LLMAskExplain - one-shot: explain the selected code / word under cursor
+"   LLMAskTrace   - one-shot: trace the call path / functions / variables of
+"                   the selected code / word under cursor
+"
+" NOTE: one-shot commands (LLMAsk / LLMAskExplain / LLMAskTrace) send only the
+" selected snippet — they do NOT pass tools, so on the 'api' backend the model
+" cannot read other files or follow cross-file call paths. They work best on
+" the 'acp' backend, where the agent has its own built-in tools and can
+" explore the codebase on its own.
 "
 " Backends (g:llm_agent_backend):
 "   'api' (default) - OpenAI-compatible API with function-calling tools.
@@ -23,6 +31,15 @@
 "   :LLMChatClear   - clear the chat buffer display
 "   :LLMChatDebug   - toggle/set the request/response debug log
 "   :LLMChatToggle  - open/close the sidebar
+"   :LLMAgentSet    - switch the agent persona (assistant|debugger|reviewer)
+"
+" Slash commands (type in the Message input, starting with '/'):
+"   /agent [name]   - switch agent persona; no arg shows current
+"   /clear          - clear the chat display
+"   /reset          - reset conversation history
+"   /stop           - cancel the in-flight turn
+"   /debug [on|off] - toggle request/response debug logging
+"   /help           - show this list
 "
 " Features:
 "   - Both writes and patches are QUEUED and shown as a color-coded diff for
@@ -88,13 +105,11 @@ let g:llm_agent_api_key          = get(g:, 'llm_agent_api_key', '')
 let g:llm_agent_model            = get(g:, 'llm_agent_model', 'deepseek-v4-flash:cloud')
 " let g:llm_agent_model            = get(g:, 'llm_agent_model', 'qwen3.8:latest')
 " let g:llm_agent_model          = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
-let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 0)
+let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 1)
 let g:llm_agent_system_prompt    = get(g:, 'llm_agent_system_prompt', '')
 let g:llm_agent_timeout          = get(g:, 'llm_agent_timeout', 180)
-let g:llm_agent_prompt_write     = get(g:, 'llm_agent_prompt_write', 'Write code for the following request. Return ONLY the code, no markdown fences, no explanation:')
 let g:llm_agent_prompt_explain   = get(g:, 'llm_agent_prompt_explain', 'Explain the following code concisely:')
-let g:llm_agent_prompt_fix       = get(g:, 'llm_agent_prompt_fix', 'Fix any bugs or issues in the following code. Return ONLY the corrected code, no markdown fences, no explanation:')
-let g:llm_agent_prompt_refactor  = get(g:, 'llm_agent_prompt_refactor', 'Refactor the following code to be cleaner and more efficient. Return ONLY the refactored code, no markdown fences, no explanation:')
+let g:llm_agent_prompt_trace     = get(g:, 'llm_agent_prompt_trace', 'Trace the following code: identify the call path, the functions/variables involved, and how data flows through them. Be precise and reference file:line where useful:')
 let g:llm_agent_tool_max_rounds  = get(g:, 'llm_agent_tool_max_rounds', 30)
 let g:llm_agent_tool_confirm     = get(g:, 'llm_agent_tool_confirm', 1)
 let g:llm_agent_sidebar          = get(g:, 'llm_agent_sidebar', 'right')
@@ -3054,6 +3069,15 @@ function! LLMAgent_SendInput()
         return
     endif
 
+    " Slash commands: if the input starts with '/', treat it as a control
+    " command (agent switch, clear, help, ...) instead of sending it to the
+    " LLM. The input buffer is cleared either way.
+    if l:text[0] ==# '/'
+        call LLMAgent_HandleSlashCommand(l:text)
+        call LLMAgent_ClearInputBuffer(l:input_buf)
+        return
+    endif
+
     " Update working buffer: find the non-sidebar window
     let l:chat_buf = bufnr('LLMAgent-Chat')
     for l:w in range(1, winnr('$'))
@@ -3071,15 +3095,61 @@ function! LLMAgent_SendInput()
     call LLMAgent_SidebarLog(l:text, 'You')
 
     " Clear input buffer
+    call LLMAgent_ClearInputBuffer(l:input_buf)
+
+    " Continue the conversation
+    call LLMAgent_ContinueChat(l:text)
+endfunction
+
+" Clear the Message input buffer (used after sending a message or running a
+" slash command).
+function! LLMAgent_ClearInputBuffer(input_buf)
     let l:cur_win = winnr()
-    let l:input_win = bufwinnr(l:input_buf)
+    let l:input_win = bufwinnr(a:input_buf)
+    if l:input_win <= 0
+        return
+    endif
     execute l:input_win . 'wincmd w'
     setlocal modifiable
     %delete _
     execute l:cur_win . 'wincmd w'
+endfunction
 
-    " Continue the conversation
-    call LLMAgent_ContinueChat(l:text)
+" Dispatch a slash command typed in the Message input. a:cmd is the full input
+" text starting with '/'. Unknown commands show the help list.
+function! LLMAgent_HandleSlashCommand(cmd)
+    let l:parts = split(a:cmd, '\s\+')
+    let l:name = tolower(substitute(get(l:parts, 0, ''), '^/', '', ''))
+    let l:arg = join(l:parts[1:], ' ')
+    if l:name ==# 'agent'
+        call LLMAgent_SetAgent(l:arg)
+    elseif l:name ==# 'clear'
+        call LLMAgent_ClearChat()
+    elseif l:name ==# 'reset'
+        call LLMAgent_Reset()
+        call LLMAgent_SidebarLog('Session reset (history cleared)', 'System')
+    elseif l:name ==# 'stop'
+        call LLMAgent_Stop()
+    elseif l:name ==# 'debug'
+        call LLMAgent_DebugCmd(l:arg)
+    elseif l:name ==# 'help' || empty(l:name)
+        call LLMAgent_SlashHelp()
+    else
+        call LLMAgent_SidebarLog('Unknown command: /' . l:name, 'Error')
+        call LLMAgent_SlashHelp()
+    endif
+endfunction
+
+" Print the available slash commands into the chat as one compact block.
+function! LLMAgent_SlashHelp()
+    let l:help = "Slash commands:\n"
+        \ . "  /agent [name]  switch agent (assistant|debugger|reviewer)\n"
+        \ . "  /clear         clear the chat display\n"
+        \ . "  /reset         reset conversation history\n"
+        \ . "  /stop          cancel the in-flight turn\n"
+        \ . "  /debug [on|off] toggle debug logging\n"
+        \ . "  /help          show this list"
+    call LLMAgent_SidebarLog(l:help, 'System')
 endfunction
 
 " Show a unified diff (current on-disk content vs proposed content) for each
@@ -3524,17 +3594,12 @@ endfunction
 function! LLMAgent_Execute(action, context, user_input, mode)
     let l:system_prompt = LLMAgent_GetAgentSystemPrompt()
 
-    " Build user prompt based on action
+    " Build user prompt based on action. Only 'explain', 'trace', and 'ask'
+    " are wired to commands (LLMAskExplain / LLMAskTrace / LLMAsk).
     if a:action == 'explain'
         let l:prompt = g:llm_agent_prompt_explain . "\n" . a:context
-    elseif a:action == 'fix'
-        let l:prompt = g:llm_agent_prompt_fix . "\n" . a:context
-    elseif a:action == 'refactor'
-        let l:prompt = g:llm_agent_prompt_refactor . "\n" . a:context
-    elseif a:action == 'write'
-        let l:prompt = g:llm_agent_prompt_write . "\n" . a:user_input
-    elseif a:action == 'custom'
-        let l:prompt = a:user_input
+    elseif a:action == 'trace'
+        let l:prompt = g:llm_agent_prompt_trace . "\n" . a:context
     else
         " 'ask' - user provides free-form prompt, context attached if present
         let l:prompt = a:user_input
@@ -3574,6 +3639,10 @@ function! LLMAgent_Execute(action, context, user_input, mode)
             \ {'role': 'system', 'content': l:system_prompt},
             \ {'role': 'user', 'content': l:prompt}
             \ ]
+        " One-shot: no tools are passed (empty list), so the model can only
+        " answer from the snippet in the prompt. For cross-file exploration
+        " (e.g. tracing a function into another file) the 'acp' backend is
+        " better — its agent has its own tools.
         call LLMAgent_BeginThinking()
         call LLMAgent_APIRequestAsync(l:messages, [], function('LLMAgent_OnSingleResponse'))
         return
@@ -3707,6 +3776,33 @@ function! LLMAgent_CommandExplain()
         return
     endif
     call LLMAgent_Execute('explain', l:loc, '', 'view')
+endfunction
+
+" LLMAskTrace - One-shot: trace the call path / functions / variables of the
+" selected code or word under cursor.
+command! -range LLMAskTrace call LLMAgent_CommandTrace()
+function! LLMAgent_CommandTrace()
+    let l:buf = bufnr('%')
+    let s:llm_agent_working_buf = l:buf
+    let l:sel = LLMAgent_CaptureSelection()
+    if l:sel['mode'] ==# 'none'
+        " No visual selection — trace the cursor line
+        let l:line = line('.')
+        let l:ctx = getline(l:line)
+        if empty(l:ctx)
+            echo 'LLMAgent: nothing to trace'
+            return
+        endif
+        let l:loc = LLMAgent_BuildLocationContext(l:buf, l:line, l:line, 'cursor')
+        call LLMAgent_Execute('trace', l:loc, '', 'view')
+        return
+    endif
+    let l:loc = LLMAgent_BuildLocationContext(l:buf, l:sel['line1'], l:sel['line2'], 'range')
+    if empty(l:loc)
+        echo 'LLMAgent: nothing to trace'
+        return
+    endif
+    call LLMAgent_Execute('trace', l:loc, '', 'view')
 endfunction
 
 " LLMChatReset - Wipe in-memory conversation state (multi-turn history,
