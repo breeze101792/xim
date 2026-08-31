@@ -1109,7 +1109,7 @@ function! LLMAgent_ACPOneShot(prompt, Callback)
     let s:acp_mode = 'oneshot'
     let s:acp_prompt_text = a:prompt
     let s:acp_oneshot_cb = a:Callback
-    call LLMAgent_StartSpinner()
+    call LLMAgent_BeginThinking()
     call LLMAgent_ACPInitialize(function('LLMAgent_ACPOneShotOnInit'))
 endfunction
 
@@ -1579,8 +1579,7 @@ function! LLMAgent_RunWithToolsACP(prompt)
     endif
 
     " Show an animated spinner over this thinking line while the agent works.
-    call LLMAgent_SidebarLog('thinking...', 'Agent')
-    call LLMAgent_StartSpinner()
+    call LLMAgent_BeginThinking()
 
     " Complete the initialize handshake before any session/new. Async: the
     " callback chains into session/new then the prompt turn, so Vim never
@@ -2772,6 +2771,16 @@ function! LLMAgent_PrefixHiGroup(prefix)
     return 'LLMAgentHiOther'
 endfunction
 
+" Log a "thinking..." line in the chat and start the animated spinner over it.
+" Shared by every async turn start (chat, one-shot, ACP) so the busy indicator
+" is always shown the same way. a:msg defaults to 'thinking...'; the chat tool
+" loop passes a round counter.
+function! LLMAgent_BeginThinking(...)
+    let l:msg = get(a:, 1, 'thinking...')
+    call LLMAgent_SidebarLog(l:msg, 'Agent')
+    call LLMAgent_StartSpinner()
+endfunction
+
 " Start the "thinking" spinner over the current line of the chat buffer. The
 " most recently appended line (s:llm_spinner_ln) is turned into a live
 " animated frame that updates on a timer, so the user can see the agent is
@@ -3203,9 +3212,8 @@ function! LLMAgent_NextTurn()
         call LLMAgent_APIRequestAsync(s:llm_agent_messages, [], function('LLMAgent_HandleFinalResponse'))
         return
     endif
-    call LLMAgent_SidebarLog('thinking... (' . (s:llm_agent_turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')', 'Agent')
+    call LLMAgent_BeginThinking('thinking... (' . (s:llm_agent_turn + 1) . '/' . g:llm_agent_tool_max_rounds . ')')
     let s:llm_agent_turn += 1
-    call LLMAgent_StartSpinner()
     call LLMAgent_APIRequestAsync(s:llm_agent_messages, s:llm_agent_tools, function('LLMAgent_HandleAPIResponse'))
 endfunction
 
@@ -3464,8 +3472,7 @@ function! LLMAgent_Execute(action, context, user_input, mode)
             \ {'role': 'system', 'content': l:system_prompt},
             \ {'role': 'user', 'content': l:prompt}
             \ ]
-        call LLMAgent_SidebarLog('thinking...', 'Agent')
-        call LLMAgent_StartSpinner()
+        call LLMAgent_BeginThinking()
         call LLMAgent_APIRequestAsync(l:messages, [], function('LLMAgent_OnSingleResponse'))
         return
     endif
