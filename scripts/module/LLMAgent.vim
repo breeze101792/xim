@@ -1663,6 +1663,9 @@ function! LLMAgent_DisplaySetupBuffer(buf, source_buf, source_range, mode)
     call setbufvar(a:buf, '&buftype', 'nofile')
     call setbufvar(a:buf, '&bufhidden', 'wipe')
     call setbufvar(a:buf, '&swapfile', 0)
+    " The LLM answers in Markdown (headings, lists, code fences). Render it
+    " with the markdown syntax so the result is readable, not a raw blob.
+    call setbufvar(a:buf, '&filetype', 'markdown')
     call setbufvar(a:buf, 'llm_agent_source_buf', a:source_buf)
     call setbufvar(a:buf, 'llm_agent_source_range', a:source_range)
     call setbufvar(a:buf, 'llm_agent_mode', a:mode)
@@ -1675,8 +1678,9 @@ function! LLMAgent_DisplayFloating(text, source_buf, source_range, mode)
     call nvim_buf_set_option(l:buf, 'modifiable', v:false)
 
     let l:lines = split(a:text, '\n')
-    let l:width = min([80, &columns - 8])
-    let l:height = min([len(l:lines) + 2, &lines - 6])
+    " 64% of the screen area: width and height each 64% of the terminal.
+    let l:width = min([float2nr(&columns * 0.64), &columns - 8])
+    let l:height = min([float2nr(&lines * 0.64), &lines - 6])
     if l:height < 3
         let l:height = 3
     endif
@@ -1702,8 +1706,9 @@ endfunction
 
 function! LLMAgent_DisplayPopup(text, source_buf, source_range, mode)
     let l:lines = split(a:text, '\n')
-    let l:width = min([80, &columns - 8])
-    let l:height = min([len(l:lines), &lines - 6])
+    " 64% of the screen area: width and height each 64% of the terminal.
+    let l:width = min([float2nr(&columns * 0.64), &columns - 8])
+    let l:height = min([float2nr(&lines * 0.64), &lines - 6])
     if l:height < 3
         let l:height = 3
     endif
