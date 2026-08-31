@@ -283,9 +283,6 @@ let s:llm_spinner_frame = 0
 let s:llm_spinner_buf = -1
 let s:llm_spinner_ln = 0
 let s:llm_spinner_msg = ''
-" Title-bar state for the sidebar windows (Neovim winbar).
-let s:llm_agent_winbar_title = ''
-let s:llm_agent_winbar_sub = ''
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
@@ -2676,8 +2673,10 @@ function! LLMAgent_SetWindowTitle(title, sub)
     if has('nvim')
         setlocal winbar=%{%LLMAgent_WinBar()%}
         setlocal winhighlight=WinBar:LLMAgentHiTitle
-        let s:llm_agent_winbar_title = a:title
-        let s:llm_agent_winbar_sub = a:sub
+        " Store the title per-window (w:), not in a shared s: var, so each
+        " panel's winbar renders its own label.
+        let w:llm_agent_winbar_title = a:title
+        let w:llm_agent_winbar_sub = a:sub
         " nvim forces a statusline when more than one window is open, and an
         " EMPTY statusline falls back to the default buffer-info bar. Set it
         " to a single space so it renders as a blank bar — the winbar is the
@@ -2693,10 +2692,12 @@ function! LLMAgent_SetWindowTitle(title, sub)
     endif
 endfunction
 
-" Neovim winbar callback: renders the title + right-aligned sub.
+" Neovim winbar callback: renders the title + right-aligned sub. Reads the
+" window-local vars set by LLMAgent_SetWindowTitle, so each panel shows its
+" own label.
 function! LLMAgent_WinBar()
-    let l:bar = get(s:, 'llm_agent_winbar_title', '')
-    let l:sub = get(s:, 'llm_agent_winbar_sub', '')
+    let l:bar = get(w:, 'llm_agent_winbar_title', '')
+    let l:sub = get(w:, 'llm_agent_winbar_sub', '')
     if !empty(l:sub)
         let l:bar .= ' %=' . l:sub
     endif
@@ -2748,7 +2749,7 @@ function! LLMAgent_SidebarOpen()
     setlocal breakindentopt=shift:2
     setlocal showbreak=
     setlocal filetype=markdown
-    call LLMAgent_SetWindowTitle('LLM Chat', LLMAgent_StatusLine())
+    call LLMAgent_SetWindowTitle('LLM Chat', '')
     if line('$') == 1 && getline(1) == ''
         call setline(1, LLMAgent_StatusLine())
         call append(1, '')
@@ -2769,7 +2770,7 @@ function! LLMAgent_SidebarOpen()
     setlocal linebreak
     setlocal breakindent
     setlocal modifiable
-    call LLMAgent_SetWindowTitle('LLM Chat', '')
+    call LLMAgent_SetWindowTitle('Message', '')
     nnoremap <buffer> <silent> <CR> :call LLMAgent_SendInput()<CR>
 
     " Focus goes to input buffer
