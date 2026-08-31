@@ -1838,7 +1838,7 @@ function! s:Test_Spinner_animates_chat_line() abort
     call LLMAgent_StopSpinner()
     silent! execute 'bwipe! LLMAgent-Chat'
     silent! execute 'bwipe! LLMAgent-Input'
-    let l:braille = '⣾⣽⣻⢿⡿⣟⣯⣷'
+    let l:braille = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
     let l:lastchar = strcharpart(l:after, strchars(l:after) - 1, 1)
     let l:got_frame = stridx(l:braille, l:lastchar) >= 0
     call s:Assert(strpart(l:after, 0, 7) ==# '[Agent]', 'the [Agent] tag stays at column 1, got: ' . string(l:after))

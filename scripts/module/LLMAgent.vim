@@ -269,7 +269,10 @@ let s:llm_agent_single_ctx = {}
 " user sees the agent is busy. When the turn resolves we stop the timer and
 " freeze the line as a plain (non-animated) note, exactly like the static
 " "thinking..." the old synchronous path left behind.
-let s:llm_spinner_frames = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
+" Frames are a 3-dot arc rotating CLOCKWISE. Out of the 8 braille dots only 3
+" are lit, so the empty portion is ~5/8 — a little more than half — which reads
+" as a calm, clearly-busy spinner rather than a near-full ring.
+let s:llm_spinner_frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 let s:llm_spinner_active = 0
 let s:llm_spinner_timer = 0
 let s:llm_spinner_frame = 0
