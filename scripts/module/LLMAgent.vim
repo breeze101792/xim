@@ -82,6 +82,7 @@ let g:llm_agent_backend          = get(g:, 'llm_agent_backend', 'api')
 let g:llm_agent_api_url          = get(g:, 'llm_agent_api_url', 'http://localhost:11434/v1')
 let g:llm_agent_api_key          = get(g:, 'llm_agent_api_key', '')
 let g:llm_agent_model            = get(g:, 'llm_agent_model', 'deepseek-v4-flash:cloud')
+" let g:llm_agent_model            = get(g:, 'llm_agent_model', 'qwen3.8:latest')
 " let g:llm_agent_model          = get(g:, 'llm_agent_model', 'gemma4:12b-it-qat')
 let g:llm_agent_enable_keymaps   = get(g:, 'llm_agent_enable_keymaps', 0)
 let g:llm_agent_system_prompt    = get(g:, 'llm_agent_system_prompt', '')
@@ -315,6 +316,21 @@ function! LLMAgent_GetContext(line1, line2)
         return join(getline(a:line1, a:line2), "\n")
     endif
     return join(getline(1, '$'), "\n")
+endfunction
+
+" Coerce an arbitrary value to a single-line string for display. The API/ACP
+" backends can surface an 'error' key whose value is a Dict (e.g. an OpenAI
+" error object) rather than a plain string; passing that raw to string ops like
+" substitute() throws E731. Dicts/Lists are JSON-encoded; everything else falls
+" back to string() so no value format ever breaks the chat log.
+function! LLMAgent_ToString(v)
+    if type(a:v) == v:t_string
+        return a:v
+    endif
+    if type(a:v) == v:t_dict || type(a:v) == v:t_list
+        return json_encode(a:v)
+    endif
+    return string(a:v)
 endfunction
 
 " Append one JSON-line event to the debug log, if g:llm_agent_debug is on.
@@ -1443,7 +1459,7 @@ function! LLMAgent_HandleACPRequest(msg)
 endfunction
 
 function! LLMAgent_ACPHandleError(id, method, error)
-    let l:err_msg = has_key(a:error, 'message') ? a:error['message'] : string(a:error)
+    let l:err_msg = LLMAgent_ToString(get(a:error, 'message', a:error))
     if a:method == 'session/prompt'
         let s:acp_turn_error = l:err_msg
         let s:acp_prompt_resolved = 1
@@ -2600,7 +2616,7 @@ function! LLMAgent_FormatToolResult(tool_name, result)
     if !has_key(a:result, 'ok')
         " Backwards compat: old tools returned {content, error} only.
         if has_key(a:result, 'error')
-            return '[TOOL_ERROR: ' . a:tool_name . '] ' . a:result['error']
+            return '[TOOL_ERROR: ' . a:tool_name . '] ' . LLMAgent_ToString(a:result['error'])
         endif
         return get(a:result, 'content', '')
     endif
@@ -2608,7 +2624,7 @@ function! LLMAgent_FormatToolResult(tool_name, result)
         return get(a:result, 'content', '')
     endif
     let l:err = get(a:result, 'error', 'unknown error')
-    return '[TOOL_ERROR: ' . a:tool_name . '] ' . l:err
+    return '[TOOL_ERROR: ' . a:tool_name . '] ' . LLMAgent_ToString(l:err)
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -2867,7 +2883,7 @@ function! LLMAgent_SidebarLog(text, ...)
 
     setlocal modifiable
     let l:prefix = get(a:, 1, '')
-    let l:text = substitute(a:text, '\r\n\|\r', "\n", 'g')
+    let l:text = substitute(LLMAgent_ToString(a:text), '\r\n\|\r', "\n", 'g')
 
     " Split on newlines and append each line individually
     " (Vim's append() does NOT split embedded \n into separate buffer lines)
@@ -3460,7 +3476,7 @@ function! LLMAgent_OnACPOneShotResponse(result)
     let l:ctx = s:acp_oneshot_ctx
     let s:acp_oneshot_ctx = {}
     if has_key(a:result, 'error')
-        echo 'LLMAgent error: ' . a:result['error']
+        echo 'LLMAgent error: ' . LLMAgent_ToString(a:result['error'])
         return
     endif
     redraw
@@ -3475,7 +3491,7 @@ function! LLMAgent_OnSingleResponse(data)
     let l:ctx = s:llm_agent_single_ctx
     let s:llm_agent_single_ctx = {}
     if has_key(a:data, 'error')
-        echo 'LLMAgent error: ' . a:data['error']
+        echo 'LLMAgent error: ' . LLMAgent_ToString(a:data['error'])
         return
     endif
     let l:message = LLMAgent_ResponseMessage(a:data)

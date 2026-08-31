@@ -1743,6 +1743,44 @@ function! s:Test_CurlError_combines_parts() abort
     call s:Assert(stridx(l:e, 'too slow') >= 0 || stridx(l:e, 'timed out') >= 0 || stridx(l:e, 'timeout') >= 0, 'timeout hint appended')
 endfunction
 
+" --- Error-value string coercion (LLMAgent_ToString) ----------------------
+
+function! s:Test_ToString_passthrough_string() abort
+    call s:AssertEq(LLMAgent_ToString('hello'), 'hello', 'plain string is unchanged')
+    call s:AssertEq(LLMAgent_ToString(''), '', 'empty string is unchanged')
+endfunction
+
+function! s:Test_ToString_json_encodes_dict() abort
+    " An API error value can be a Dict (e.g. {"message": "...", "type": ...}).
+    " It must be JSON-encoded, not crash string concat with E731.
+    let l:s = LLMAgent_ToString({'message': 'boom', 'code': 500})
+    call s:Assert(type(l:s) == v:t_string, 'dict returns a string')
+    call s:AssertEq(json_decode(l:s)['message'], 'boom', 'dict is json-encoded')
+endfunction
+
+function! s:Test_ToString_handles_list_and_number() abort
+    call s:Assert(type(LLMAgent_ToString([1, 2])) == v:t_string, 'list returns a string')
+    call s:Assert(type(LLMAgent_ToString(42)) == v:t_string, 'number returns a string')
+endfunction
+
+" --- SidebarLog must not break on a dict error value ----------------------
+
+function! s:Test_SidebarLog_accepts_dict_text() abort
+    " Regression: LLMAgent_SidebarLog(a:data['error'], 'Error') used to throw
+    " E731 "Using a Dictionary as a String" when the error value was a dict.
+    " It must render the dict instead of raising.
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    call LLMAgent_SidebarOpen()
+    call LLMAgent_SidebarLog({'message': 'provider error', 'code': 500}, 'Error')
+    let l:chat = bufnr('LLMAgent-Chat')
+    let l:joined = join(getbufline(l:chat, 1, '$'), "\n")
+    call s:Assert(stridx(l:joined, 'message') >= 0, 'dict keys rendered in the chat')
+    call s:Assert(stridx(l:joined, 'provider error') >= 0, 'dict value rendered in the chat')
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+endfunction
+
 " --- Stop / job helpers ---
 
 function! s:Test_JobHelpers_nojob_safety() abort
@@ -2075,6 +2113,7 @@ let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'GetContext_
     \ 'ParseToolArgs_object_passthrough', 'ParseToolArgs_json_string', 'ParseToolArgs_bad_json_error', 'ParseToolArgs_non_string_types', 'ToolArgsSummary_prefers_path_then_pattern',
     \ 'ResponseMessage_shapes', 'MessageHasText_variants',
     \ 'APIRequestBody_tools_only_when_given', 'BuildCurlCmd_parts', 'ParseCompletion_shapes', 'CurlError_combines_parts',
+    \ 'ToString_passthrough_string', 'ToString_json_encodes_dict', 'ToString_handles_list_and_number', 'SidebarLog_accepts_dict_text',
     \ 'JobHelpers_nojob_safety', 'JobHelpers_start_echo_job',
     \ 'Spinner_animates_chat_line', 'StopSpinner_freezes_line_to_done', 'StartSpinner_noop_without_chat_buffer',
     \ 'StatusLine_api_uses_model', 'StatusLine_acp_falls_back_to_cmd', 'StatusLine_acp_uses_reported_agent_name',
