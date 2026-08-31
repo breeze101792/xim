@@ -3229,19 +3229,36 @@ function! LLMAgent_SidebarShowApproval(write_list)
     " Save the normal input state
     let s:llm_agent_saved_input = getbufline(l:input_buf, 1, '$')
 
-    " Write approval prompt to input buffer
+    " Write approval prompt to input buffer. The frame width adapts to the
+    " longest content line so long paths don't get clipped. Content is ASCII
+    " (1 cell/byte); box-drawing chars are 1 cell each.
+    let l:rows = ['APPROVE ' . len(a:write_list) . ' write(s):']
+    for l:entry in a:write_list
+        call add(l:rows, '  ' . l:entry['path'] . ' (' . len(l:entry['content']) . ' bytes)')
+    endfor
+    call add(l:rows, '')
+    call add(l:rows, 'Enter=apply  q=reject')
+    " inner = number of '─' per border edge. Border total = inner + 2 cells
+    " (two corners). Content total = len + 4 cells (two '│' plus two spaces).
+    " Match them: inner = max(len + 2). Also fill the whole input window so
+    " the box hugs the sidebar edge instead of a narrow content-sized box.
+    let l:inner = 0
+    for l:r in l:rows
+        let l:inner = max([l:inner, len(l:r) + 2])
+    endfor
+    let l:inner = max([l:inner, winwidth(l:input_win) - 2])
+    let l:top = '┌' . repeat('─', l:inner) . '┐'
+    let l:bot = '└' . repeat('─', l:inner) . '┘'
     setlocal modifiable
     %delete _
-    call setline(1, '┌─────────────────────────────────────────┐')
-    call setline(2, '│ APPROVE ' . len(a:write_list) . ' write(s):')
-    let l:row = 3
-    for l:entry in a:write_list
-        call setline(l:row, '│   ' . l:entry['path'] . ' (' . len(l:entry['content']) . ' bytes)')
+    call setline(1, l:top)
+    let l:row = 2
+    for l:r in l:rows
+        let l:pad = l:inner - len(l:r) - 2
+        call setline(l:row, '│ ' . l:r . repeat(' ', l:pad) . ' │')
         let l:row += 1
     endfor
-    call setline(l:row, '│')
-    call setline(l:row + 1, '│ Enter=apply  q=reject')
-    call setline(l:row + 2, '└─────────────────────────────────────────┘')
+    call setline(l:row, l:bot)
     setlocal nomodifiable
 
     " Override input keymaps for approval
