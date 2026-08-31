@@ -2755,6 +2755,9 @@ function! LLMAgent_SidebarOpen()
         call append(1, '')
     endif
     setlocal nomodifiable
+    " Tab jumps to the other sidebar panel (input).
+    nnoremap <buffer> <silent> <Tab> :call LLMAgent_SidebarNextPanel()<CR>
+    inoremap <buffer> <silent> <Tab> <Esc>:call LLMAgent_SidebarNextPanel()<CR>
 
     " Bottom area: Input buffer
     below new
@@ -2772,6 +2775,9 @@ function! LLMAgent_SidebarOpen()
     setlocal modifiable
     call LLMAgent_SetWindowTitle('Message', '')
     nnoremap <buffer> <silent> <CR> :call LLMAgent_SendInput()<CR>
+    " Tab jumps to the other sidebar panel (chat).
+    nnoremap <buffer> <silent> <Tab> :call LLMAgent_SidebarNextPanel()<CR>
+    inoremap <buffer> <silent> <Tab> <Esc>:call LLMAgent_SidebarNextPanel()<CR>
 
     " Focus goes to input buffer
     let l:input_buf = bufnr('LLMAgent-Input')
@@ -2801,6 +2807,25 @@ endfunction
 function! LLMAgent_OnResize()
     if bufnr('LLMAgent-Chat') > 0 && bufwinnr(bufnr('LLMAgent-Chat')) > 0
         call LLMAgent_ResizeSidebarWindows(LLMAgent_GetSidebarWidth(), LLMAgent_GetInputHeight())
+    endif
+endfunction
+
+" Jump to the other sidebar panel (chat <-> input). Only acts when the current
+" window is one of the two sidebar panels, so Tab elsewhere is unaffected.
+function! LLMAgent_SidebarNextPanel()
+    let l:cur = bufnr('%')
+    let l:chat_buf = bufnr('LLMAgent-Chat')
+    let l:input_buf = bufnr('LLMAgent-Input')
+    if l:cur == l:chat_buf
+        let l:target = l:input_buf
+    elseif l:cur == l:input_buf
+        let l:target = l:chat_buf
+    else
+        return
+    endif
+    let l:win = bufwinnr(l:target)
+    if l:win > 0
+        execute l:win . 'wincmd w'
     endif
 endfunction
 
