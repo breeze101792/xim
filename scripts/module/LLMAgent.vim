@@ -74,6 +74,10 @@ hi default LLMAgentHiDiffAdd    ctermfg=114 guifg=#a6e3a1
 hi default LLMAgentHiDiffDel    ctermfg=203 guifg=#f38ba8
 hi default LLMAgentHiDiffHunk   ctermfg=141 guifg=#cba6f7
 hi default LLMAgentHiDiffFile   ctermfg=246 guifg=#a6adc8
+" Sidebar title bar. Linked to the theme's StatusLine group so it follows the
+" user's colorscheme instead of a hardcoded color. StatusLine is the natural
+" fit for a bar that spans the window width.
+hi default link LLMAgentHiTitle StatusLine
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Variables
@@ -279,6 +283,9 @@ let s:llm_spinner_frame = 0
 let s:llm_spinner_buf = -1
 let s:llm_spinner_ln = 0
 let s:llm_spinner_msg = ''
+" Title-bar state for the sidebar windows (Neovim winbar).
+let s:llm_agent_winbar_title = ''
+let s:llm_agent_winbar_sub = ''
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 """"    Tool Definitions (OpenAI function-calling format)
@@ -2654,6 +2661,48 @@ function! LLMAgent_StatusLine()
     return 'mode: ' . g:llm_agent_backend . '  |  model: ' . l:model
 endfunction
 
+" Set a title bar on the current window. Neovim has a real top winbar; Vim
+" (9.2) does not, so fall back to a bottom statusline there. a:title is the
+" label; a:sub is an optional right-aligned detail (e.g. the model). The bar
+" is highlighted with LLMAgentHiTitle.
+" NOTE: we only touch the WINDOW-LOCAL statusline, never the global
+" 'laststatus' (which in nvim is a global option — setting it would disable
+" the statusline for every window, not just the sidebar).
+function! LLMAgent_SetWindowTitle(title, sub)
+    let l:bar = a:title
+    if !empty(a:sub)
+        let l:bar .= ' %=' . a:sub
+    endif
+    if has('nvim')
+        setlocal winbar=%{%LLMAgent_WinBar()%}
+        setlocal winhighlight=WinBar:LLMAgentHiTitle
+        let s:llm_agent_winbar_title = a:title
+        let s:llm_agent_winbar_sub = a:sub
+        " nvim forces a statusline when more than one window is open, and an
+        " EMPTY statusline falls back to the default buffer-info bar. Set it
+        " to a single space so it renders as a blank bar — the winbar is the
+        " only bar these panels need. This is window-local, so other windows
+        " keep their normal statusline.
+        let &l:statusline = ' '
+    else
+        " Vim statusline: escape % so it renders literally, then assign via
+        " let (not execute) so spaces in the label are not split. Prefix the
+        " highlight group with %#...# so the whole bar uses LLMAgentHiTitle.
+        let l:bar = substitute(l:bar, '%', '%%', 'g')
+        let &l:statusline = '%#LLMAgentHiTitle#' . l:bar
+    endif
+endfunction
+
+" Neovim winbar callback: renders the title + right-aligned sub.
+function! LLMAgent_WinBar()
+    let l:bar = get(s:, 'llm_agent_winbar_title', '')
+    let l:sub = get(s:, 'llm_agent_winbar_sub', '')
+    if !empty(l:sub)
+        let l:bar .= ' %=' . l:sub
+    endif
+    return l:bar
+endfunction
+
 function! LLMAgent_SidebarOpen()
     let l:sidebar_width = LLMAgent_GetSidebarWidth()
     let l:input_height = LLMAgent_GetInputHeight()
@@ -2699,10 +2748,10 @@ function! LLMAgent_SidebarOpen()
     setlocal breakindentopt=shift:2
     setlocal showbreak=
     setlocal filetype=markdown
+    call LLMAgent_SetWindowTitle('LLM Chat', LLMAgent_StatusLine())
     if line('$') == 1 && getline(1) == ''
-        call setline(1, '=== LLM Agent ===')
-        call append(1, LLMAgent_StatusLine())
-        call append(2, '')
+        call setline(1, LLMAgent_StatusLine())
+        call append(1, '')
     endif
     setlocal nomodifiable
 
@@ -2720,6 +2769,7 @@ function! LLMAgent_SidebarOpen()
     setlocal linebreak
     setlocal breakindent
     setlocal modifiable
+    call LLMAgent_SetWindowTitle('LLM Chat', '')
     nnoremap <buffer> <silent> <CR> :call LLMAgent_SendInput()<CR>
 
     " Focus goes to input buffer
@@ -3122,9 +3172,8 @@ function! LLMAgent_ClearChat()
     execute l:chat_win . 'wincmd w'
     setlocal modifiable
     %delete _
-    call setline(1, '=== LLM Agent ===')
-    call append(1, LLMAgent_StatusLine())
-    call append(2, '')
+    call setline(1, LLMAgent_StatusLine())
+    call append(1, '')
     setlocal nomodifiable
     execute l:cur_win . 'wincmd w'
     let s:llm_agent_messages = []
