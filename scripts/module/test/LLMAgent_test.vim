@@ -2202,7 +2202,7 @@ endfunction
 
 function! s:Test_Commands_new_defined_old_removed() abort
     " The current command family (LLMChat*/LLMAsk*) must all exist...
-    for l:c in ['LLMChat', 'LLMChatReset', 'LLMChatStop', 'LLMChatClear', 'LLMChatDebug', 'LLMChatToggle', 'LLMAsk', 'LLMAskExplain', 'LLMAskTrace', 'LLMAgentSet']
+    for l:c in ['LLMChat', 'LLMChatReset', 'LLMChatStop', 'LLMChatClear', 'LLMChatDebug', 'LLMChatToggle', 'LLMAsk', 'LLMAskExplain', 'LLMAskTrace', 'LLMAgentSet', 'LLMBackend', 'LLMModel']
         call s:Assert(exists(':' . l:c), 'command is defined: :' . l:c)
     endfor
     " ...and the renamed/removed names must be gone. exists(':X') does prefix
@@ -2211,6 +2211,53 @@ function! s:Test_Commands_new_defined_old_removed() abort
     for l:c in ['LLMAgent', 'LLMExplain', 'LLMReset', 'LLMClear', 'LLMStop', 'LLMDebug', 'LLMToggle']
         call s:Assert(index(l:defined, l:c) < 0, 'old command is gone: :' . l:c)
     endfor
+endfunction
+
+function! s:Test_SetBackend_switches_and_rejects() abort
+    let l:save = g:llm_agent_backend
+    call LLMAgent_SetBackend('acp')
+    call s:AssertEq(g:llm_agent_backend, 'acp', 'backend switches to acp')
+    call LLMAgent_SetBackend('api')
+    call s:AssertEq(g:llm_agent_backend, 'api', 'backend switches back to api')
+    call LLMAgent_SetBackend('bogus')
+    call s:AssertEq(g:llm_agent_backend, 'api', 'unknown backend rejected')
+    let g:llm_agent_backend = l:save
+endfunction
+
+function! s:Test_SetModel_switches() abort
+    let l:save = g:llm_agent_model
+    call LLMAgent_SetModel('probe-model-xyz')
+    call s:AssertEq(g:llm_agent_model, 'probe-model-xyz', 'model switches')
+    let g:llm_agent_model = l:save
+endfunction
+
+function! s:Test_SlashCommand_backend_switches() abort
+    let l:save = g:llm_agent_backend
+    call LLMAgent_HandleSlashCommand('/backend acp')
+    call s:AssertEq(g:llm_agent_backend, 'acp', '/backend acp switches')
+    call LLMAgent_HandleSlashCommand('/backend api')
+    call s:AssertEq(g:llm_agent_backend, 'api', '/backend api switches back')
+    let g:llm_agent_backend = l:save
+endfunction
+
+function! s:Test_SlashCommand_model_switches() abort
+    let l:save = g:llm_agent_model
+    call LLMAgent_HandleSlashCommand('/model probe-model-xyz')
+    call s:AssertEq(g:llm_agent_model, 'probe-model-xyz', '/model switches')
+    let g:llm_agent_model = l:save
+endfunction
+
+function! s:Test_SlashHelp_lists_backend_and_model() abort
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
+    call LLMAgent_SidebarOpen()
+    call LLMAgent_SlashHelp()
+    let l:chat = bufnr('LLMAgent-Chat')
+    let l:joined = join(getbufline(l:chat, 1, '$'), "\n")
+    call s:Assert(stridx(l:joined, '/backend') >= 0, 'help lists /backend')
+    call s:Assert(stridx(l:joined, '/model') >= 0, 'help lists /model')
+    silent! execute 'bwipe! LLMAgent-Chat'
+    silent! execute 'bwipe! LLMAgent-Input'
 endfunction
 
 " Resolve the path to the module under test. The test is run from the
@@ -2246,7 +2293,8 @@ let s:all_tests = ['GetSidebarWidth_floor', 'GetInputHeight_floor', 'SetWindowTi
     \ 'ACPSessionNew_sends_request_shape', 'ACPSessionNew_captures_session_id',
     \ 'JobStart_on_stdout_callback', 'JobWaitJob_signature',
     \ 'StripDiffProse_strips_leading_prose',
-    \ 'Commands_new_defined_old_removed']
+    \ 'Commands_new_defined_old_removed',
+    \ 'SetBackend_switches_and_rejects', 'SetModel_switches', 'SlashCommand_backend_switches', 'SlashCommand_model_switches', 'SlashHelp_lists_backend_and_model']
 
 for s:t in s:all_tests
     let s:fn = function('<SNR>1_Test_' . s:t)

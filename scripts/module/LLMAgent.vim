@@ -3123,6 +3123,10 @@ function! LLMAgent_HandleSlashCommand(cmd)
     let l:arg = join(l:parts[1:], ' ')
     if l:name ==# 'agent'
         call LLMAgent_SetAgent(l:arg)
+    elseif l:name ==# 'backend'
+        call LLMAgent_SetBackend(l:arg)
+    elseif l:name ==# 'model'
+        call LLMAgent_SetModel(l:arg)
     elseif l:name ==# 'clear'
         call LLMAgent_ClearChat()
     elseif l:name ==# 'reset'
@@ -3144,6 +3148,8 @@ endfunction
 function! LLMAgent_SlashHelp()
     let l:help = "Slash commands:\n"
         \ . "  /agent [name]  switch agent (assistant|debugger|reviewer)\n"
+        \ . "  /backend [api|acp] switch backend\n"
+        \ . "  /model [name]  switch model\n"
         \ . "  /clear         clear the chat display\n"
         \ . "  /reset         reset conversation history\n"
         \ . "  /stop          cancel the in-flight turn\n"
@@ -3863,6 +3869,43 @@ function! LLMAgent_DebugCmd(arg)
     else
         echo 'LLMAgent debug logging: OFF (file kept at ' . g:llm_agent_debug_file . ')'
     endif
+endfunction
+
+" LLMBackend [api|acp] - Switch the active backend at runtime. With no
+" argument, show the current backend. Switching stops any in-flight turn and
+" resets the conversation history, since the two backends keep incompatible
+" state (structured messages vs. a flattened ACP prompt).
+command! -nargs=? LLMBackend call LLMAgent_SetBackend(<q-args>)
+function! LLMAgent_SetBackend(name)
+    if empty(a:name)
+        echo 'Current backend: ' . g:llm_agent_backend . ' (api|acp)'
+        return
+    endif
+    if a:name !=# 'api' && a:name !=# 'acp'
+        echo 'Unknown backend: ' . a:name . ' (available: api, acp)'
+        return
+    endif
+    if a:name ==# g:llm_agent_backend
+        echo 'Backend already: ' . a:name
+        return
+    endif
+    call LLMAgent_Stop()
+    call LLMAgent_Reset()
+    let g:llm_agent_backend = a:name
+    echo 'Backend switched to: ' . a:name
+endfunction
+
+" LLMModel [name] - Switch the active model at runtime. With no argument, show
+" the current model. The conversation history is kept; only the model used for
+" the next turn changes.
+command! -nargs=? LLMModel call LLMAgent_SetModel(<q-args>)
+function! LLMAgent_SetModel(name)
+    if empty(a:name)
+        echo 'Current model: ' . g:llm_agent_model
+        return
+    endif
+    let g:llm_agent_model = a:name
+    echo 'Model switched to: ' . a:name
 endfunction
 
 " LLMChatToggle - Toggle sidebar open/close.
