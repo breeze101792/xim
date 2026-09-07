@@ -944,7 +944,7 @@ function! LLMAgent_GetAgentSystemPrompt()
     let l:rules .= "\n\nTOOL CALL FORMAT:"
     let l:rules .= "\n- Each tool call's arguments MUST be a single valid JSON object."
     let l:rules .= "\n- No markdown, no code fences, no prose, no comments, and no trailing commas inside the arguments JSON. Use the exact parameter names the tool defines."
-    let l:rules .= "\n- Call the smallest set of tools that gets the job done. Do not call a tool you do not need, and do not call read_file on a file you have already read this conversation."
+    let l:rules .= "\n- Call the smallest set of tools that gets the job done. Do not call a tool you do not need. You may re-read a file if it may have changed since you last read it (e.g. the user edited it), but avoid unnecessary re-reads."
     return l:prompt . l:rules
 endfunction
 
